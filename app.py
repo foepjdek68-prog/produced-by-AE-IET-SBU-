@@ -92,4 +92,17 @@ if conn:
         with col_data:
             # กราฟแนวโน้ม
             st.markdown(f"### 📈 แนวโน้ม ทุก ๆ 1 ชั่วโมง")
-            history['timestamp'] = pd
+            history['timestamp'] = pd.to_datetime(history['timestamp'])
+            fig = px.line(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=180, color_discrete_sequence=['#2dd4bf'])
+            fig.update_layout(margin=dict(l=0, r=0, t=10, b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_size=10)
+            st.plotly_chart(fig, use_container_width=True)
+
+            # ตารางอันดับ
+            st.markdown(f"### 🏆 อันดับ{s_thai_metric.split(' (')[0]}สูงสุด")
+            df_rank = all_data.sort_values(by=s_metric, ascending=False)
+            inv_m = {v: k for k, v in REGION_MAP.items()}
+            df_rank['ภูมิภาค'] = df_rank['region'].map(inv_m)
+            st.dataframe(df_rank[['ภูมิภาค', s_metric]], hide_index=True, use_container_width=True, height=130)
+            
+    except: st.info("🔄 กำลังอัปเดตข้อมูล...")
+else: st.error("⚠️ ไม่พบฐานข้อมูล")
