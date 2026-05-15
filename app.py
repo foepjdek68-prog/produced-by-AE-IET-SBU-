@@ -5,53 +5,57 @@ import pydeck as pdk
 import sqlite3
 import os
 
-# 1. ตั้งค่าหน้าจอ (Wide Mode + บีบระยะห่างบนสุด)
+# 1. ตั้งค่าหน้าจอ (บีบระยะห่างให้เหลือน้อยที่สุด)
 st.set_page_config(page_title="GHGs Monitoring SBU", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 🎨 2. CSS: ลดสเกล UI (Scale Down) ---
+# --- 🎨 2. CSS: ลดสเกล UI และบล็อกการพิมพ์ใน Selectbox ---
 st.markdown("""
     <style>
-    /* ลด Padding รอบแอปให้เล็กลงเพื่อให้ดูแน่นขึ้น */
-    .block-container { padding: 1rem 1.5rem !important; }
+    /* บีบพื้นที่หน้าจอให้แน่น */
+    .block-container { padding: 0.5rem 1rem !important; }
     .stApp { background-color: #020617; color: #f8fafc; }
 
-    /* ลดขนาดหัวข้อ */
-    h1 { font-size: 22px !important; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0px !important; }
-    p { font-size: 12px !important; color: #94a3b8; }
-    h5 { font-size: 14px !important; margin-bottom: 10px !important; color: #22d3ee; }
+    /* ลดสเกลตัวอักษรและหัวข้อ */
+    h1 { font-size: 18px !important; font-weight: 800; margin-bottom: -5px !important; }
+    p { font-size: 10px !important; color: #64748b; margin-bottom: 5px !important; }
+    h5 { font-size: 12px !important; margin-bottom: 5px !important; color: #22d3ee; }
 
-    /* ปรับแต่ง Metric Cards ให้เล็กลง */
+    /* ปรับแต่ง Metric Cards ให้เล็กและเตี้ยลง */
     div[data-testid="stMetric"] { 
         background: rgba(30, 41, 59, 0.4); 
-        padding: 10px 15px !important; 
-        border-radius: 10px; 
+        padding: 5px 10px !important; 
+        border-radius: 8px; 
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    div[data-testid="stMetricValue"] { font-size: 20px !important; font-weight: 700 !important; }
-    div[data-testid="stMetricLabel"] { font-size: 11px !important; }
+    div[data-testid="stMetricValue"] { font-size: 18px !important; }
+    div[data-testid="stMetricLabel"] { font-size: 10px !important; }
 
-    /* ปรับขนาด Selectbox ให้ดูเล็กและแบน (Flat Design) */
-    .stSelectbox div[data-baseweb="select"] { transform: scale(0.9); transform-origin: left; }
-
-    /* กล่องเครดิตลอยมุมขวาล่าง (เล็กลง) */
-    .footer-credit {
-        position: fixed; bottom: 15px; right: 15px;
-        background: rgba(15, 23, 42, 0.95);
-        padding: 8px 12px; border-radius: 12px;
-        border: 1px solid rgba(34, 211, 238, 0.4);
-        display: flex; align-items: center; gap: 10px; z-index: 9999;
+    /* บล็อกการพิมพ์ใน Selectbox (ทำให้เป็น Read-only) */
+    div[data-baseweb="select"] input {
+        pointer-events: none; /* ห้ามคลิกเพื่อพิมพ์ */
+        caret-color: transparent; /* ซ่อนตัวกะพริบ */
     }
-    .footer-credit img { width: 100px; height: auto; } /* ขนาดโลโก้เล็กลง */
-    .credit-text { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px; font-size: 9px; color: #94a3b8; }
+    .stSelectbox label { font-size: 11px !important; margin-bottom: 0px !important; }
+
+    /* เครดิตลอยมุมขวาล่าง (จิ๋วแต่แจ๋ว) */
+    .footer-credit {
+        position: fixed; bottom: 10px; right: 10px;
+        background: rgba(15, 23, 42, 0.95);
+        padding: 5px 10px; border-radius: 10px;
+        border: 1px solid rgba(34, 211, 238, 0.3);
+        display: flex; align-items: center; gap: 8px; z-index: 9999;
+    }
+    .footer-credit img { width: 80px; height: auto; }
+    .credit-text { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 8px; font-size: 8px; color: #94a3b8; }
     </style>
 
     <div class="footer-credit">
-        <a href="https://www.southeast.ac.th/about-us/" target="_blank" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+        <a href="https://www.southeast.ac.th/about-us/" target="_blank" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
             <img src="https://www.southeast.ac.th/wp-content/uploads/2023/11/logo-main2.png" 
                  onerror="this.src='https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Southeast_Bangkok_University_Logo.png/200px-Southeast_Bangkok_University_Logo.png'">
             <div class="credit-text">
-                <b style="color:#fff;">AE-IET Team</b><br>
-                <span>GHGs Project</span>
+                <b style="color:#fff;">AE-IET</b><br>
+                <span>SBU Monitoring</span>
             </div>
         </a>
     </div>
@@ -68,12 +72,12 @@ COORDS = {"North": [18.78, 98.98], "Central": [13.75, 100.50], "South": [7.88, 9
 
 # --- 🔝 4. HEADER ---
 st.markdown("<h1>TRACKING GHGs EMISSION</h1>", unsafe_allow_html=True)
-st.markdown("<p>Environmental Real-time Data produced by SBU</p>", unsafe_allow_html=True)
+st.markdown("<p>Real-time Monitoring System [SBU]</p>", unsafe_allow_html=True)
 
-# ลดระยะห่างส่วน Filter
+# ส่วน Filter (บีบลง 0.8x)
 c_sel1, c_sel2 = st.columns(2)
-with c_sel1: s_region_name = st.selectbox("📍 Region:", list(REGION_MAP.keys()), index=1)
-with c_sel2: s_metric_name = st.selectbox("📊 Metric:", list(METRIC_MAP.keys()), index=0)
+with c_sel1: s_region_name = st.selectbox("📍 ภูมิภาค:", list(REGION_MAP.keys()), index=1)
+with c_sel2: s_metric_name = st.selectbox("📊 ดัชนี:", list(METRIC_MAP.keys()), index=0)
 
 s_region = REGION_MAP[s_region_name]
 s_metric = METRIC_MAP[s_metric_name]
@@ -87,58 +91,55 @@ if conn:
         all_data = pd.read_sql("SELECT region, MAX(co2) as co2, MAX(ch4) as ch4, MAX(no2) as no2, MAX(temp) as temp FROM ghg_logs GROUP BY region", conn)
         conn.close()
 
-        # Metrics Row (บีบให้เล็กลง)
+        # Metrics Row
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("CO₂ (ppm)", f"{int(latest['co2'])}")
         m2.metric("CH₄ (ppb)", f"{latest['ch4']:.1f}")
         m3.metric("NO₂ (ppb)", f"{latest['no2']:.1f}")
         m4.metric("TEMP (°C)", f"{int(latest['temp'])}")
 
-        st.write("") # ลด Space
-
-        # Layout Main (ลดสเกลแผนที่และกราฟ)
-        col_map, col_right = st.columns([1.6, 1])
+        # ส่วนแสดงผลหลัก
+        col_map, col_right = st.columns([1.7, 1])
 
         with col_map:
             st.markdown("##### 🗺️ 2D STATION NETWORK")
             all_data['lat'] = all_data['region'].map(lambda x: COORDS[x][0])
             all_data['lon'] = all_data['region'].map(lambda x: COORDS[x][1])
             
-            # ปรับ Zoom และ Pitch ให้ดูเป็น Dashboard Monitoring มากขึ้น
             st.pydeck_chart(pdk.Deck(
                 map_style="mapbox://styles/mapbox/dark-v10", 
-                initial_view_state=pdk.ViewState(latitude=13.5, longitude=100.8, zoom=5.0),
+                initial_view_state=pdk.ViewState(latitude=13.5, longitude=100.8, zoom=5.1),
                 layers=[
                     pdk.Layer(
                         "ScatterplotLayer", all_data,
                         get_position="[lon, lat]",
                         get_color="[34, 211, 238, 200]",
-                        get_radius=45000,
+                        get_radius=42000,
                     )
                 ],
             ))
 
         with col_right:
-            # กราฟ (ลดความสูง)
+            # กราฟ (เน้นประหยัดพื้นที่)
             st.markdown(f"##### 📈 TREND: {s_metric_name.split(' (')[0]}")
             history['timestamp'] = pd.to_datetime(history['timestamp'])
-            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=200)
+            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=180)
             fig.update_layout(
                 margin=dict(l=0, r=0, t=5, b=0),
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(color="#94a3b8", size=9),
+                font=dict(color="#94a3b8", size=8),
                 xaxis=dict(showgrid=False), yaxis=dict(gridcolor="rgba(255,255,255,0.05)")
             )
-            fig.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.1)')
+            fig.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.05)')
             st.plotly_chart(fig, use_container_width=True)
 
-            # ตาราง (ลดความสูง)
+            # ตาราง
             st.markdown("##### 🏆 RANKING")
             df_rank = all_data.sort_values(by=s_metric, ascending=False)
             df_rank['ภูมิภาค'] = df_rank['region'].map({v: k for k, v in REGION_MAP.items()})
-            st.dataframe(df_rank[['ภูมิภาค', s_metric]], hide_index=True, use_container_width=True, height=150)
+            st.dataframe(df_rank[['ภูมิภาค', s_metric]], hide_index=True, use_container_width=True, height=130)
 
     except Exception as e:
-        st.error(f"Syncing Error: {e}")
+        st.error(f"Error: {e}")
 else:
-    st.error("⚠️ Database not found in /data")
+    st.error("Database connection failed")
