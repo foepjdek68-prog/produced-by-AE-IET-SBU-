@@ -7,15 +7,16 @@ import os
 from datetime import datetime
 import pytz
 
-# 1. Config หน้าจอ
+# 1. Config หน้าจอ (เน้นความกระชับ)
 st.set_page_config(page_title="Dashboard Tracking GHGs Emission", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 🎨 2. CSS: จัดตำแหน่งสมดุล บล็อกการพิมพ์ และนาฬิกา ---
+# --- 🎨 2. CSS: ขยับเนื้อหาขึ้นและจัดการพื้นที่ว่าง ---
 st.markdown("""
     <style>
-    /* บีบหน้าจอให้สมดุลและขยับขึ้น */
+    /* บีบ Padding ด้านบนให้เล็กลงเพื่อดันเนื้อหาขึ้น และเพิ่ม Padding ด้านล่าง */
     .block-container { 
-        padding: 1.5rem 1.5rem 3.5rem 1.5rem !important; 
+        padding-top: 1rem !important; 
+        padding-bottom: 5rem !important; 
         max-height: 100vh; 
         overflow: hidden; 
     }
@@ -23,7 +24,7 @@ st.markdown("""
 
     /* นาฬิกาประเทศไทยมุมบนขวา */
     .digital-clock {
-        position: absolute; top: -45px; right: 0px;
+        position: absolute; top: -50px; right: 0px;
         color: #22d3ee; font-family: monospace; font-size: 16px;
         font-weight: bold; background: rgba(30, 41, 59, 0.5);
         padding: 4px 12px; border-radius: 5px; border: 1px solid rgba(34, 211, 238, 0.3);
@@ -35,23 +36,26 @@ st.markdown("""
     /* ตกแต่ง Metric Cards */
     div[data-testid="stMetric"] { 
         background: rgba(30, 41, 59, 0.4); 
-        padding: 8px 12px !important; 
+        padding: 10px 15px !important; 
         border-radius: 8px; 
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    div[data-testid="stMetricValue"] { font-size: 18px !important; color: #22d3ee !important; }
+    div[data-testid="stMetricValue"] { font-size: 20px !important; color: #22d3ee !important; }
 
-    /* เครดิตและโลโก้ (ขยับขึ้นหนีขอบล่าง) */
+    /* เครดิตและโลโก้ (ขยับขึ้นให้พ้นขอบล่างพอดีๆ) */
     .footer-container {
-        position: fixed; bottom: 45px; right: 20px;
+        position: fixed; bottom: 55px; right: 25px;
         display: flex; flex-direction: column; align-items: flex-end;
         z-index: 10000;
     }
     .footer-container img { width: 85px; height: auto; margin-bottom: 2px; }
     .produced-by { font-size: 9px; color: #64748b; }
 
-    /* เว้นพื้นที่ใต้แผนที่ */
-    .map-box { margin-bottom: 40px !important; }
+    /* ส่วนจัดการแผนที่: ขยับขึ้นและเว้นระยะล่าง */
+    .map-wrapper { 
+        margin-top: -15px !important; 
+        margin-bottom: 50px !important; 
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -81,8 +85,8 @@ REGION_MAP = {"ภาคเหนือ": "North", "ภาคกลาง": "Cen
 METRIC_MAP = {f"{CO2_LBL} (ppm)": "co2", "CH₄ (ppb)": "ch4", "NO₂ (ppb)": "no2", "TEMP (°C)": "temp"}
 COORDS = {"North": [18.78, 98.98], "Central": [13.75, 100.50], "South": [7.88, 98.39], "Northeast": [14.97, 102.10], "East": [12.92, 100.88], "West": [13.52, 99.81]}
 
-# --- 🔝 5. HEADER ---
-st.markdown("<h2 style='color:white; margin-bottom:10px; font-size:24px;'>Dashboard “Tracking GHGs Emission”</h2>", unsafe_allow_html=True)
+# --- 🔝 5. HEADER (ขยับชิดบนขึ้น) ---
+st.markdown("<h2 style='color:white; margin-bottom:15px; font-size:26px;'>Dashboard “Tracking GHGs Emission”</h2>", unsafe_allow_html=True)
 
 col_h1, col_h2 = st.columns(2)
 with col_h1: s_region_name = st.selectbox("Region", list(REGION_MAP.keys()), index=1)
@@ -107,13 +111,13 @@ if conn:
         m3.metric("NO₂", f"{latest['no2']:.1f} ppb")
         m4.metric("TEMP", f"{int(latest['temp'])} °C")
 
-        st.write("") 
+        st.write("") # ระยะห่างสมดุล
 
         # Layout: [แผนที่ | ตารางอันดับ | กราฟแนวโน้ม]
         col_map, col_rank, col_trend = st.columns([0.8, 1.0, 1.2])
 
         with col_map:
-            st.markdown("<div class='map-box'>", unsafe_allow_html=True)
+            st.markdown("<div class='map-wrapper'>", unsafe_allow_html=True)
             st.markdown("<p style='font-size:11px; color:#22d3ee; margin-bottom:5px;'>STATION NETWORK</p>", unsafe_allow_html=True)
             all_data['lat'] = all_data['region'].map(lambda x: COORDS[x][0])
             all_data['lon'] = all_data['region'].map(lambda x: COORDS[x][1])
@@ -132,12 +136,12 @@ if conn:
             df_rank = all_data.sort_values(by=s_metric, ascending=False).head(6).copy()
             df_rank['Region'] = df_rank['region'].map({v: k for k, v in REGION_MAP.items()})
             df_display = df_rank[['Region', s_metric]].rename(columns={s_metric: 'Value'})
-            st.dataframe(df_display, hide_index=True, use_container_width=True, height=225)
+            st.dataframe(df_display, hide_index=True, use_container_width=True, height=230)
 
         with col_trend:
             st.markdown("<p style='font-size:11px; color:#22d3ee; margin-bottom:5px;'>TREND ANALYSIS (Every 1 Hour)</p>", unsafe_allow_html=True)
             history['timestamp'] = pd.to_datetime(history['timestamp'])
-            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=230)
+            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=235)
             
             fig.update_layout(
                 margin=dict(l=0, r=0, t=5, b=0),
