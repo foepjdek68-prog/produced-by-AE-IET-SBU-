@@ -5,13 +5,13 @@ import pydeck as pdk
 import sqlite3
 import os
 
-# 1. บีบทุกอย่างให้อยู่ในหน้าเดียวแบบ Desktop Perfect
-st.set_page_config(page_title="SBU MONITORING", layout="wide", initial_sidebar_state="collapsed")
+# 1. Config หน้าจอ
+st.set_page_config(page_title="GHG Dashboard", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 🎨 2. CSS: จัดตำแหน่ง Logo ให้สูงขึ้น และบล็อกการพิมพ์ ---
+# --- 🎨 2. CSS: ปรับแต่ง UI และตำแหน่ง Logo ---
 st.markdown("""
     <style>
-    .block-container { padding: 0.5rem 1rem !important; max-height: 100vh; overflow: hidden; }
+    .block-container { padding: 0.5rem 1.5rem !important; max-height: 100vh; overflow: hidden; }
     .stApp { background-color: #020617; }
 
     /* บล็อกการพิมพ์ในช่องเลือก */
@@ -20,28 +20,31 @@ st.markdown("""
     /* ตกแต่ง Metric Cards */
     div[data-testid="stMetric"] { 
         background: rgba(30, 41, 59, 0.4); 
-        padding: 5px 10px !important; 
+        padding: 5px 12px !important; 
         border-radius: 8px; 
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    div[data-testid="stMetricValue"] { font-size: 18px !important; color: #22d3ee !important; }
+    div[data-testid="stMetricValue"] { font-size: 20px !important; color: #22d3ee !important; }
 
-    /* โลโก้ SBU: ขยับให้สูงขึ้นจากมุมขวาล่าง (เพื่อไม่ให้ Manage app บัง) */
-    .footer-credit {
-        position: fixed; bottom: 60px; right: 20px;
-        background: rgba(15, 23, 42, 0.9);
-        padding: 10px; border-radius: 12px;
-        border: 1px solid rgba(34, 211, 238, 0.4);
+    /* โลโก้และข้อความ Produced by (มุมขวาล่าง) */
+    .footer-container {
+        position: fixed; bottom: 50px; right: 20px;
+        display: flex; flex-direction: column; align-items: center;
         z-index: 10000;
     }
-    .footer-credit img { width: 100px; height: auto; }
+    .footer-container img { width: 90px; height: auto; margin-bottom: 5px; }
+    .produced-by { font-size: 10px; color: #64748b; font-family: sans-serif; }
     </style>
+    """, unsafe_allow_html=True)
 
-    <div class="footer-credit">
+# ฟังก์ชันแสดง Logo และเครดิต
+st.markdown(f"""
+    <div class="footer-container">
         <a href="https://www.southeast.ac.th/about-us/" target="_blank">
             <img src="https://www.southeast.ac.th/wp-content/uploads/2023/11/logo-main2.png" 
                  onerror="this.src='https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Southeast_Bangkok_University_Logo.png/200px-Southeast_Bangkok_University_Logo.png'">
         </a>
+        <div class="produced-by">produced by AE-IET [SBU]</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -50,14 +53,16 @@ def get_db_connection():
     db_path = os.path.join(os.path.dirname(__file__), 'data', 'ghg_data.db')
     return sqlite3.connect(db_path) if os.path.exists(db_path) else None
 
+# ใช้ Unicode เลข 2 ห้อย (CO₂)
+CO2_STR = "CO₂"
 REGION_MAP = {"ภาคเหนือ": "North", "ภาคกลาง": "Central", "ภาคใต้": "South", "ภาคอีสาน": "Northeast", "ภาคตะวันออก": "East", "ภาคตะวันตก": "West"}
-METRIC_MAP = {"CO₂": "co2", "CH₄": "ch4", "NO₂": "no2", "Temp": "temp"}
+METRIC_MAP = {f"{CO2_STR} (ppm)": "co2", "CH₄ (ppb)": "ch4", "NO₂ (ppb)": "no2", "TEMP (°C)": "temp"}
 COORDS = {"North": [18.78, 98.98], "Central": [13.75, 100.50], "South": [7.88, 98.39], "Northeast": [14.97, 102.10], "East": [12.92, 100.88], "West": [13.52, 99.81]}
 
-# --- 🔝 4. HEADER (ปรับปรุงให้เห็นชัดเจน) ---
-st.markdown("<h3 style='color:white; margin-bottom:5px; font-size:22px;'>GHGs MONITORING SYSTEM</h3>", unsafe_allow_html=True)
+# --- 🔝 4. HEADER ---
+st.markdown("<h2 style='color:white; margin-bottom:10px; font-size:26px;'>Dashboard “Tracking GHGs Emission”</h2>", unsafe_allow_html=True)
 
-col_h1, col_h2 = st.columns([1, 1])
+col_h1, col_h2 = st.columns(2)
 with col_h1: s_region_name = st.selectbox("Region", list(REGION_MAP.keys()), index=1)
 with col_h2: s_metric_name = st.selectbox("Metric", list(METRIC_MAP.keys()), index=0)
 
@@ -68,22 +73,25 @@ s_metric = METRIC_MAP[s_metric_name]
 conn = get_db_connection()
 if conn:
     try:
+        # ดึงข้อมูลล่าสุด
         latest = pd.read_sql(f"SELECT * FROM ghg_logs WHERE region='{s_region}' ORDER BY timestamp DESC LIMIT 1", conn).iloc[0]
-        history = pd.read_sql(f"SELECT * FROM ghg_logs WHERE region='{s_region}' ORDER BY timestamp DESC LIMIT 20", conn)
+        # ดึงข้อมูลย้อนหลัง (จำลองรายชั่วโมงโดยใช้การ Query)
+        history = pd.read_sql(f"SELECT * FROM ghg_logs WHERE region='{s_region}' ORDER BY timestamp DESC LIMIT 48", conn)
+        # ข้อมูล Ranking ทุกภูมิภาค
         all_data = pd.read_sql("SELECT region, MAX(co2) as co2, MAX(ch4) as ch4, MAX(no2) as no2, MAX(temp) as temp FROM ghg_logs GROUP BY region", conn)
         conn.close()
 
         # Metrics Row
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("CO₂ (ppm)", f"{int(latest['co2'])}")
-        m2.metric("CH₄ (ppb)", f"{latest['ch4']:.1f}")
-        m3.metric("NO₂ (ppb)", f"{latest['no2']:.1f}")
-        m4.metric("TEMP (°C)", f"{int(latest['temp'])}")
+        m1.metric(f"{CO2_STR}", f"{int(latest['co2'])} ppm")
+        m2.metric("CH₄", f"{latest['ch4']:.1f} ppb")
+        m3.metric("NO₂", f"{latest['no2']:.1f} ppb")
+        m4.metric("TEMP", f"{int(latest['temp'])} °C")
 
-        st.markdown("<div style='margin: 5px 0;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
 
-        # Main Layout: [แผนที่ขนาด 1 ใน 4 (0.8) | ข้อมูลสรุป (2.2)]
-        col_map, col_data = st.columns([0.8, 2.2])
+        # Main Layout: [แผนที่ (0.8) | ตาราง Ranking (1.0) | กราฟแนวโน้ม (1.2)]
+        col_map, col_rank, col_trend = st.columns([0.8, 1.0, 1.2])
 
         with col_map:
             st.markdown("<p style='font-size:12px; color:#22d3ee; margin-bottom:5px;'>STATION NETWORK</p>", unsafe_allow_html=True)
@@ -95,24 +103,29 @@ if conn:
                 layers=[pdk.Layer("ScatterplotLayer", all_data, get_position="[lon, lat]", get_color="[34, 211, 238, 200]", get_radius=60000)],
             ), use_container_width=True)
 
-        with col_data:
-            # กราฟและตารางเรียงกันในแนวนอนภายในพื้นที่ส่วนใหญ่
-            c1, c2 = st.columns([1.5, 1])
-            with c1:
-                st.markdown("<p style='font-size:12px; color:#22d3ee; margin-bottom:5px;'>TREND ANALYSIS</p>", unsafe_allow_html=True)
-                history['timestamp'] = pd.to_datetime(history['timestamp'])
-                fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=220)
-                fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="#94a3b8", size=9))
-                fig.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.1)')
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with c2:
-                st.markdown("<p style='font-size:12px; color:#22d3ee; margin-bottom:5px;'>REGION RANKING</p>", unsafe_allow_html=True)
-                df_rank = all_data.sort_values(by=s_metric, ascending=False)
-                df_rank['Region'] = df_rank['region'].map({v: k for k, v in REGION_MAP.items()})
-                st.dataframe(df_rank[['Region', s_metric]], hide_index=True, use_container_width=True, height=200)
+        with col_rank:
+            st.markdown(f"<p style='font-size:12px; color:#22d3ee; margin-bottom:5px;'>อันดับ{s_metric_name.split(' (')[0]}</p>", unsafe_allow_html=True)
+            df_rank = all_data.sort_values(by=s_metric, ascending=False)
+            df_rank['Region'] = df_rank['region'].map({v: k for k, v in REGION_MAP.items()})
+            # แสดงตารางให้ยาวลงไป
+            st.dataframe(df_rank[['Region', s_metric]], hide_index=True, use_container_width=True, height=350)
+
+        with col_trend:
+            st.markdown("<p style='font-size:12px; color:#22d3ee; margin-bottom:5px;'>TREND ANALYSIS (Hourly)</p>", unsafe_allow_html=True)
+            history['timestamp'] = pd.to_datetime(history['timestamp'])
+            # สร้างกราฟรายชั่วโมง
+            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=280)
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=0, b=0),
+                paper_bgcolor='rgba(0,0,0,0)', 
+                plot_bgcolor='rgba(0,0,0,0)', 
+                font=dict(color="#94a3b8", size=9),
+                xaxis=dict(tickformat="%H:%M\n%d %b", dtick=3600000) # บังคับแสดงผลรายชั่วโมง (3600000 ms)
+            )
+            fig.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.1)')
+            st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
-        st.error("Processing...")
+        st.error("Data Syncing...")
 else:
-    st.error("DB Error")
+    st.error("DB Connection Failed")
