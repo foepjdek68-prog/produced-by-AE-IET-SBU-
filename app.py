@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 import pytz
 
-# 1. Config หน้าจอ (บีบพื้นที่ให้อยู่ในหน้าเดียว)
+# 1. Config หน้าจอ
 st.set_page_config(page_title="Dashboard Tracking GHGs Emission", layout="wide", initial_sidebar_state="collapsed")
 
 # --- 🎨 2. CSS: จัดตำแหน่งสมดุล บล็อกการพิมพ์ และนาฬิกา ---
@@ -15,7 +15,7 @@ st.markdown("""
     <style>
     /* บีบหน้าจอให้สมดุลและขยับขึ้น */
     .block-container { 
-        padding: 1rem 1.5rem 3.5rem 1.5rem !important; 
+        padding: 1.5rem 1.5rem 3.5rem 1.5rem !important; 
         max-height: 100vh; 
         overflow: hidden; 
     }
@@ -56,9 +56,12 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 🕒 3. แสดงนาฬิกาและเครดิต ---
-tz_th = pytz.timezone('Asia/Bangkok')
-now_th = datetime.now(tz_th).strftime("%H:%M:%S")
-st.markdown(f'<div class="digital-clock">🇹🇭 TH TIME: {now_th}</div>', unsafe_allow_html=True)
+try:
+    tz_th = pytz.timezone('Asia/Bangkok')
+    now_th = datetime.now(tz_th).strftime("%H:%M:%S")
+    st.markdown(f'<div class="digital-clock">🇹🇭 TH TIME: {now_th}</div>', unsafe_allow_html=True)
+except:
+    pass
 
 st.markdown(f"""
     <div class="footer-container">
@@ -104,7 +107,7 @@ if conn:
         m3.metric("NO₂", f"{latest['no2']:.1f} ppb")
         m4.metric("TEMP", f"{int(latest['temp'])} °C")
 
-        st.write("") # เพิ่มช่องไฟเล็กน้อย
+        st.write("") 
 
         # Layout: [แผนที่ | ตารางอันดับ | กราฟแนวโน้ม]
         col_map, col_rank, col_trend = st.columns([0.8, 1.0, 1.2])
@@ -126,7 +129,6 @@ if conn:
             if m_name == "CO₂": m_name = "คาร์บอนไดออกไซด์ (CO₂)"
             st.markdown(f"<p style='font-size:11px; color:#22d3ee; margin-bottom:5px;'>อันดับ{m_name}</p>", unsafe_allow_html=True)
             
-            # บังคับแสดงผลแค่ 6 แถว และลบคอลัมน์ขยะ
             df_rank = all_data.sort_values(by=s_metric, ascending=False).head(6).copy()
             df_rank['Region'] = df_rank['region'].map({v: k for k, v in REGION_MAP.items()})
             df_display = df_rank[['Region', s_metric]].rename(columns={s_metric: 'Value'})
@@ -137,7 +139,6 @@ if conn:
             history['timestamp'] = pd.to_datetime(history['timestamp'])
             fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=230)
             
-            # ปรับแต่งแกน X ให้แสดงเวลา HH:MM สวยงาม
             fig.update_layout(
                 margin=dict(l=0, r=0, t=5, b=0),
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
