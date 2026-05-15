@@ -5,42 +5,59 @@ import pydeck as pdk
 import sqlite3
 import os
 
-# 1. ตั้งค่าหน้าจอ
-st.set_page_config(page_title="GHGs Monitoring SBU", layout="wide")
+# 1. ตั้งค่าหน้าจอ (Wide Mode + บีบระยะห่างบนสุด)
+st.set_page_config(page_title="GHGs Monitoring SBU", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 🎨 CSS: คลุมโทนสีและจัดการโลโก้ (แบบเดิมที่รูปไม่แตก) ---
+# --- 🎨 2. CSS: ลดสเกล UI (Scale Down) ---
 st.markdown("""
     <style>
-    .stApp { background-color: #020617; color: white; }
-    
-    /* กล่องสรุปตัวเลข */
-    div[data-testid="stMetric"] { 
-        background: #1f2937; 
-        padding: 15px; 
-        border-radius: 10px; 
-        border-left: 5px solid #22d3ee;
-    }
+    /* ลด Padding รอบแอปให้เล็กลงเพื่อให้ดูแน่นขึ้น */
+    .block-container { padding: 1rem 1.5rem !important; }
+    .stApp { background-color: #020617; color: #f8fafc; }
 
-    /* เครดิตโลโก้มุมขวาล่าง */
-    .footer-credit {
-        position: fixed; bottom: 20px; right: 20px;
-        background: rgba(15, 23, 42, 0.9);
-        padding: 15px; border-radius: 15px;
-        border: 1px solid #22d3ee;
-        display: flex; align-items: center; gap: 15px; z-index: 9999;
+    /* ลดขนาดหัวข้อ */
+    h1 { font-size: 22px !important; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0px !important; }
+    p { font-size: 12px !important; color: #94a3b8; }
+    h5 { font-size: 14px !important; margin-bottom: 10px !important; color: #22d3ee; }
+
+    /* ปรับแต่ง Metric Cards ให้เล็กลง */
+    div[data-testid="stMetric"] { 
+        background: rgba(30, 41, 59, 0.4); 
+        padding: 10px 15px !important; 
+        border-radius: 10px; 
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .footer-credit img { width: 130px; height: auto; }
+    div[data-testid="stMetricValue"] { font-size: 20px !important; font-weight: 700 !important; }
+    div[data-testid="stMetricLabel"] { font-size: 11px !important; }
+
+    /* ปรับขนาด Selectbox ให้ดูเล็กและแบน (Flat Design) */
+    .stSelectbox div[data-baseweb="select"] { transform: scale(0.9); transform-origin: left; }
+
+    /* กล่องเครดิตลอยมุมขวาล่าง (เล็กลง) */
+    .footer-credit {
+        position: fixed; bottom: 15px; right: 15px;
+        background: rgba(15, 23, 42, 0.95);
+        padding: 8px 12px; border-radius: 12px;
+        border: 1px solid rgba(34, 211, 238, 0.4);
+        display: flex; align-items: center; gap: 10px; z-index: 9999;
+    }
+    .footer-credit img { width: 100px; height: auto; } /* ขนาดโลโก้เล็กลง */
+    .credit-text { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px; font-size: 9px; color: #94a3b8; }
     </style>
 
     <div class="footer-credit">
-        <a href="https://www.southeast.ac.th/about-us/" target="_blank">
+        <a href="https://www.southeast.ac.th/about-us/" target="_blank" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
             <img src="https://www.southeast.ac.th/wp-content/uploads/2023/11/logo-main2.png" 
                  onerror="this.src='https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Southeast_Bangkok_University_Logo.png/200px-Southeast_Bangkok_University_Logo.png'">
+            <div class="credit-text">
+                <b style="color:#fff;">AE-IET Team</b><br>
+                <span>GHGs Project</span>
+            </div>
         </a>
     </div>
     """, unsafe_allow_html=True)
 
-# --- 🛠️ ส่วนจัดการข้อมูล ---
+# --- 🛠️ 3. DATABASE CONNECTION ---
 def get_db_connection():
     db_path = os.path.join(os.path.dirname(__file__), 'data', 'ghg_data.db')
     return sqlite3.connect(db_path) if os.path.exists(db_path) else None
@@ -49,19 +66,19 @@ REGION_MAP = {"ภาคเหนือ": "North", "ภาคกลาง": "Cen
 METRIC_MAP = {"คาร์บอนไดออกไซด์ (CO₂)": "co2", "มีเทน (CH₄)": "ch4", "ไนโตรเจน (NO₂)": "no2", "อุณหภูมิ (Temp)": "temp"}
 COORDS = {"North": [18.78, 98.98], "Central": [13.75, 100.50], "South": [7.88, 98.39], "Northeast": [14.97, 102.10], "East": [12.92, 100.88], "West": [13.52, 99.81]}
 
-# --- 🔝 หัวข้อและการเลือก ---
-st.header("TRACKING GHGs EMISSION")
-st.write("Environmental Real-time Data by SBU")
+# --- 🔝 4. HEADER ---
+st.markdown("<h1>TRACKING GHGs EMISSION</h1>", unsafe_allow_html=True)
+st.markdown("<p>Environmental Real-time Data produced by SBU</p>", unsafe_allow_html=True)
 
-col_sel1, col_sel2 = st.columns(2)
-with col_sel1:
-    region_thai = st.selectbox("เลือกภูมิภาค:", list(REGION_MAP.keys()), index=1)
-    s_region = REGION_MAP[region_thai]
-with col_sel2:
-    metric_thai = st.selectbox("เลือกดัชนี:", list(METRIC_MAP.keys()), index=0)
-    s_metric = METRIC_MAP[metric_thai]
+# ลดระยะห่างส่วน Filter
+c_sel1, c_sel2 = st.columns(2)
+with c_sel1: s_region_name = st.selectbox("📍 Region:", list(REGION_MAP.keys()), index=1)
+with c_sel2: s_metric_name = st.selectbox("📊 Metric:", list(METRIC_MAP.keys()), index=0)
 
-# --- 📊 แสดงผลหลัก ---
+s_region = REGION_MAP[s_region_name]
+s_metric = METRIC_MAP[s_metric_name]
+
+# --- 📊 5. CONTENT ---
 conn = get_db_connection()
 if conn:
     try:
@@ -70,45 +87,58 @@ if conn:
         all_data = pd.read_sql("SELECT region, MAX(co2) as co2, MAX(ch4) as ch4, MAX(no2) as no2, MAX(temp) as temp FROM ghg_logs GROUP BY region", conn)
         conn.close()
 
-        # 1. Metrics
+        # Metrics Row (บีบให้เล็กลง)
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("CO₂", f"{int(latest['co2'])} ppm")
-        m2.metric("CH₄", f"{latest['ch4']:.1f}")
-        m3.metric("NO₂", f"{latest['no2']:.1f}")
-        m4.metric("Temp", f"{int(latest['temp'])}°C")
+        m1.metric("CO₂ (ppm)", f"{int(latest['co2'])}")
+        m2.metric("CH₄ (ppb)", f"{latest['ch4']:.1f}")
+        m3.metric("NO₂ (ppb)", f"{latest['no2']:.1f}")
+        m4.metric("TEMP (°C)", f"{int(latest['temp'])}")
 
-        # 2. จัดระเบียบหน้าจอ (ซ้าย: แผนที่, ขวา: กราฟ)
-        c_map, c_graph = st.columns([1.5, 1])
+        st.write("") # ลด Space
 
-        with c_map:
-            st.subheader("🗺️ 2D Station Network")
+        # Layout Main (ลดสเกลแผนที่และกราฟ)
+        col_map, col_right = st.columns([1.6, 1])
+
+        with col_map:
+            st.markdown("##### 🗺️ 2D STATION NETWORK")
             all_data['lat'] = all_data['region'].map(lambda x: COORDS[x][0])
             all_data['lon'] = all_data['region'].map(lambda x: COORDS[x][1])
             
-            # --- แก้ไขส่วนแผนที่ให้ Basic ที่สุดเพื่อกันบัค ---
+            # ปรับ Zoom และ Pitch ให้ดูเป็น Dashboard Monitoring มากขึ้น
             st.pydeck_chart(pdk.Deck(
-                map_style=None, # ใช้พื้นฐาน ไม่พึ่งพา Style ภายนอก
-                initial_view_state=pdk.ViewState(latitude=13.5, longitude=101.0, zoom=5),
+                map_style="mapbox://styles/mapbox/dark-v10", 
+                initial_view_state=pdk.ViewState(latitude=13.5, longitude=100.8, zoom=5.0),
                 layers=[
                     pdk.Layer(
-                        "ScatterplotLayer",
-                        all_data,
+                        "ScatterplotLayer", all_data,
                         get_position="[lon, lat]",
                         get_color="[34, 211, 238, 200]",
-                        get_radius=50000,
+                        get_radius=45000,
                     )
                 ],
             ))
 
-        with c_graph:
-            st.subheader("📈 Trend")
+        with col_right:
+            # กราฟ (ลดความสูง)
+            st.markdown(f"##### 📈 TREND: {s_metric_name.split(' (')[0]}")
             history['timestamp'] = pd.to_datetime(history['timestamp'])
-            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=300)
-            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
-            fig.update_traces(line_color='#22d3ee')
+            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=200)
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=5, b=0),
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color="#94a3b8", size=9),
+                xaxis=dict(showgrid=False), yaxis=dict(gridcolor="rgba(255,255,255,0.05)")
+            )
+            fig.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.1)')
             st.plotly_chart(fig, use_container_width=True)
 
+            # ตาราง (ลดความสูง)
+            st.markdown("##### 🏆 RANKING")
+            df_rank = all_data.sort_values(by=s_metric, ascending=False)
+            df_rank['ภูมิภาค'] = df_rank['region'].map({v: k for k, v in REGION_MAP.items()})
+            st.dataframe(df_rank[['ภูมิภาค', s_metric]], hide_index=True, use_container_width=True, height=150)
+
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Syncing Error: {e}")
 else:
-    st.error("⚠️ หาไฟล์ data/ghg_data.db ไม่เจอ")
+    st.error("⚠️ Database not found in /data")
