@@ -7,29 +7,32 @@ import os
 from datetime import datetime
 import pytz
 
-# 1. Config หน้าจอ
+# 1. Config หน้าจอ (บีบพื้นที่ให้อยู่ในหน้าเดียว)
 st.set_page_config(page_title="Dashboard Tracking GHGs Emission", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 🎨 2. CSS: จัดการพื้นที่และนาฬิกา ---
+# --- 🎨 2. CSS: จัดตำแหน่งสมดุล บล็อกการพิมพ์ และนาฬิกา ---
 st.markdown("""
     <style>
+    /* บีบหน้าจอให้สมดุลและขยับขึ้น */
     .block-container { 
-        padding: 1.5rem 1.5rem 4rem 1.5rem !important; 
+        padding: 1rem 1.5rem 3.5rem 1.5rem !important; 
         max-height: 100vh; 
         overflow: hidden; 
     }
     .stApp { background-color: #020617; }
 
-    /* นาฬิกาไทยมุมบน */
+    /* นาฬิกาประเทศไทยมุมบนขวา */
     .digital-clock {
-        position: absolute; top: -50px; right: 0px;
-        color: #22d3ee; font-family: monospace; font-size: 18px;
-        font-weight: bold; background: rgba(30, 41, 59, 0.6);
-        padding: 5px 15px; border-radius: 5px; border: 1px solid rgba(34, 211, 238, 0.3);
+        position: absolute; top: -45px; right: 0px;
+        color: #22d3ee; font-family: monospace; font-size: 16px;
+        font-weight: bold; background: rgba(30, 41, 59, 0.5);
+        padding: 4px 12px; border-radius: 5px; border: 1px solid rgba(34, 211, 238, 0.3);
     }
 
+    /* บล็อกการพิมพ์ในช่องเลือก */
     div[data-baseweb="select"] input { caret-color: transparent !important; pointer-events: none !important; }
     
+    /* ตกแต่ง Metric Cards */
     div[data-testid="stMetric"] { 
         background: rgba(30, 41, 59, 0.4); 
         padding: 8px 12px !important; 
@@ -38,28 +41,29 @@ st.markdown("""
     }
     div[data-testid="stMetricValue"] { font-size: 18px !important; color: #22d3ee !important; }
 
+    /* เครดิตและโลโก้ (ขยับขึ้นหนีขอบล่าง) */
     .footer-container {
-        position: fixed; bottom: 50px; right: 20px;
+        position: fixed; bottom: 45px; right: 20px;
         display: flex; flex-direction: column; align-items: flex-end;
         z-index: 10000;
     }
-    .footer-container img { width: 80px; height: auto; }
+    .footer-container img { width: 85px; height: auto; margin-bottom: 2px; }
     .produced-by { font-size: 9px; color: #64748b; }
 
-    /* ดันแผนที่ขึ้นให้มีที่ว่างด้านล่าง */
-    .map-container { margin-top: -10px; margin-bottom: 50px !important; }
+    /* เว้นพื้นที่ใต้แผนที่ */
+    .map-box { margin-bottom: 40px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 🕒 3. เวลาประเทศไทย (Digital Clock) ---
+# --- 🕒 3. แสดงนาฬิกาและเครดิต ---
 tz_th = pytz.timezone('Asia/Bangkok')
 now_th = datetime.now(tz_th).strftime("%H:%M:%S")
 st.markdown(f'<div class="digital-clock">🇹🇭 TH TIME: {now_th}</div>', unsafe_allow_html=True)
 
-# ส่วนแสดงเครดิต
 st.markdown(f"""
     <div class="footer-container">
-        <img src="https://www.southeast.ac.th/wp-content/uploads/2023/11/logo-main2.png">
+        <img src="https://www.southeast.ac.th/wp-content/uploads/2023/11/logo-main2.png" 
+             onerror="this.src='https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Southeast_Bangkok_University_Logo.png/200px-Southeast_Bangkok_University_Logo.png'">
         <div class="produced-by">produced by AE-IET [SBU]</div>
     </div>
     """, unsafe_allow_html=True)
@@ -89,25 +93,24 @@ conn = get_db_connection()
 if conn:
     try:
         latest = pd.read_sql(f"SELECT * FROM ghg_logs WHERE region='{s_region}' ORDER BY timestamp DESC LIMIT 1", conn).iloc[0]
-        # ดึงข้อมูล 24 จุดล่าสุด (แทน 24 ชั่วโมง)
         history = pd.read_sql(f"SELECT * FROM ghg_logs WHERE region='{s_region}' ORDER BY timestamp DESC LIMIT 24", conn)
         all_data = pd.read_sql("SELECT region, MAX(co2) as co2, MAX(ch4) as ch4, MAX(no2) as no2, MAX(temp) as temp FROM ghg_logs GROUP BY region", conn)
         conn.close()
 
-        # Metrics
+        # Metrics Row
         m1, m2, m3, m4 = st.columns(4)
         m1.metric(f"{CO2_LBL}", f"{int(latest['co2'])} ppm")
         m2.metric("CH₄", f"{latest['ch4']:.1f} ppb")
         m3.metric("NO₂", f"{latest['no2']:.1f} ppb")
         m4.metric("TEMP", f"{int(latest['temp'])} °C")
 
-        st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
+        st.write("") # เพิ่มช่องไฟเล็กน้อย
 
-        # Layout: [แผนที่ | ตารางอันดับยาว | กราฟแนวโน้ม]
+        # Layout: [แผนที่ | ตารางอันดับ | กราฟแนวโน้ม]
         col_map, col_rank, col_trend = st.columns([0.8, 1.0, 1.2])
 
         with col_map:
-            st.markdown("<div class='map-container'>", unsafe_allow_html=True)
+            st.markdown("<div class='map-box'>", unsafe_allow_html=True)
             st.markdown("<p style='font-size:11px; color:#22d3ee; margin-bottom:5px;'>STATION NETWORK</p>", unsafe_allow_html=True)
             all_data['lat'] = all_data['region'].map(lambda x: COORDS[x][0])
             all_data['lon'] = all_data['region'].map(lambda x: COORDS[x][1])
@@ -121,36 +124,31 @@ if conn:
         with col_rank:
             m_name = s_metric_name.split(' (')[0]
             if m_name == "CO₂": m_name = "คาร์บอนไดออกไซด์ (CO₂)"
-            st.markdown(f darkness="<p style='font-size:11px; color:#22d3ee; margin-bottom:5px;'>อันดับ{m_name}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-size:11px; color:#22d3ee; margin-bottom:5px;'>อันดับ{m_name}</p>", unsafe_allow_html=True)
             
-            # บังคับ Top 6 และลบคอลัมน์อื่น
+            # บังคับแสดงผลแค่ 6 แถว และลบคอลัมน์ขยะ
             df_rank = all_data.sort_values(by=s_metric, ascending=False).head(6).copy()
             df_rank['Region'] = df_rank['region'].map({v: k for k, v in REGION_MAP.items()})
-            # แสดงตารางแบบยาว (Height ปรับให้พอดีกับ 6 แถว)
-            st.dataframe(df_rank[['Region', s_metric]].rename(columns={s_metric: 'Value'}), 
-                         hide_index=True, use_container_width=True, height=245)
+            df_display = df_rank[['Region', s_metric]].rename(columns={s_metric: 'Value'})
+            st.dataframe(df_display, hide_index=True, use_container_width=True, height=225)
 
         with col_trend:
             st.markdown("<p style='font-size:11px; color:#22d3ee; margin-bottom:5px;'>TREND ANALYSIS (Every 1 Hour)</p>", unsafe_allow_html=True)
             history['timestamp'] = pd.to_datetime(history['timestamp'])
-            # แก้ไขกราฟให้แสดงเวลาจริง (ไม่ใช่แค่ 00:00)
-            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=240)
+            fig = px.area(history.sort_values('timestamp'), x='timestamp', y=s_metric, height=230)
+            
+            # ปรับแต่งแกน X ให้แสดงเวลา HH:MM สวยงาม
             fig.update_layout(
                 margin=dict(l=0, r=0, t=5, b=0),
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', 
                 font=dict(color="#94a3b8", size=8),
-                xaxis=dict(
-                    showgrid=False, 
-                    nticks=8, 
-                    tickformat="%H:%M", # แสดงเวลาเป็น ชม:นาที
-                    title=None
-                ),
+                xaxis=dict(showgrid=False, nticks=6, tickformat="%H:%M", title=None),
                 yaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.05)", title=None)
             )
             fig.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.1)')
             st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
-        st.error("Data processing...")
+        st.error(f"Waiting for data... ({e})")
 else:
-    st.error("DB connection error")
+    st.error("Database connection failed.")
