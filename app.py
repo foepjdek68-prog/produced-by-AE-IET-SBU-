@@ -30,23 +30,30 @@ def get_history(pollutant, mode):
     vals = np.random.normal(base, 5, len(dates))
     return pd.DataFrame({'Date': dates, 'Value': vals})
 
-# 4. UI
+# 4. UI - MAIN LAYOUT
+# รวมชื่อผลงานและโลโก้ไว้ที่ส่วนบนสุด (Header)
+col_h1, col_h2 = st.columns([4, 1])
+with col_h1:
+    st.title("Tracking GHGs Emission")
+    st.subheader("Dashboard ระบบติดตามการปล่อยก๊าซเรือนกระจก")
+with col_h2:
+    # แสดงโลโก้พร้อมคำอธิบาย
+    st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=120)
+    st.caption("SBU - Engineering")
+
+# Sidebar สำหรับการตั้งค่า
 with st.sidebar:
-    # โลโก้คณะ
-    st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=150)
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
 
-st.title("Dashboard “Tracking GHGs Emission”")
-
-# Metrics
+# Metrics Section
 metrics = get_latest_data()
 cols = st.columns(len(metrics))
 for i, (label, val) in enumerate(metrics.items()):
     cols[i].metric(label, val)
 
-# Graph
+# Graph Section
 df_hist = get_history(selected, mode)
 fig = px.line(df_hist, x='Date', y='Value', template="plotly_dark", height=400)
 fig.update_layout(
