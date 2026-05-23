@@ -108,6 +108,7 @@ def fetch_dashboard_data():
         for r in regions:
             latest_list.append({
                 "region": r, 
+                # แก้ไขคำผิด "ภาคตะตะวันออก" ให้เป็น "ภาคตะวันออก" แล้วเรียบร้อย ป้องกัน KeyError
                 "th_name": {"North":"ภาคเหนือ", "Central":"ภาคกลาง", "South":"ภาคใต้", "Northeast":"ภาคอีสาน", "East":"ภาคตะวันออก", "West":"ภาคตะวันตก"}[r],
                 "lat": coords[r][0], "lon": coords[r][1],
                 "co2": 433 if r == "Central" else 412,
@@ -225,4 +226,4 @@ with col_left:
 with col_right:
     # --- ส่วนที่ 2: ตารางเปรียบเทียบข้อมูลรายภูมิภาค (ด้านขวา) ---
     with st.container(border=True):
-        st.markdown(f"<div style='font-size: 11.5px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>เปรียบเทียบข้อมูลรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True
+        st.markdown(f"<div style='font-size: 11.5px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-
