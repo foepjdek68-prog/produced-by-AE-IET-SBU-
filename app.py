@@ -13,25 +13,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# จัดโครงสร้าง CSS ใหม่ บีบทุกอย่างให้อยู่ในหน้าเดียวแบบ 100% No-Scroll
 st.markdown("""
     <style>
-    /* บีบเนื้อหาทั้งหมดไม่ให้หลุดขอบหน้าจอหลัก ป้องกันการเกิด Scrollbar */
     .block-container {
         padding-top: 0.5rem !important;
-        padding-bottom: 0px !important;
+        padding-bottom: 1.0rem !important;
         padding-left: 1.5rem !important;
         padding-right: 1.5rem !important;
-        height: 100vh;
-        overflow: hidden;
     }
     
-    /* ธีมสีพื้นหลัง (#020617 ตามที่ตั้งค่าใน config.toml) */
     .stApp {
         background-color: #020617;
     }
     
-    /* สไตล์ Dropdown ป้องกันผู้ใช้พิมพ์ข้อความแปลกปลอม */
     div[data-baseweb="select"] {
         background-color: #1e293b !important;
         border-radius: 6px !important;
@@ -42,13 +36,11 @@ st.markdown("""
         pointer-events: none !important;
     }
     
-    /* บล็อกแสดงตัวเลขสรุป (Metric Cards) แบบประหยัดพื้นที่ */
     div[data-testid="stMetric"] {
         background: linear-gradient(135deg, #1e293b 0%, #020617 100%);
         padding: 4px 10px !important;
         border-radius: 6px;
         border: 1px solid #334155;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     div[data-testid="stMetricLabel"] {
         color: #94a3b8 !important;
@@ -61,7 +53,6 @@ st.markdown("""
         color: #22d3ee !important;
     }
     
-    /* ปรับแต่งตารางข้อมูล (HTML Table) ให้คอมแพคที่สุด */
     .compact-table {
         width: 100%;
         border-collapse: collapse;
@@ -84,22 +75,18 @@ st.markdown("""
         background-color: #1e293b;
     }
     
-    /* ซ่อนแถบเครื่องมือดั้งเดิมทั้งหมด */
     footer {visibility: hidden; display: none !important;}
     header {visibility: hidden; display: none !important;}
     div[data-testid="stToolbar"] {visibility: hidden !important;}
-    
-    /* คำสั่งสคริปต์ขั้นเด็ดขาดดักซ่อนปุ่มดำ "Manage app" ของระบบคลาวด์ */
     div[data-testid="stConnectionStatus"] {display: none !important;}
     .stDeployButton {display: none !important;}
     iframe[title="Manage app"] {display: none !important;}
-    div[class^="viewerBadge_container"] {display: none !important;}
     button[title="View source code"] {display: none !important;}
     </style>
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. DATA BRIDGE SYSTEM (FastAPI Ready with Mock Backup)
+# 2. DATA BRIDGE SYSTEM
 # =====================================================================
 BACKEND_API_URL = "http://localhost:8000/api/v1/ghg-metrics"
 
@@ -121,7 +108,7 @@ def fetch_dashboard_data():
         for r in regions:
             latest_list.append({
                 "region": r, 
-                "th_name": {"North":"ภาคเหนือ", "Central":"ภาคกลาง", "South":"ภาคใต้", "Northeast":"ภาคอีสาน", "East":"ภาคตะวันออก", "West":"ภาคตะวันตก"}[r],
+                "th_name": {"North":"ภาคเหนือ", "Central":"ภาคกลาง", "South":"ภาคใต้", "Northeast":"ภาคอีสาน", "East":"ภาคตะตะวันออก", "West":"ภาคตะวันตก"}[r],
                 "lat": coords[r][0], "lon": coords[r][1],
                 "co2": 433 if r == "Central" else 412,
                 "ch4": 1865 if r == "Central" else 1810,
@@ -132,15 +119,18 @@ def fetch_dashboard_data():
             })
         
         history_list = []
+        months = ["มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค."]
         for r in regions:
-            for h in range(24):
+            for idx, m in enumerate(months):
                 history_list.append({
-                    "timestamp": pd.Timestamp.now() - pd.Timedelta(hours=h),
+                    "month": m,
                     "region": r,
-                    "co2": 410 + (h * 0.8) + (23 if r == "Central" else 2),
-                    "ch4": 1810 + (h * 1.6) + (55 if r == "Central" else 0),
-                    "no2": 20 + h + (22 if r == "Central" else 0),
-                    "temp": 26 + (h % 6)
+                    "co2": 415 + (idx * 2.1) + (14 if r == "Central" else 1),
+                    "ch4": 1800 + (idx * 7.5) + (50 if r == "Central" else 4),
+                    "no2": 20 + (idx * 1.5) + (15 if r == "Central" else 2),
+                    "temp": 28 + (idx % 4),
+                    "pm25": 15 + (idx * 4.5 if idx > 6 else idx * 0.8),
+                    "humidity": 78 - (idx * 1.8)
                 })
         return pd.DataFrame(latest_list), pd.DataFrame(history_list)
 
@@ -149,30 +139,19 @@ df_latest, df_history = fetch_dashboard_data()
 REGION_MAP = {"ภาคกลาง": "Central", "ภาคเหนือ": "North", "ภาคใต้": "South", "ภาคอีสาน": "Northeast", "ภาคตะวันออก": "East", "ภาคตะวันตก": "West"}
 METRIC_MAP = {
     "คาร์บอนไดออกไซด์ (CO₂)": "co2", 
-    "มีเทน (CH₄)": "ch4", 
+    "ก๊าซมีเทน (CH₄)": "ch4", 
     "ไนโตรเจนไดออกไซด์ (NO₂)": "no2", 
-    "อุณหภูมิอากาศ (TEMP)": "temp"
+    "อุณหภูมิอากาศ (TEMP)": "temp",
+    "ฝุ่น PM 2.5": "pm25",
+    "ความชื้นในอากาศ (HUMIDITY)": "humidity"
 }
-UNIT_MAP = {"co2": "ppm", "ch4": "ppb", "no2": "ppb", "temp": "°C"}
+UNIT_MAP = {"co2": "ppm", "ch4": "ppb", "no2": "ppb", "temp": "°C", "pm25": "µg/m³", "humidity": "%"}
 
 # =====================================================================
-# 3. INTERACTION CONTROL PANEL & BRANDING HEADER (TOP BAR)
+# 3. BRANDING HEADER & TOP CONTROL BAR
 # =====================================================================
 col_brand_logo, col_title_text, col_ctrl1, col_ctrl2 = st.columns([0.35, 1.95, 0.85, 0.85])
 
 with col_brand_logo:
-    # โลโก้ ComSci สถาบันเซาธ์อีสท์บางกอก พร้อมระบบสำรองหากรูปพัง
     st.markdown("""
-        <div style='display: flex; align-items: center; height: 42px; justify-content: center;'>
-            <img src='https://comci.southeast.ac.th/wp-content/uploads/2023/11/logo_comsci_re-1.png' 
-                 style='height: 38px; width: auto; object-fit: contain;'
-                 onerror="this.src='https://www.southeast.ac.th/wp-content/uploads/2023/11/logo-main2.png'">
-        </div>
-    """, unsafe_allow_html=True)
-
-with col_title_text:
-    # ชูชื่อผู้จัดทำและพัฒนาโปรเจกต์ไว้อย่างชัดเจนด้านบนสุดระดับสายตา
-    st.markdown("""
-        <div style='padding-top: 2px;'>
-            <h1 style='color:#f8fafc; font-size:16px; font-weight:700; margin-bottom:0px; line-height:1.2;'>ระบบวิเคราะห์ข้อมูลก๊าซเรือนกระจกและสภาพภูมิอากาศ</h1>
-            <p style='color:#38bdf8; font-size:10px; margin:0; font-weight:500
+        <div style='display: flex; align-items: center; height: 4
