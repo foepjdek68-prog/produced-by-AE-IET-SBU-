@@ -5,7 +5,7 @@ import pydeck as pdk
 import requests
 
 # =====================================================================
-# 1. PAGE CONFIGURATION & FIX-CSS THEME (แก้ไขบั๊ก Overflow บีบหน้าจอ)
+# 1. PAGE CONFIGURATION & COMPACT THEME
 # =====================================================================
 st.set_page_config(
     page_title="ระบบวิเคราะห์ข้อมูลสภาพภูมิอากาศและก๊าซเรือนกระจก",
@@ -15,10 +15,9 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    /* แก้ไขบั๊กปลดล็อกพื้นที่หน้าจอเพื่อให้คอมโพเนนต์ด้านล่างแสดงผลได้ครบถ้วน */
     .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 0.8rem !important;
+        padding-bottom: 1.5rem !important;
         padding-left: 1.5rem !important;
         padding-right: 1.5rem !important;
     }
@@ -39,17 +38,17 @@ st.markdown("""
     
     div[data-testid="stMetric"] {
         background: linear-gradient(135deg, #1e293b 0%, #020617 100%);
-        padding: 8px 12px !important;
+        padding: 6px 10px !important;
         border-radius: 6px;
         border: 1px solid #334155;
     }
     div[data-testid="stMetricLabel"] {
         color: #94a3b8 !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
         font-weight: 600 !important;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 18px !important;
+        font-size: 16px !important;
         font-weight: 700 !important;
         color: #22d3ee !important;
     }
@@ -57,19 +56,19 @@ st.markdown("""
     .compact-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 12px;
+        font-size: 11px;
         color: #e2e8f0;
     }
     .compact-table th {
         background-color: #0f172a;
         color: #94a3b8;
         text-align: left;
-        padding: 6px 8px;
+        padding: 5px 6px;
         font-weight: 600;
         border-bottom: 1px solid #334155;
     }
     .compact-table td {
-        padding: 6px 8px;
+        padding: 5px 6px;
         border-bottom: 1px solid #1e293b;
     }
     .compact-table tr:hover {
@@ -87,7 +86,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. DATA BRIDGE SYSTEM (สถิติรายเดือนในรอบ 1 ปีเต็ม)
+# 2. DATA BRIDGE SYSTEM
 # =====================================================================
 BACKEND_API_URL = "http://localhost:8000/api/v1/ghg-metrics"
 
@@ -155,9 +154,9 @@ col_brand_logo, col_title_text, _ = st.columns([0.4, 2.0, 1.6])
 
 with col_brand_logo:
     st.markdown("""
-        <div style='display: flex; align-items: center; height: 45px; justify-content: center;'>
+        <div style='display: flex; align-items: center; height: 42px; justify-content: center;'>
             <img src='https://comci.southeast.ac.th/wp-content/uploads/2023/11/logo_comsci_re-1.png' 
-                 style='height: 40px; width: auto; object-fit: contain;'
+                 style='height: 38px; width: auto; object-fit: contain;'
                  onerror="this.src='https://www.southeast.ac.th/wp-content/uploads/2023/11/logo-main2.png'">
         </div>
     """, unsafe_allow_html=True)
@@ -165,14 +164,14 @@ with col_brand_logo:
 with col_title_text:
     st.markdown("""
         <div style='padding-top: 2px;'>
-            <h1 style='color:#f8fafc; font-size:18px; font-weight:700; margin-bottom:0px; line-height:1.2;'>ระบบวิเคราะห์ข้อมูลก๊าซเรือนกระจกและสภาพภูมิอากาศ</h1>
-            <p style='color:#38bdf8; font-size:11px; margin:0; font-weight:500;'>
+            <h1 style='color:#f8fafc; font-size:16px; font-weight:700; margin-bottom:0px; line-height:1.2;'>ระบบวิเคราะห์ข้อมูลก๊าซเรือนกระจกและสภาพภูมิอากาศ</h1>
+            <p style='color:#38bdf8; font-size:10px; margin:0; font-weight:500;'>
                 คณะวิทยาศาสตร์และคอมพิวเตอร์ [SBU] • พัฒนาโดยทีมวิเคราะห์ข้อมูลวิศวกรรมขั้นสูง AE-IET
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<div style='margin-bottom: 6px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
 # 4. EXECUTIVE SUMMARY STRIPS
@@ -185,16 +184,16 @@ m4.metric(label="อุณหภูมิอากาศ", value="33.2 °C")
 m5.metric(label="ฝุ่น PM 2.5", value="22.4 µg/m³")
 m6.metric(label="ความชื้นในอากาศ", value="64 %")
 
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 6px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 5. ROW 1: WORKSPACE GRID (แผนที่ซ้ายกว้าง - แผงควบคุมขวาแคบ)
+# 5. ROW 1: WORKSPACE GRID (แผนที่ซ้ายกว้างแบบแบนราบ - แผงควบคุมขวา)
 # =====================================================================
-row1_left, row1_right = st.columns([2.7, 1.3])
+row1_left, row1_right = st.columns([2.8, 1.2])
 
 with row1_right:
     with st.container(border=True):
-        st.markdown("<div style='font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 6px;'>แผงควบคุมระบบข้อมูล</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 4px;'>แผงควบคุมระบบข้อมูล</div>", unsafe_allow_html=True)
         selected_metric_th = st.selectbox("เลือกสารมลพิษ/ตัวชี้วัด", list(METRIC_MAP.keys()), index=0)
         selected_metric = METRIC_MAP[selected_metric_th]
         selected_region_th = st.selectbox("เลือกภูมิภาค", list(REGION_MAP.keys()), index=0)
@@ -202,39 +201,40 @@ with row1_right:
 
 with row1_left:
     with st.container(border=True):
-        st.markdown("<div style='font-size: 12px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 8px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
         
-        df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 22000 + 10000
+        # ปรับแก้บั๊กความหนารก: ลดขนาดของรัศมีวงกลมให้เล็กลงมากและคลีนที่สุด
+        df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 8000 + 4000
         
-        # ปรับความซูมแผนที่ลงเหลือ 4.2 เพื่อให้สเกลแผนที่เล็กลง เห็นประเทศไทยครบล้นพอดีตัว
         view_state = pdk.ViewState(latitude=13.6, longitude=100.6, zoom=4.2, pitch=0)
         
         layer = pdk.Layer(
             "ScatterplotLayer",
             df_latest,
             get_position="[lon, lat]",
-            get_color="[239, 68, 68, 200]" if "co2" in selected_metric or "pm25" in selected_metric else "[34, 211, 238, 200]",
+            get_color="[239, 68, 68, 180]" if "co2" in selected_metric or "pm25" in selected_metric else "[34, 211, 238, 180]",
             get_radius="radius",
             pickable=True
         )
         
+        # หดความสูงแผนที่เหลือ 110px เพื่อไม่ให้รกและกินพื้นที่หน้าจอ
         st.pydeck_chart(pdk.Deck(
             map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
             initial_view_state=view_state,
             layers=[layer],
-            height=260
+            height=110
         ), use_container_width=True)
 
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 6px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 6. ROW 2: LOWER VISUALIZATION GRID (ตารางซ้าย - กราฟสถิติ 1 ปีขวา)
+# 6. ROW 2: LOWER VISUALIZATION GRID (แสดงผลเต็มส่วน)
 # =====================================================================
 row2_left, row2_right = st.columns([1.4, 2.6])
 
 with row2_left:
     with st.container(border=True):
-        st.markdown(f"<div style='font-size: 12px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 8px;'>เปรียบเทียบรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>เปรียบเทียบรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True)
         
         df_rank = df_latest.sort_values(by=selected_metric, ascending=False)
         
@@ -248,22 +248,22 @@ with row2_left:
 
 with row2_right:
     with st.container(border=True):
-        st.markdown(f"<div style='font-size: 12px; font-weight: 600; color: #f8fafc; border-left: 3px solid #38bdf8; padding-left: 6px; margin-bottom: 8px;'>แนวโน้มสถานการณ์ {selected_region_th} ในรอบ 1 ปี (สถิติรายเดือน)</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #38bdf8; padding-left: 6px; margin-bottom: 6px;'>แนวโน้มสถานการณ์ {selected_region_th} ในรอบ 1 ปี (สถิติรายเดือน)</div>", unsafe_allow_html=True)
         
         df_region_history = df_history[df_history['region'] == selected_region]
         
-        fig = px.area(df_region_history, x='month', y=selected_metric, height=180)
+        fig = px.area(df_region_history, x='month', y=selected_metric, height=170)
         fig.update_layout(
             margin=dict(l=20, r=20, t=10, b=20),
             paper_bgcolor='rgba(0,0,0,0)', 
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color="#64748b", size=10),
+            font=dict(color="#64748b", size=9),
             xaxis=dict(showgrid=False, title=None),
-            yaxis=dict(showgrid=True, gridcolor="rgba(51,65,85,0.2)", title=None)
+            yaxis=dict(showgrid=True, gridcolor="rgba(51,65,85,0.15)", title=None)
         )
         fig.update_traces(
             line_color='#38bdf8', 
-            fillcolor='rgba(56, 189, 248, 0.06)',
-            line_width=2.0
+            fillcolor='rgba(56, 189, 248, 0.05)',
+            line_width=1.5
         )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
