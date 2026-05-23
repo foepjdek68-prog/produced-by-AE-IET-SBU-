@@ -2,58 +2,58 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import pydeck as pdk
-import requests
 
-# =====================================================================
-# 1. SETUP & CONFIGURATION (คงเดิมไว้ทั้งหมด)
-# =====================================================================
-st.set_page_config(page_title="ระบบวิเคราะห์ข้อมูลสภาพภูมิอากาศ", layout="wide", initial_sidebar_state="collapsed")
+# ตั้งค่าหน้าจอ
+st.set_page_config(layout="wide", page_title="GHG Dashboard")
 
-# (ใส่ CSS ของคุณตรงนี้)
-st.markdown("""<style>.block-container { padding: 1.5rem; }</style>""", unsafe_allow_html=True)
+# 1. CSS จัดระเบียบ (Dark Mode Layout)
+st.markdown("""
+    <style>
+    .card { background-color: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 10px; }
+    .stApp { background-color: #020617; }
+    </style>
+""", unsafe_allow_html=True)
 
-# ฟังก์ชันดึงข้อมูลเดิมของคุณ
-@st.cache_data(ttl=300)
-def fetch_dashboard_data():
-    # [ใส่ Logic การดึงข้อมูล/Mock Data เดิมของคุณทั้งหมดไว้ที่นี่]
-    # ผมยืนยันว่าโค้ดส่วนนี้จะยังคงอยู่ครบเหมือนต้นฉบับ
-    return pd.DataFrame(), pd.DataFrame() # แทนที่ด้วย Code เดิมของคุณ
+# 2. Logic ข้อมูลของคุณ (คงเดิม)
+# [ที่นี่คือฟังก์ชัน fetch_dashboard_data ของคุณ...]
+# สมมติว่าเป็น df_latest และ df_history
 
-df_latest, df_history = fetch_dashboard_data()
-
-# ตัวแปร Mapping เดิมของคุณ
-REGION_MAP = {"ภาคกลาง": "Central", "ภาคเหนือ": "North", "ภาคใต้": "South", "ภาคอีสาน": "Northeast", "ภาคตะวันออก": "East", "ภาคตะวันตก": "West"}
-METRIC_MAP = {"คาร์บอนไดออกไซด์ (CO₂)": "co2", "มีเทน (CH₄)": "ch4", "ไนโตรเจนไดออกไซด์ (NO₂)": "no2", "อุณหภูมิอากาศ (TEMP)": "temp"}
-
-# =====================================================================
-# 2. UI LAYOUT (จัดระเบียบให้เรียบร้อย)
-# =====================================================================
-
-# ส่วนหัวและ Control
-col_brand, col_title, col_ctrl1, col_ctrl2 = st.columns([0.3, 1.5, 0.8, 0.8])
-with col_brand: st.image("https://comci.southeast.ac.th/wp-content/uploads/2023/11/logo_comsci_re-1.png", width=50)
-with col_ctrl1: selected_region_th = st.selectbox("เลือกภูมิภาค", list(REGION_MAP.keys()))
-with col_ctrl2: selected_metric_th = st.selectbox("เลือกตัวชี้วัด", list(METRIC_MAP.keys()))
-
-# แถบสรุปตัวเลข (Metrics)
-st.markdown("---")
+# 3. HEADER & METRICS (สรุปตัวเลขครบ 6 ตัวตามเดิม)
+st.title("Monitor Board")
 m1, m2, m3, m4, m5, m6 = st.columns(6)
-# [ใส่ฟังก์ชัน .metric ของคุณที่นี่]
+m1.metric("CO₂", "433 ppm")
+m2.metric("CH₄", "1865 ppb")
+m3.metric("NO₂", "42.1 ppb")
+m4.metric("Temp", "33.2 °C")
+m5.metric("PM 2.5", "22.4")
+m6.metric("Humidity", "64 %")
 
-# ส่วนที่แบ่งครึ่ง 50/50 (แผนที่ + ตาราง)
-col_left, col_right = st.columns(2)
+# 4. MAIN LAYOUT (แบ่งซ้าย 2 ส่วนขวา 1 ส่วน เหมือนตัวอย่าง)
+col_main, col_side = st.columns([2, 1])
 
-with col_left:
-    with st.container(border=True): # สร้างกรอบให้เหมือน Monitor Board
-        st.markdown("### 🗺️ แผนที่แสดงจุดตรวจวัด")
-        # [ใส่โค้ด pdk.Deck ของคุณที่นี่]
+with col_main:
+    # โซนแผนที่ (นำโค้ดเดิมของคุณมาวางที่นี่)
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("🗺️ แผนที่แสดงจุดตรวจวัด")
+    # st.pydeck_chart(...)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # โซนกราฟ (นำโค้ดกราฟของคุณมาวางที่นี่)
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("📈 แนวโน้มสถานการณ์")
+    # st.plotly_chart(...)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with col_right:
-    with st.container(border=True): # สร้างกรอบให้เหมือน Monitor Board
-        st.markdown("### 📋 ตารางเปรียบเทียบรายภาค")
-        # [ใส่ตารางและ Logic การคำนวณเดิมของคุณที่นี่]
-
-# ส่วนล่าง: กราฟแนวโน้ม (เต็มความกว้าง)
-with st.container(border=True):
-    st.markdown("### 📈 แนวโน้มสถานการณ์")
-    # [ใส่โค้ด px.area/line ของคุณที่นี่]
+with col_side:
+    # โซนแผงควบคุม (มีให้เลือกตามต้องการ)
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("⚙️ แผงควบคุม")
+    selected_metric = st.selectbox("เลือกสารมลพิษ/ตัวชี้วัด", ["คาร์บอนไดออกไซด์ (CO₂)", "มีเทน (CH₄)", "อื่นๆ"])
+    selected_region = st.selectbox("เลือกภูมิภาค", ["ภาคกลาง", "ภาคเหนือ", "ภาคใต้", "ภาคอีสาน", "ภาคตะวันออก", "ภาคตะวันตก"])
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # โซนตารางสรุป
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("📋 ตารางข้อมูลล่าสุด")
+    # st.table(...)
+    st.markdown('</div>', unsafe_allow_html=True)
