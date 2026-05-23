@@ -5,7 +5,7 @@ import pydeck as pdk
 import requests
 
 # =====================================================================
-# 1. PAGE CONFIGURATION & LIVE STREAMLIT OVERRIDES
+# 1. PAGE CONFIGURATION & ENTERPRISE THEME (CSS)
 # =====================================================================
 st.set_page_config(
     page_title="ระบบวิเคราะห์ข้อมูลสภาพภูมิอากาศและก๊าซเรือนกระจก",
@@ -13,10 +13,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ล็อกขอบเขตหน้าจอหลักด้วย CSS ชั้นนอกสุด ป้องกันการเกิด Scrollbar และซ่อนส่วนเกินของระบบคลาวด์
+# จัดโครงสร้าง CSS ใหม่ บีบทุกอย่างให้อยู่ในหน้าเดียวแบบ 100% No-Scroll
 st.markdown("""
     <style>
-    /* บีบแอปพลิเคชันให้อยู่ในพื้นที่หน้าจอเดียวแบบ 100% No-Scroll */
+    /* บีบเนื้อหาทั้งหมดไม่ให้หลุดขอบหน้าจอหลัก ป้องกันการเกิด Scrollbar */
     .block-container {
         padding-top: 0.5rem !important;
         padding-bottom: 0px !important;
@@ -26,7 +26,7 @@ st.markdown("""
         overflow: hidden;
     }
     
-    /* ควบคุมโทนสีพื้นหลังหลัก (#020617 ตามที่ตั้งค่าใน config.toml) */
+    /* ธีมสีพื้นหลัง (#020617 ตามที่ตั้งค่าใน config.toml) */
     .stApp {
         background-color: #020617;
     }
@@ -42,7 +42,26 @@ st.markdown("""
         pointer-events: none !important;
     }
     
-    /* การจัดสไตล์ตารางข้อมูลรายภาคให้กะทัดรัดและอ่านง่ายที่สุด */
+    /* บล็อกแสดงตัวเลขสรุป (Metric Cards) แบบประหยัดพื้นที่ */
+    div[data-testid="stMetric"] {
+        background: linear-gradient(135deg, #1e293b 0%, #020617 100%);
+        padding: 4px 10px !important;
+        border-radius: 6px;
+        border: 1px solid #334155;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    div[data-testid="stMetricLabel"] {
+        color: #94a3b8 !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stMetricValue"] {
+        font-size: 17px !important;
+        font-weight: 700 !important;
+        color: #22d3ee !important;
+    }
+    
+    /* ปรับแต่งตารางข้อมูล (HTML Table) ให้คอมแพคที่สุด */
     .compact-table {
         width: 100%;
         border-collapse: collapse;
@@ -65,10 +84,12 @@ st.markdown("""
         background-color: #1e293b;
     }
     
-    /* ระบบดักซ่อนแถบควบคุมและปุ่ม "Manage app" ของ Streamlit Cloud ทุกรูปแบบ */
+    /* ซ่อนแถบเครื่องมือดั้งเดิมทั้งหมด */
     footer {visibility: hidden; display: none !important;}
     header {visibility: hidden; display: none !important;}
     div[data-testid="stToolbar"] {visibility: hidden !important;}
+    
+    /* คำสั่งสคริปต์ขั้นเด็ดขาดดักซ่อนปุ่มดำ "Manage app" ของระบบคลาวด์ */
     div[data-testid="stConnectionStatus"] {display: none !important;}
     .stDeployButton {display: none !important;}
     iframe[title="Manage app"] {display: none !important;}
@@ -78,7 +99,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. DATA BRIDGE SYSTEM (FastAPI Pipeline Ready)
+# 2. DATA BRIDGE SYSTEM (FastAPI Ready with Mock Backup)
 # =====================================================================
 BACKEND_API_URL = "http://localhost:8000/api/v1/ghg-metrics"
 
@@ -90,7 +111,6 @@ def fetch_dashboard_data():
             data = response.json()
             return pd.DataFrame(data['latest']), pd.DataFrame(data['history'])
     except Exception:
-        # ระบบสำรองข้อมูลจำลองกรณีสแตนด์บายรอเชื่อมต่อฐานข้อมูล PostgreSQL จริง
         regions = ["North", "Central", "South", "Northeast", "East", "West"]
         coords = {
             "North": [18.78, 98.98], "Central": [13.75, 100.50], "South": [7.88, 98.39],
@@ -133,10 +153,10 @@ UNIT_MAP = {"co2": "ppm", "ch4": "ppb", "no2": "ppb", "temp": "°C"}
 # =====================================================================
 # 3. INTERACTION CONTROL PANEL & BRANDING HEADER (TOP BAR)
 # =====================================================================
-# จัดสัดส่วนแทรกโลโก้และชื่อคณะ/ผู้จัดทำให้อยู่ส่วนบนสุดระดับสายตาอย่างโดดเด่น
 col_brand_logo, col_title_text, col_ctrl1, col_ctrl2 = st.columns([0.35, 1.95, 0.85, 0.85])
 
 with col_brand_logo:
+    # โลโก้ ComSci สถาบันเซาธ์อีสท์บางกอก พร้อมระบบสำรองหากรูปพัง
     st.markdown("""
         <div style='display: flex; align-items: center; height: 42px; justify-content: center;'>
             <img src='https://comci.southeast.ac.th/wp-content/uploads/2023/11/logo_comsci_re-1.png' 
@@ -146,6 +166,7 @@ with col_brand_logo:
     """, unsafe_allow_html=True)
 
 with col_title_text:
+    # ชูชื่อผู้จัดทำและพัฒนาโปรเจกต์ไว้อย่างชัดเจนด้านบนสุดระดับสายตา
     st.markdown("""
         <div style='padding-top: 2px;'>
             <h1 style='color:#f8fafc; font-size:16px; font-weight:700; margin-bottom:0px; line-height:1.2;'>ระบบวิเคราะห์ข้อมูลก๊าซเรือนกระจกและสภาพภูมิอากาศ</h1>
@@ -181,12 +202,13 @@ m6.metric(label="ความชื้นในอากาศ", value=f"{int(re
 st.markdown("<div style='margin-bottom: 6px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 5. MAIN ANALYTICS WORKSPACE (3-COLUMN NATIVE LAYOUT)
+# 5. MAIN ANALYTICS WORKSPACE (3-COLUMN LAYOUT)
 # =====================================================================
 col_map, col_rank, col_trend = st.columns([1.15, 0.85, 1.0])
 
 # --- คอลัมน์ 1: แผนที่แสดงจุดตรวจวัดเชิงพื้นที่ ---
 with col_map:
+    # รอบนี้ผมเปลี่ยนมาใช้ Native Streamlit Containers เพื่อสร้างกรอบที่เสถียรกว่าการล็อกค่า div ถาวร
     with st.container(border=True):
         st.markdown("<div style='font-size: 11.5px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 8px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
         
@@ -202,7 +224,7 @@ with col_map:
             pickable=True
         )
         
-        # ปรับระดับความสูงลงมาที่ 185px เพื่อการันตีพื้นที่ปลอดภัยในทุกอุปกรณ์
+        # คุมความสูงของ PyDeck แผนที่ไว้ที่ 185px ป้องกันไม่ให้ทะลุตกขอบล่างของหน้าต่างเบราว์เซอร์
         st.pydeck_chart(pdk.Deck(
             map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
             initial_view_state=view_state,
@@ -217,7 +239,7 @@ with col_rank:
         
         df_rank = df_latest.sort_values(by=selected_metric, ascending=False)
         
-        # แสดงผลด้วย HTML Table ความละเอียดสูงและฟิตสัดส่วนแนวตั้งได้อย่างลงตัว
+        # แสดงผลเป็นตาราง HTML ขนาดกะทัดรัด (Compact Table) เพื่อประหยัดพื้นที่แนวตั้งสูงสุด
         table_html = f"<table class='compact-table'><tr><th>ภูมิภาค</th><th>ค่าตรวจวัด ({UNIT_MAP[selected_metric]})</th></tr>"
         for _, row in df_rank.iterrows():
             table_html += f"<tr><td>{row['th_name']}</td><td>{row[selected_metric]:.1f}</td></tr>"
@@ -233,7 +255,7 @@ with col_trend:
         
         df_region_history = df_history[df_history['region'] == selected_region].sort_values('timestamp')
         
-        # ล็อกความสูงกราฟที่ 185px ให้ระนาบเส้นขนานตรงกับแผนที่อย่างสมบูรณ์
+        # ปรับความสูงกราฟ Plotly ลงเหลือความสูง 185px เพื่อให้ระนาบเส้นขนานกับแผนที่อย่างสมบูรณ์
         fig = px.area(df_region_history, x='timestamp', y=selected_metric, height=185)
         
         fig.update_layout(
