@@ -13,20 +13,25 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. DATA LAYER (ฟังก์ชันสำหรับดึงค่า)
+# 2. DATA LAYER (จำลองข้อมูลให้สมจริงตามประเภท)
 def get_latest_data():
-    # ในอนาคตเปลี่ยนเป็น API Call
     return {"CO₂ (ppm)": 433, "CH₄ (ppb)": 1865, "NO₂ (ppb)": 42.1, "PM 2.5": 22.4, "Temp (°C)": 33.2, "Humidity (%)": 64}
 
 def get_history(pollutant):
     dates = pd.date_range(start="2026-05-01", periods=30)
-    return pd.DataFrame({'Date': dates, 'Value': np.random.normal(400, 20, 30)})
+    # logic ปรับค่าตามชนิดมลพิษเพื่อให้กราฟไม่มั่ว
+    if "Temp" in pollutant:
+        vals = np.random.normal(33, 2, 30)
+    elif "CO₂" in pollutant:
+        vals = np.random.normal(430, 5, 30)
+    else:
+        vals = np.random.normal(50, 10, 30)
+    return pd.DataFrame({'Date': dates, 'Value': vals})
 
 # 3. DASHBOARD UI
 st.title("GHG Operational Monitor")
-st.caption(f"Status: Live | Last Update: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-# --- แถบ Metrics ด้านบน (เรียลไทม์) ---
+# --- แถบ Metrics ---
 metrics = get_latest_data()
 st.markdown('<div class="metric-card">', unsafe_allow_html=True)
 cols = st.columns(len(metrics))
@@ -34,24 +39,18 @@ for i, (label, val) in enumerate(metrics.items()):
     cols[i].metric(label, val)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- ส่วนกราฟย้อนหลัง (ด้านล่าง) ---
-col_graph, col_ctrl = st.columns([3, 1])
+# --- กราฟย้อนหลัง ---
+st.subheader("Historical Trends Analysis")
+selected = st.selectbox("เลือกสารมลพิษเพื่อดูย้อนหลัง", list(metrics.keys()))
 
-with col_graph:
-    st.subheader("Historical Trends Analysis")
-    selected = st.selectbox("เลือกสารมลพิษเพื่อดูย้อนหลัง", list(metrics.keys()))
-    df_hist = get_history(selected)
-    fig = px.line(df_hist, x='Date', y='Value', template="plotly_dark")
-    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig, use_container_width=True)
+# ดึงข้อมูลใหม่ตามตัวเลือก
+df_hist = get_history(selected)
 
-with col_ctrl:
-    st.subheader("⚙️ System Control")
-    st.write("โหมดการทำงาน: **อัตโนมัติ**")
-    st.info("ระบบจะอัปเดตค่าปัจจุบันทุกต้นชั่วโมง (:00)")
-    if st.button("Force Refresh Data"):
-        st.rerun()
-
-# 4. AUTO-REFRESH LOGIC (เช็กทุกต้นชั่วโมง)
-if datetime.now().minute == 0:
-    st.rerun()
+# กราฟนี้จะปรับสเกล (Autoscale) อัตโนมัติ เพราะไม่ได้ล็อกค่า
+fig = px.line(df_hist, x='Date', y='Value', template="plotly_dark")
+fig.update_layout(
+    paper_bgcolor="rgba(0,0,0,0)", 
+    plot_bgcolor="rgba(0,0,0,0)",
+    yaxis=dict(autorange=True) # <--- สำคัญ: ปรับสเกลตามข้อมูลที่เข้ามาใหม่
+)
+st.plotly_chart(fig, use_container_width=True)
