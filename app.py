@@ -5,7 +5,7 @@ import pydeck as pdk
 import requests
 
 # =====================================================================
-# 1. PAGE CONFIGURATION & CORPORATE THEME INTEGRATION
+# 1. PAGE CONFIGURATION & ENTERPRISE THEME (CSS)
 # =====================================================================
 st.set_page_config(
     page_title="GHGs Emission & Climate Analytics Platform",
@@ -13,25 +13,23 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ผสานธีมจาก config.toml บน GitHub และควบคุมพื้นที่ไม่ให้มี Scrollbar
+# ปรับรื้อระบบ Layout ใหม่เพื่อความยืดหยุ่น ป้องกันเนื้อหาตกขอบหรือโดนขอบหน้าจอตัดขาด
 st.markdown("""
     <style>
-    /* บีบหน้าจอให้ฟิตพอดีพื้นที่ Desktop 100% */
+    /* ปรับแต่ง Container หลักให้ยืดหยุ่นและสกรอลล์ได้อย่างเป็นธรรมชาติ */
     .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 0.5rem !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-        max-height: 100vh;
-        overflow: hidden;
+        padding-top: 1.5rem !important;
+        padding-bottom: 3.5rem !important; /* เว้นพื้นที่ด้านล่างสุดไม่ให้ทับ Footer */
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
     }
     
-    /* อ้างอิงโทนสีพื้นหลังหลักตาม GitHub config.toml ของคุณ */
+    /* โทนสีพื้นหลังหลักสอดคล้องกับ GitHub config.toml ของคุณ */
     .stApp {
         background-color: #020617;
     }
     
-    /* สไตล์ Dropdown ควบคุมทิศทางและล็อกการพิมพ์ป้องกัน Error */
+    /* สไตล์ Dropdown ควบคุมทิศทางและล็อกการพิมพ์ */
     div[data-baseweb="select"] {
         background-color: #1e293b !important;
         border-radius: 6px !important;
@@ -42,10 +40,10 @@ st.markdown("""
         pointer-events: none !important;
     }
     
-    /* บล็อกแสดงตัวเลขชี้วัดระดับนโยบาย (Metric Cards) */
+    /* บล็อกแสดงตัวเลขชี้วัดระดับผู้บริหาร (Metric Cards) */
     div[data-testid="stMetric"] {
         background: linear-gradient(135deg, #1e293b 0%, #020617 100%);
-        padding: 8px 14px !important;
+        padding: 10px 16px !important;
         border-radius: 8px;
         border: 1px solid #334155;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -58,58 +56,65 @@ st.markdown("""
         letter-spacing: 0.05em;
     }
     div[data-testid="stMetricValue"] {
-        font-size: 20px !important;
+        font-size: 22px !important;
         font-weight: 700 !important;
-        color: #22d3ee !important; /* ใช้คู่สี Primary #22d3ee ตามแบบของคุณ */
+        color: #22d3ee !important; /* สีฟ้า Primary สว่างชัดเจนตามแบบ config */
     }
     
-    /* กรอบหน้าต่างควบคุมเนื้อหาการวิเคราะห์ */
+    /* กรอบหน้าต่างควบคุมเนื้อหาหลัก (Content Cards) */
     .content-card {
         background-color: #1e293b;
-        padding: 14px;
+        padding: 16px;
         border-radius: 8px;
         border: 1px solid #334155;
-        height: 385px; 
+        margin-bottom: 1rem;
     }
     .card-title {
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
         color: #f8fafc;
-        margin-bottom: 10px;
+        margin-bottom: 14px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         border-left: 3px solid #22d3ee;
         padding-left: 8px;
     }
     
-    /* ซ่อนโครงสร้างส่วนเกินดั้งเดิมของระบบ */
+    /* ปรับแต่งสไตล์หัวตารางและเนื้อหาภายใน Streamlit Dataframe */
+    div[data-testid="stDataFrame"] {
+        border: 1px solid #334155 !important;
+        border-radius: 4px;
+    }
+    
+    /* ซ่อนโครงสร้างแถบเครื่องมือดั้งเดิมของระบบ */
     footer {visibility: hidden;}
     header {visibility: hidden;}
     div[data-testid="stToolbar"] {visibility: hidden !important;}
     
-    /* เครดิตองค์กรวางตัวแบบเงียบสงบที่มุมขวาล่าง */
+    /* เครดิตองค์กรวางตัวแบบเป็นทางการที่มุมขวาล่าง */
     .corporate-footer {
         position: fixed;
-        bottom: 10px;
-        right: 1.5rem;
+        bottom: 0;
+        left: 0;
+        width: 100%;
         display: flex;
+        justify-content: flex-end;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         z-index: 999;
-        background: rgba(2, 6, 23, 0.85);
-        padding: 5px 10px;
-        border-radius: 6px;
-        border: 1px solid #334155;
+        background: rgba(2, 6, 23, 0.9);
+        padding: 8px 2rem;
+        border-top: 1px solid #334155;
     }
     .corporate-footer img {
-        height: 22px;
+        height: 24px;
         width: auto;
     }
     .corporate-footer .text-block {
         text-align: right;
     }
     .corporate-footer .title {
-        font-size: 9px;
+        font-size: 10px;
         font-weight: 600;
         color: #e2e8f0;
     }
@@ -133,39 +138,37 @@ def fetch_dashboard_data():
             data = response.json()
             return pd.DataFrame(data['latest']), pd.DataFrame(data['history'])
     except Exception:
-        # ระบบจะเรียกใช้กลไกสำรอง (Mock ข้อมูลตามโครงสร้างภาพแผนงาน) เมื่อยังไม่ได้เปิด Backend API
+        # กลไกสำรองกรณี Backend Server ยังไม่ได้เปิด (Mock ค่าดึงตามผังข้อมูล Air4Thai + TMD + Satellite)
         regions = ["North", "Central", "South", "Northeast", "East", "West"]
         coords = {
             "North": [18.78, 98.98], "Central": [13.75, 100.50], "South": [7.88, 98.39],
             "Northeast": [14.97, 102.10], "East": [12.92, 100.88], "West": [13.52, 99.81]
         }
         
-        # จำลองค่าล่าสุด (Data Sources: Air4Thai + TMD + Satellite Sentinel-5P)
         latest_list = []
         for r in regions:
             latest_list.append({
                 "region": r, 
                 "th_name": {"North":"ภาคเหนือ", "Central":"ภาคกลาง", "South":"ภาคใต้", "Northeast":"ภาคอีสาน", "East":"ภาคตะวันออก", "West":"ภาคตะวันตก"}[r],
                 "lat": coords[r][0], "lon": coords[r][1],
-                "co2": 415 + (18 if r == "Central" else -4),
-                "ch4": 1850 + (95 if r == "Northeast" else 15),
-                "no2": 42.1 if r == "Central" else 11.8,
-                "temp": 33.2 if r == "Central" else 28.5,
-                "pm25": 39.1 if r == "North" else 22.4, 
+                "co2": 433 if r == "Central" else 412,
+                "ch4": 1865 if r == "Central" else 1810,
+                "no2": 42.1 if r == "Central" else 12.4,
+                "temp": 33.2 if r == "Central" else 29.0,
+                "pm25": 22.4 if r == "Central" else 35.0, 
                 "humidity": 64.0
             })
         
-        # จำลองค่าประวัติเวลาความถี่สูง (TimescaleDB Logs)
         history_list = []
         for r in regions:
             for h in range(24):
                 history_list.append({
                     "timestamp": pd.Timestamp.now() - pd.Timedelta(hours=h),
                     "region": r,
-                    "co2": 402 + (h * 0.6) + (18 if r == "Central" else 3),
-                    "ch4": 1815 + (h * 1.8),
-                    "no2": 22 + h,
-                    "temp": 25 + (h % 7)
+                    "co2": 410 + (h * 0.8) + (23 if r == "Central" else 2),
+                    "ch4": 1810 + (h * 1.6) + (55 if r == "Central" else 0),
+                    "no2": 20 + h + (22 if r == "Central" else 0),
+                    "temp": 26 + (h % 6)
                 })
         return pd.DataFrame(latest_list), pd.DataFrame(history_list)
 
@@ -182,9 +185,9 @@ col_title, col_ctrl1, col_ctrl2 = st.columns([2.2, 0.9, 0.9])
 
 with col_title:
     st.markdown("""
-        <div style='padding-top: 2px;'>
-            <h1 style='color:#f8fafc; font-size:22px; font-weight:700; margin-bottom:0px;'>GHGs Emission Tracking & Climate Analytics</h1>
-            <p style='color:#64748b; font-size:11px; margin:0;'>National Environmental Monitoring Platform • Live Data Sync Enabled</p>
+        <div style='padding-top: 4px;'>
+            <h1 style='color:#f8fafc; font-size:24px; font-weight:700; margin-bottom:0px;'>GHGs Emission Tracking & Climate Analytics</h1>
+            <p style='color:#64748b; font-size:12px; margin:0;'>National Environmental Monitoring Platform • Live Data Sync Enabled</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -196,7 +199,7 @@ with col_ctrl2:
     selected_metric_th = st.selectbox("ตัวชี้วัดหลัก (Main Metric)", list(METRIC_MAP.keys()), index=0)
     selected_metric = METRIC_MAP[selected_metric_th]
 
-st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
 # 4. EXECUTIVE SUMMARY STRIPS (ROW 1)
@@ -211,61 +214,68 @@ m4.metric(label="Ambient Temp", value=f"{region_data['temp']:.1f} °C")
 m5.metric(label="PM 2.5 (TMD API)", value=f"{region_data['pm25']:.1f} µg/m³")
 m6.metric(label="Humidity (TMD API)", value=f"{int(region_data['humidity'])} %")
 
-st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
 # 5. MAIN ANALYTICS WORKSPACE (3-COLUMN ANALYTICS SUITE)
 # =====================================================================
-col_map, col_rank, col_trend = st.columns([1.1, 0.9, 1.2])
+col_map, col_rank, col_trend = st.columns([1.2, 0.9, 1.2])
 
-# --- คอลัมน์ 1: การจำลองสภาพภูมิศาสตร์เชิงพื้นที่ (Carto Dark) ---
+# --- คอลัมน์ 1: Geospatial Mapping (PyDeck ขนาดพอดีคาร์ด) ---
 with col_map:
-    st.markdown("<div class='content-card'><div class='card-title'>Station Network & Geospatial Mapping</div>", unsafe_allow_html=True)
+    st.markdown("<div class='content-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='card-title'>Station Network & Geospatial Mapping</div>", unsafe_allow_html=True)
     
-    df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 38000 + 17000
-    view_state = pdk.ViewState(latitude=13.3, longitude=101.0, zoom=4.7, pitch=15)
+    df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 30000 + 15000
+    view_state = pdk.ViewState(latitude=13.5, longitude=100.8, zoom=5.2, pitch=10)
     
     layer = pdk.Layer(
         "ScatterplotLayer",
         df_latest,
         get_position="[lon, lat]",
-        get_color="[34, 211, 238, 170]" if selected_metric == "co2" else "[34, 197, 94, 170]",
+        get_color="[34, 211, 238, 180]" if selected_metric == "co2" else "[34, 197, 94, 180]",
         get_radius="radius",
         pickable=True
     )
     
-    # 🔥 แก้ไขจุดบั๊กการตัดบรรข้อมูลของ String ลิงก์แผนที่เรียบร้อยครับ
+    # กำหนดความสูงแผนที่ไว้ที่ 360px เพื่อให้บรรจุในกรอบ Content Card ได้อย่างพอดี ไม่ทะลุออกไปด้านล่าง
     st.pydeck_chart(pdk.Deck(
         map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
         initial_view_state=view_state,
-        layers=[layer]
+        layers=[layer],
+        height=360
     ), use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- คอลัมน์ 2: ตารางเปรียบเทียบลำดับข้อมูลแห่งชาติ ---
+# --- คอลัมน์ 2: ตารางเปรียบเทียบค่าวิเคราะห์ (จำกัดความสูง Dataframe) ---
 with col_rank:
-    st.markdown("<div class='content-card'><div class='card-title'>ตารางเปรียบเทียบค่าวิเคราะห์รายภูมิภาค</div>", unsafe_allow_html=True)
+    st.markdown("<div class='content-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='card-title'>ตารางเปรียบเทียบค่าวิเคราะห์รายภูมิภาค</div>", unsafe_allow_html=True)
     
     df_rank = df_latest.sort_values(by=selected_metric, ascending=False).copy()
     df_display = df_rank[['th_name', selected_metric]].rename(
         columns={'th_name': 'ภูมิภาค', selected_metric: f'ค่าวิเคราะห์ ({UNIT_MAP[selected_metric]})'}
     )
     
-    st.dataframe(df_display, hide_index=True, use_container_width=True, height=315)
+    # ปรับความสูงตารางเหลือ 360px เพื่อให้แมตช์พอดีกับแผนที่และเห็นครบทุกภูมิภาคโดยมี Scrollbar ในตารางเอง
+    st.dataframe(df_display, hide_index=True, use_container_width=True, height=360)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- คอลัมน์ 3: การประมวลผลอนุกรมเวลา (TimescaleDB Integration) ---
+# --- คอลัมน์ 3: Time-Series Trend Analysis (กำหนดความสูงตัวกราฟพอดีคาร์ด) ---
 with col_trend:
-    st.markdown("<div class='content-card'><div class='card-title'>Trend Analysis (TimescaleDB 24h Data Logs)</div>", unsafe_allow_html=True)
+    st.markdown("<div class='content-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='card-title'>Trend Analysis (TimescaleDB 24h Data Logs)</div>", unsafe_allow_html=True)
     
     df_region_history = df_history[df_history['region'] == selected_region].sort_values('timestamp')
-    fig = px.area(df_region_history, x='timestamp', y=selected_metric, height=310)
+    
+    # ปรับความสูงกราฟ Plotly เป็น 350px เพื่อให้สเกลตัวเลขด้านล่างไม่ตกขอบการ์ด
+    fig = px.area(df_region_history, x='timestamp', y=selected_metric, height=350)
     
     fig.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin=dict(l=15, r=15, t=10, b=30), # เพิ่มพื้นที่ขอบล่าง (b=30) เพื่อให้เห็นแกนเวลาชัดเจน
         paper_bgcolor='rgba(0,0,0,0)', 
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color="#64748b", size=9),
+        font=dict(color="#64748b", size=10),
         xaxis=dict(showgrid=False, nticks=5, tickformat="%H:%M", title=None),
         yaxis=dict(showgrid=True, gridcolor="rgba(51,65,85,0.3)", title=None)
     )
