@@ -7,29 +7,71 @@ from datetime import datetime
 # 1. SETUP
 st.set_page_config(layout="wide", page_title="GHG Monitor Board")
 
-# 2. CSS STYLING (หัวใจสำคัญของความสวยงาม)
+# 2. ADVANCED CSS STYLING
 st.markdown("""
     <style>
-        /* จัดกรอบ Metric ให้สวยงาม */
-        [data-testid="stMetric"] { 
-            background: rgba(255, 255, 255, 0.05); 
-            padding: 20px; 
-            border-radius: 15px; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
+        /* ฟอนต์หลักและพื้นหลัง */
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
+        html, body, [class*="css"]  { font-family: 'Kanit', sans-serif; }
         
-        /* จัด Sidebar ให้ตรึงล่าง */
-        [data-testid="stSidebarContent"] { 
-            display: flex; flex-direction: column; height: 100vh; 
-        }
-        .footer-group { 
-            margin-top: auto; padding: 20px; display: flex; flex-direction: column; gap: 5px;
-            background: rgba(0,0,0,0.2); border-radius: 10px;
-        }
-        
-        /* เปลี่ยนสีพื้นหลังหลัก */
         .stApp { background-color: #0e1117; }
+
+        /* ตกแต่งกรอบ Metric (ค่ามลพิษ) */
+        [data-testid="stMetric"] { 
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            padding: 25px !important; 
+            border-radius: 20px !important; 
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: 0.3s;
+        }
+        [data-testid="stMetric"]:hover {
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            transform: translateY(-5px);
+        }
+
+        /* ปรับแต่ง Sidebar */
+        [data-testid="stSidebar"] { background-color: #161b22 !important; border-right: 1px solid rgba(255,255,255,0.1); }
+        
+        /* จัดโครงสร้างเมนูและ Footer */
+        [data-testid="stSidebarContent"] {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
+        }
+
+        .menu-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #30363d;
+        }
+
+        /* กลุ่มโลโก้และเครดิตด้านล่าง (Signature Block) */
+        .brand-container {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .brand-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+        .brand-sub {
+            font-size: 11px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -37,38 +79,37 @@ st.markdown("""
 def get_latest_data():
     return {"CO₂ (ppm)": 433, "CH₄ (ppb)": 1865, "NO₂ (ppb)": 42.1, "PM 2.5": 22.4, "Temp (°C)": 33.2, "Humidity (%)": 64}
 
-# 4. MAIN LAYOUT
-st.title("📊 Tracking GHGs Emission")
+# 4. MAIN CONTENT
+st.title("🌍 Tracking GHGs Emission")
+st.markdown("---")
 
+# Display Metrics
 metrics = get_latest_data()
 cols = st.columns(len(metrics))
 for i, (label, val) in enumerate(metrics.items()):
     cols[i].metric(label, str(val))
 
-# SIDEBAR (LOGO & CREDIT)
+# 5. SIDEBAR DESIGN
 with st.sidebar:
-    st.header("⚙️ Configuration")
-    selected = st.selectbox("เลือกสารมลพิษ", ["CO₂ (ppm)", "CH₄ (ppb)", "NO₂ (ppb)", "PM 2.5", "Temp (°C)", "Humidity (%)"])
-    mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
+    # ส่วนหัวเมนู
+    st.markdown('<div class="menu-title">📋 เมนูควบคุมระบบ</div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="footer-group">', unsafe_allow_html=True)
-    # ใส่โลโก้ (ใช้ URL ตรง เพื่อให้ไม่บั๊กเวลาคนอื่นเปิด)
-    st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=120)
+    # ส่วนการตั้งค่า
+    selected = st.selectbox("เลือกสารมลพิษที่ต้องการดู:", list(get_latest_data().keys()))
+    mode = st.radio("เลือกช่วงเวลาแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
+    
+    # พื้นที่ว่างดัน Footer ลงล่าง
+    st.container() 
+    
+    # กลุ่มโลโก้และเครดิต (Signature Block)
+    st.markdown('<div class="brand-container">', unsafe_allow_html=True)
+    st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=90)
     st.markdown("""
-        <div style="font-size: 16px; font-weight: bold; margin-top: 5px;">AE-IET [SBU]</div>
-        <div style="font-size: 11px; color: #aaa;">produced by Engineering</div>
+        <div class="brand-name">AE-IET [SBU]</div>
+        <div class="brand-sub">Produced by Engineering Team</div>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# GRAPH
+# 6. GRAPH (Dummy Data for visual)
 dates = pd.date_range(end=datetime.now(), periods=30, freq='D')
-vals = np.random.normal(400, 10, 30)
-df = pd.DataFrame({'Date': dates, 'Value': vals})
-
-fig = px.line(df, x='Date', y='Value', template="plotly_dark")
-fig.update_layout(
-    paper_bgcolor="rgba(0,0,0,0)", 
-    plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(t=50, b=0, l=0, r=0)
-)
-st.plotly_chart(fig, use_container_width=True)
+vals = np.random.normal(400,
