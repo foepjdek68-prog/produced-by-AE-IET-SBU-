@@ -27,10 +27,11 @@ def get_history(pollutant, mode):
     dates = pd.date_range(end=datetime.now(), periods=periods, freq=freq)
     mapping = {"Temp": 30, "CO₂": 430, "CH₄": 1800, "NO₂": 40, "PM 2.5": 25, "Humidity": 60}
     base = next((val for key, val in mapping.items() if key in pollutant), 50)
-    vals = np.random.normal(base, 5, len(dates))
+    vals = np.random.normal(base, 5, len(periods) if isinstance(periods, int) else 30)
     return pd.DataFrame({'Date': dates, 'Value': vals})
 
 # 4. UI - MAIN LAYOUT
+# Header: ชื่อผลงานและโลโก้
 col_h1, col_h2 = st.columns([4, 1])
 with col_h1:
     st.title("Tracking GHGs Emission")
@@ -39,16 +40,30 @@ with col_h2:
     st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=120)
     st.caption("SBU - Engineering")
 
+# Sidebar: การตั้งค่าและเครดิตผู้ผลิต
 with st.sidebar:
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
+    
+    # ย้ายเครดิตมาไว้ล่างสุดของ Sidebar
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="font-size: 10px; color: gray; margin-top: auto;">
+            produced by AE-IET [SBU]
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
 
+# Metrics Section
 metrics = get_latest_data()
 cols = st.columns(len(metrics))
 for i, (label, val) in enumerate(metrics.items()):
     cols[i].metric(label, val)
 
+# Graph Section
 df_hist = get_history(selected, mode)
 fig = px.line(df_hist, x='Date', y='Value', template="plotly_dark", height=400)
 fig.update_layout(
@@ -59,10 +74,3 @@ fig.update_layout(
 )
 fig.update_traces(mode='lines+markers')
 st.plotly_chart(fig, use_container_width=True)
-
-# Footer Credit ย้ายมามุมล่างซ้าย
-st.markdown("""
-    <div style="position: fixed; left: 20px; bottom: 20px; font-size: 10px; color: gray;">
-        produced by AE-IET [SBU]
-    </div>
-""", unsafe_allow_html=True)
