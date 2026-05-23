@@ -7,109 +7,63 @@ from datetime import datetime
 # 1. SETUP
 st.set_page_config(layout="wide", page_title="GHG Monitor Board")
 
-# 2. ADVANCED CSS STYLING
+# 2. CSS STYLING (ปรับแต่งให้รันผ่านและสวยงาม)
 st.markdown("""
     <style>
-        /* ฟอนต์หลักและพื้นหลัง */
+        /* ฟอนต์ */
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
-        html, body, [class*="css"]  { font-family: 'Kanit', sans-serif; }
+        html, body, [class*="css"] { font-family: 'Kanit', sans-serif !important; }
         
         .stApp { background-color: #0e1117; }
 
-        /* ตกแต่งกรอบ Metric (ค่ามลพิษ) */
+        /* กรอบ Metric */
         [data-testid="stMetric"] { 
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-            padding: 25px !important; 
-            border-radius: 20px !important; 
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            transition: 0.3s;
-        }
-        [data-testid="stMetric"]:hover {
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            transform: translateY(-5px);
+            background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; 
+            border: 1px solid rgba(255,255,255,0.1); text-align: center;
         }
 
-        /* ปรับแต่ง Sidebar */
-        [data-testid="stSidebar"] { background-color: #161b22 !important; border-right: 1px solid rgba(255,255,255,0.1); }
-        
-        /* จัดโครงสร้างเมนูและ Footer */
-        [data-testid="stSidebarContent"] {
+        /* จัด Sidebar ให้ตรึงล่างสุดแบบชัวร์ๆ */
+        section[data-testid="stSidebar"] > div {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             height: 100vh;
         }
-
-        .menu-title {
-            font-size: 24px;
-            font-weight: 500;
-            color: #ffffff;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #30363d;
-        }
-
-        /* กลุ่มโลโก้และเครดิตด้านล่าง (Signature Block) */
-        .brand-container {
-            background: rgba(255, 255, 255, 0.03);
+        .footer-container {
+            margin-top: auto; 
             padding: 20px;
+            background: rgba(255,255,255,0.03);
             border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 20px;
             text-align: left;
-        }
-        .brand-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #ffffff;
-            margin-top: 10px;
-            letter-spacing: 1px;
-        }
-        .brand-sub {
-            font-size: 11px;
-            color: #8b949e;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. DATA FUNCTIONS
-def get_latest_data():
-    return {"CO₂ (ppm)": 433, "CH₄ (ppb)": 1865, "NO₂ (ppb)": 42.1, "PM 2.5": 22.4, "Temp (°C)": 33.2, "Humidity (%)": 64}
-
-# 4. MAIN CONTENT
+# 3. CONTENT
 st.title("🌍 Tracking GHGs Emission")
-st.markdown("---")
 
-# Display Metrics
-metrics = get_latest_data()
-cols = st.columns(len(metrics))
-for i, (label, val) in enumerate(metrics.items()):
-    cols[i].metric(label, str(val))
+# Metrics
+cols = st.columns(6)
+data = {"CO₂": 433, "CH₄": 1865, "NO₂": 42.1, "PM2.5": 22.4, "Temp": 33.2, "Humid": 64}
+for i, (k, v) in enumerate(data.items()):
+    cols[i].metric(k, v)
 
-# 5. SIDEBAR DESIGN
+# Sidebar
 with st.sidebar:
-    # ส่วนหัวเมนู
-    st.markdown('<div class="menu-title">📋 เมนูควบคุมระบบ</div>', unsafe_allow_html=True)
+    st.markdown("## 📋 เมนูควบคุมระบบ")
+    selected = st.selectbox("เลือกสารมลพิษ:", list(data.keys()))
+    mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"])
     
-    # ส่วนการตั้งค่า
-    selected = st.selectbox("เลือกสารมลพิษที่ต้องการดู:", list(get_latest_data().keys()))
-    mode = st.radio("เลือกช่วงเวลาแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
-    
-    # พื้นที่ว่างดัน Footer ลงล่าง
-    st.container() 
-    
-    # กลุ่มโลโก้และเครดิต (Signature Block)
-    st.markdown('<div class="brand-container">', unsafe_allow_html=True)
-    st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=90)
+    # กลุ่มล่างสุด (ใช้ div ครอบ)
     st.markdown("""
-        <div class="brand-name">AE-IET [SBU]</div>
-        <div class="brand-sub">Produced by Engineering Team</div>
+        <div class="footer-container">
+            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="80">
+            <div style="font-weight:bold; margin-top:10px;">AE-IET [SBU]</div>
+            <div style="font-size:11px; color:#888;">Produced by Engineering Team</div>
+        </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# 6. GRAPH (Dummy Data for visual)
-dates = pd.date_range(end=datetime.now(), periods=30, freq='D')
-vals = np.random.normal(400,
+# Graph
+df = pd.DataFrame({'Date': pd.date_range(start='2026-05-01', periods=30), 'Value': np.random.randn(30).cumsum()})
+fig = px.line(df, x='Date', y='Value', template="plotly_dark")
+fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+st.plotly_chart(fig, use_container_width=True)
