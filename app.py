@@ -130,7 +130,7 @@ def fetch_dashboard_data():
     try:
         # ยิงดึงข้อมูลจาก Backend API ตามแผน 100%
         response = requests.get(BACKEND_API_URL, timeout=3)
-        if response.status_url == 200:
+        if response.status_code == 200:
             data = response.json()
             df_latest = pd.DataFrame(data['latest'])
             df_history = pd.DataFrame(data['history'])
