@@ -13,7 +13,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ล็อกการแสดงผลให้อยู่ในหน้าจอเดียว (No-Scroll 100%) พร้อมซ่อนปุ่มระบบคลาวด์
 st.markdown("""
     <style>
     .block-container {
@@ -29,7 +28,6 @@ st.markdown("""
         background-color: #020617;
     }
     
-    /* สไตล์กล่อง Dropdown */
     div[data-baseweb="select"] {
         background-color: #1e293b !important;
         border-radius: 6px !important;
@@ -40,7 +38,6 @@ st.markdown("""
         pointer-events: none !important;
     }
     
-    /* สไตล์กล่อง Metric Cards ให้บางและกะทัดรัด */
     div[data-testid="stMetric"] {
         background: linear-gradient(135deg, #1e293b 0%, #020617 100%);
         padding: 4px 10px !important;
@@ -58,7 +55,6 @@ st.markdown("""
         color: #22d3ee !important;
     }
     
-    /* สไตล์ตารางข้อมูลรายภาคให้คอมแพคที่สุด */
     .compact-table {
         width: 100%;
         border-collapse: collapse;
@@ -81,7 +77,6 @@ st.markdown("""
         background-color: #1e293b;
     }
     
-    /* ดักซ่อนส่วนเกินและปุ่ม Manage app ของระบบคลาวด์ */
     footer {visibility: hidden; display: none !important;}
     header {visibility: hidden; display: none !important;}
     div[data-testid="stToolbar"] {visibility: hidden !important;}
@@ -93,7 +88,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. DATA BRIDGE SYSTEM (ดึงค่าสารมลพิษครบถ้วนทุกมิติ)
+# 2. DATA BRIDGE SYSTEM
 # =====================================================================
 BACKEND_API_URL = "http://localhost:8000/api/v1/ghg-metrics"
 
@@ -105,7 +100,6 @@ def fetch_dashboard_data():
             data = response.json()
             return pd.DataFrame(data['latest']), pd.DataFrame(data['history'])
     except Exception:
-        # ระบบสำรองข้อมูลจำลองกรณีเชื่อมต่อ FastAPI สแตนด์บาย
         regions = ["North", "Central", "South", "Northeast", "East", "West"]
         coords = {
             "North": [18.78, 98.98], "Central": [13.75, 100.50], "South": [7.88, 98.39],
@@ -144,8 +138,6 @@ def fetch_dashboard_data():
 df_latest, df_history = fetch_dashboard_data()
 
 REGION_MAP = {"ภาคกลาง": "Central", "ภาคเหนือ": "North", "ภาคใต้": "South", "ภาคอีสาน": "Northeast", "ภาคตะวันออก": "East", "ภาคตะวันตก": "West"}
-
-# เพิ่มดัชนีมลพิษและสิ่งแวดล้อมให้ครบถ้วนทุกตัวตามโครงสร้างระบบ
 METRIC_MAP = {
     "คาร์บอนไดออกไซด์ (CO₂)": "co2", 
     "ก๊าซมีเทน (CH₄)": "ch4", 
@@ -157,7 +149,7 @@ METRIC_MAP = {
 UNIT_MAP = {"co2": "ppm", "ch4": "ppb", "no2": "ppb", "temp": "°C", "pm25": "µg/m³", "humidity": "%"}
 
 # =====================================================================
-# 3. BRANDING HEADER (แถบส่วนหัวคงที่ สะอาดตา ไม่มีตัวเลือกกวนใจ)
+# 3. BRANDING HEADER
 # =====================================================================
 col_brand_logo, col_title_text, col_spacer = st.columns([0.35, 1.95, 1.7])
 
@@ -183,9 +175,8 @@ with col_title_text:
 st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 4. EXECUTIVE SUMMARY STRIPS (แสดงค่าสรุปคงที่แบบเรียลไทม์)
+# 4. EXECUTIVE SUMMARY STRIPS
 # =====================================================================
-# ตั้งต้นเลือกพื้นที่หลักจากภาพเพื่อดึงโปรไฟล์ภูมิภาคขึ้นมาสแตนด์บาย
 selected_region = "Central" 
 region_data = df_latest[df_latest['region'] == selected_region].iloc[0]
 
@@ -200,33 +191,21 @@ m6.metric(label="ความชื้นในอากาศ", value=f"{int(re
 st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 5. CONTROL WORKSPACE (ย้ายกล่องเลือกมลพิษและพื้นที่ลงมารวมกลุ่มที่นี่)
+# 5. CONTROL & GEOSPATIAL MAP WORKSPACE (แถวบน: แผนที่ + กล่องเลือกด้านขวา)
 # =====================================================================
-with st.container(border=True):
-    ctrl_col1, ctrl_col2, ctrl_col_text = st.columns([1.2, 1.2, 2.0])
-    with ctrl_col1:
-        selected_metric_th = st.selectbox("🎯 เลือกสารมลพิษ/ตัวชี้วัดข้อมูล", list(METRIC_MAP.keys()), index=0)
-        selected_metric = METRIC_MAP[selected_metric_th]
-    with ctrl_col2:
-        selected_region_th = st.selectbox("📍 เลือกภูมิภาควิเคราะห์แนวโน้ม", list(REGION_MAP.keys()), index=0)
-        selected_region = REGION_MAP[selected_region_th]
-    with ctrl_col_text:
-        st.markdown(f"""
-            <div style='padding-top: 18px; font-size: 11.5px; color: #94a3b8; line-height: 1.4;'>
-                💡 <b>ศูนย์ควบคุมการวิเคราะห์ร่วม:</b> ตารางเปรียบเทียบเชิงพื้นที่และกราฟเส้นแสดงแนวโน้มด้านล่าง 
-                จะแปรผันตามสารมลพิษ <b>{selected_metric_th}</b> และภูมิภาคที่เลือกพร้อมกันโดยอัตโนมัติ
-            </div>
-        """, unsafe_allow_html=True)
+col_map_zone, col_ctrl_zone = st.columns([2.2, 0.8])
 
-# =====================================================================
-# 6. MAIN ANALYTICS DISPLAY LAYER (3-COLUMN LAYOUT)
-# =====================================================================
-col_map, col_rank, col_trend = st.columns([1.1, 0.9, 1.0])
-
-# --- คอลัมน์ 1: แผนที่แสดงจุดตรวจวัดเชิงพื้นที่ ---
-with col_map:
+with col_map_zone:
     with st.container(border=True):
         st.markdown("<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 8px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
+        
+        # ส่วนควบคุม Dropdown จะอยู่ฝั่งขวา แต่ค่าจะถูกเรียกใช้ในแผนที่ฝั่งซ้ายโดยตรง
+        with col_ctrl_zone:
+            with st.container(border=True):
+                selected_metric_th = st.selectbox("เลือกสารมลพิษ/ตัวชี้วัด", list(METRIC_MAP.keys()), index=0)
+                selected_metric = METRIC_MAP[selected_metric_th]
+                selected_region_th = st.selectbox("เลือกภูมิภาค", list(REGION_MAP.keys()), index=0)
+                selected_region = REGION_MAP[selected_region_th]
         
         df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 20000 + 12000
         view_state = pdk.ViewState(latitude=13.4, longitude=100.6, zoom=4.6, pitch=0)
@@ -244,10 +223,14 @@ with col_map:
             map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
             initial_view_state=view_state,
             layers=[layer],
-            height=165
+            height=150
         ), use_container_width=True)
 
-# --- คอลัมน์ 2: ตารางเปรียบเทียบข้อมูลรายภาค (ทำงานร่วมกับ Dropdown มลพิษ) ---
+# =====================================================================
+# 6. ANALYTICS DISPLAY LAYER (แถวล่าง: ตาราง + กราฟ)
+# =====================================================================
+col_rank, col_trend = st.columns([1.3, 1.7])
+
 with col_rank:
     with st.container(border=True):
         st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 8px;'>เปรียบเทียบรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True)
@@ -256,22 +239,19 @@ with col_rank:
         
         table_html = f"<table class='compact-table'><tr><th>ภูมิภาค</th><th>ค่าตรวจวัด</th></tr>"
         for _, row in df_rank.iterrows():
-            # ไฮไลต์บรรทัดภูมิภาคที่ผู้ใช้กำลังเลือกดูแนวโน้มเพื่อให้สังเกตง่ายขึ้น
             bg_style = "style='background-color: #1e293b; font-weight: bold; color: #22d3ee;'" if row['region'] == selected_region else ""
             table_html += f"<tr {bg_style}><td>{row['th_name']}</td><td>{row[selected_metric]:.1f}</td></tr>"
         table_html += "</table>"
         
         st.markdown(table_html, unsafe_allow_html=True)
-        st.markdown("<div style='margin-bottom: 3px;'></div>", unsafe_allow_html=True)
 
-# --- คอลัมน์ 3: กราฟเส้นแสดงแนวโน้มย้อนหลัง 24 ชั่วโมง (ทำงานร่วมกันแบบ Dynamic) ---
 with col_trend:
     with st.container(border=True):
         st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #38bdf8; padding-left: 6px; margin-bottom: 8px;'>แนวโน้มสถานการณ์ {selected_region_th} (24 ชม.)</div>", unsafe_allow_html=True)
         
         df_region_history = df_history[df_history['region'] == selected_region].sort_values('timestamp')
         
-        fig = px.area(df_region_history, x='timestamp', y=selected_metric, height=165)
+        fig = px.area(df_region_history, x='timestamp', y=selected_metric, height=135)
         fig.update_layout(
             margin=dict(l=10, r=10, t=5, b=15),
             paper_bgcolor='rgba(0,0,0,0)', 
