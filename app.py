@@ -88,7 +88,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. DATA BRIDGE SYSTEM (ปรับโมเดลรองรับ Timeline ย้อนหลัง 1 ปี)
+# 2. DATA BRIDGE SYSTEM (Timeline 1 ปีเต็ม รายเดือน)
 # =====================================================================
 BACKEND_API_URL = "http://localhost:8000/api/v1/ghg-metrics"
 
@@ -120,7 +120,6 @@ def fetch_dashboard_data():
                 "humidity": 64.0
             })
         
-        # จำลองข้อมูลย้อนหลังรายเดือนตลอดรอบ 1 ปีเต็ม (12 เดือน)
         history_list = []
         months = ["มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค."]
         for r in regions:
@@ -132,7 +131,7 @@ def fetch_dashboard_data():
                     "ch4": 1800 + (idx * 5.0) + (45 if r == "Central" else 0),
                     "no2": 25 + idx + (12 if r == "Central" else 0),
                     "temp": 28 + (idx % 4),
-                    "pm25": 18 + (idx * 2 if idx > 6 else idx * 0.5), # จำลองหน้าแล้งฝุ่นสูง
+                    "pm25": 18 + (idx * 2 if idx > 6 else idx * 0.5),
                     "humidity": 75 - (idx * 1.2)
                 })
         return pd.DataFrame(latest_list), pd.DataFrame(history_list)
@@ -193,7 +192,7 @@ m6.metric(label="ความชื้นในอากาศ", value=f"{int(re
 st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 5. UPPER ZONE: MAP (LEFT) & CONTROLS (RIGHT)
+# 5. ROW 1: MAP ZONE (LEFT) & CONTROLS ZONE (RIGHT)
 # =====================================================================
 col_map_inner, col_ctrl_inner = st.columns([2.3, 0.7])
 
@@ -209,7 +208,9 @@ with col_map_inner:
         st.markdown("<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
         
         df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 20000 + 12000
-        view_state = pdk.ViewState(latitude=13.4, longitude=100.6, zoom=4.6, pitch=0)
+        
+        # ปรับสเกลแผนที่ให้เล็กลงโดยเปลี่ยนค่าซูมเป็น 4.1 และปรับจุดศูนย์กลางให้อยู่กลางประเทศไทยพอดี
+        view_state = pdk.ViewState(latitude=13.2, longitude=101.2, zoom=4.1, pitch=0)
         
         layer = pdk.Layer(
             "ScatterplotLayer",
@@ -228,11 +229,12 @@ with col_map_inner:
         ), use_container_width=True)
 
 # =====================================================================
-# 6. LOWER ZONE: COMPARATIVE TABLE & 1-YEAR TREND CHART
+# 6. ROW 2: DATA ANALYTICS ZONE (TABLE & 1-YEAR CHART RE-ACTIVATED)
 # =====================================================================
-col_rank_zone, col_trend_zone = st.columns([1.3, 1.7])
+# แยกตัวแปร Columns ชุดใหม่อย่างเด็ดขาดเพื่อไม่ให้บล็อกดีไซน์แถวบนทับกัน
+col_rank_new, col_trend_new = st.columns([1.3, 1.7])
 
-with col_rank_zone:
+with col_rank_new:
     with st.container(border=True):
         st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>เปรียบเทียบรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True)
         
@@ -246,7 +248,7 @@ with col_rank_zone:
         
         st.markdown(table_html, unsafe_allow_html=True)
 
-with col_trend_zone:
+with col_trend_new:
     with st.container(border=True):
         st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #38bdf8; padding-left: 6px; margin-bottom: 6px;'>แนวโน้มสถานการณ์ {selected_region_th} ในรอบ 1 ปี (รายเดือน)</div>", unsafe_allow_html=True)
         
