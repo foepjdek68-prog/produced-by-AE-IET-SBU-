@@ -31,29 +31,24 @@ def get_history(pollutant, mode):
     return pd.DataFrame({'Date': dates, 'Value': vals})
 
 # 4. UI - MAIN LAYOUT
-# รวมชื่อผลงานและโลโก้ไว้ที่ส่วนบนสุด (Header)
 col_h1, col_h2 = st.columns([4, 1])
 with col_h1:
     st.title("Tracking GHGs Emission")
     st.subheader("Dashboard ระบบติดตามการปล่อยก๊าซเรือนกระจก")
 with col_h2:
-    # แสดงโลโก้พร้อมคำอธิบาย
     st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=120)
     st.caption("SBU - Engineering")
 
-# Sidebar สำหรับการตั้งค่า
 with st.sidebar:
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
 
-# Metrics Section
 metrics = get_latest_data()
 cols = st.columns(len(metrics))
 for i, (label, val) in enumerate(metrics.items()):
     cols[i].metric(label, val)
 
-# Graph Section
 df_hist = get_history(selected, mode)
 fig = px.line(df_hist, x='Date', y='Value', template="plotly_dark", height=400)
 fig.update_layout(
@@ -65,10 +60,9 @@ fig.update_layout(
 fig.update_traces(mode='lines+markers')
 st.plotly_chart(fig, use_container_width=True)
 
-# Footer Credit
+# Footer Credit ย้ายมามุมล่างซ้าย
 st.markdown("""
-    <hr style="border: 0; border-top: 1px solid #333;">
-    <div style="text-align: right; font-size: 10px; color: gray;">
+    <div style="position: fixed; left: 20px; bottom: 20px; font-size: 10px; color: gray;">
         produced by AE-IET [SBU]
     </div>
 """, unsafe_allow_html=True)
