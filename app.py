@@ -108,7 +108,7 @@ def fetch_dashboard_data():
         for r in regions:
             latest_list.append({
                 "region": r, 
-                "th_name": {"North":"ภาคเหนือ", "Central":"ภาคกลาง", "South":"ภาคใต้", "Northeast":"ภาคอีสาน", "East":"ภาคตะตะวันออก", "West":"ภาคตะวันตก"}[r],
+                "th_name": {"North":"ภาคเหนือ", "Central":"ภาคกลาง", "South":"ภาคใต้", "Northeast":"ภาคอีสาน", "East":"ภาคตะวันออก", "West":"ภาคตะวันตก"}[r],
                 "lat": coords[r][0], "lon": coords[r][1],
                 "co2": 433 if r == "Central" else 412,
                 "ch4": 1865 if r == "Central" else 1810,
@@ -154,4 +154,75 @@ col_brand_logo, col_title_text, col_ctrl1, col_ctrl2 = st.columns([0.35, 1.95, 0
 
 with col_brand_logo:
     st.markdown("""
-        <div style='display: flex; align-items: center; height: 4
+        <div style='display: flex; align-items: center; height: 42px; justify-content: center;'>
+            <img src='https://comci.southeast.ac.th/wp-content/uploads/2023/11/logo_comsci_re-1.png' 
+                 style='height: 38px; width: auto; object-fit: contain;'>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_title_text:
+    st.markdown("""
+        <div style='padding-top: 2px;'>
+            <h1 style='color:#f8fafc; font-size:16px; font-weight:700; margin-bottom:0px; line-height:1.2;'>ระบบวิเคราะห์ข้อมูลก๊าซเรือนกระจกและสภาพภูมิอากาศ</h1>
+            <p style='color:#38bdf8; font-size:10px; margin:0; font-weight:500;'>
+                คณะวิทยาศาสตร์และคอมพิวเตอร์ [SBU] • พัฒนาโดยทีมวิเคราะห์ข้อมูลวิศวกรรมขั้นสูง AE-IET
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_ctrl1:
+    selected_metric_th = st.selectbox("เลือกตัวชี้วัด", list(METRIC_MAP.keys()), index=0, label_visibility="collapsed")
+    selected_metric = METRIC_MAP[selected_metric_th]
+
+with col_ctrl2:
+    selected_region_th = st.selectbox("เลือกภูมิภาค", list(REGION_MAP.keys()), index=0, label_visibility="collapsed")
+    selected_region = REGION_MAP[selected_region_th]
+
+st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
+
+# =====================================================================
+# 4. EXECUTIVE SUMMARY STRIPS
+# =====================================================================
+m1, m2, m3, m4, m5, m6 = st.columns(6)
+m1.metric(label="คาร์บอนไดออกไซด์ (CO₂)", value="433 ppm")
+m2.metric(label="ก๊าซมีเทน (CH₄)", value="1865 ppb")
+m3.metric(label="ไนโตรเจนไดออกไซด์ (NO₂)", value="42.1 ppb")
+m4.metric(label="อุณหภูมิอากาศ", value="33.2 °C")
+m5.metric(label="ฝุ่น PM 2.5", value="22.4 µg/m³")
+m6.metric(label="ความชื้นในอากาศ", value="64 %")
+
+st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)
+
+# =====================================================================
+# 5. MAIN WORKSPACE: 50/50 BALANCED LAYOUT (แบ่งซ้าย-ขวา คนละ 50% เท่ากัน)
+# =====================================================================
+col_left, col_right = st.columns(2)
+
+with col_left:
+    # --- ส่วนที่ 1: แผนที่แสดงจุดตรวจวัดเชิงพื้นที่ (ด้านซ้าย) ---
+    with st.container(border=True):
+        st.markdown(f"<div style='font-size: 11.5px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่ ({selected_metric_th})</div>", unsafe_allow_html=True)
+        
+        df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 7000 + 4000
+        view_state = pdk.ViewState(latitude=13.6, longitude=100.6, zoom=4.3, pitch=0)
+        
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            df_latest,
+            get_position="[lon, lat]",
+            get_color="[239, 68, 68, 180]" if "co2" in selected_metric or "pm25" in selected_metric else "[34, 211, 238, 180]",
+            get_radius="radius",
+            pickable=True
+        )
+        
+        st.pydeck_chart(pdk.Deck(
+            map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+            initial_view_state=view_state,
+            layers=[layer],
+            height=210
+        ), use_container_width=True)
+
+with col_right:
+    # --- ส่วนที่ 2: ตารางเปรียบเทียบข้อมูลรายภูมิภาค (ด้านขวา) ---
+    with st.container(border=True):
+        st.markdown(f"<div style='font-size: 11.5px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>เปรียบเทียบข้อมูลรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True
