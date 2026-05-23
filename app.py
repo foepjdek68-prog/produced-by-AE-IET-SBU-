@@ -30,28 +30,37 @@ def get_history(pollutant, mode):
     vals = np.random.normal(base, 5, len(dates))
     return pd.DataFrame({'Date': dates, 'Value': vals})
 
-# 4. UI - ใช้ Sidebar ประหยัดพื้นที่หน้าหลัก
-st.title("GHG Operational Monitor")
-
+# 4. UI
+# เพิ่มโลโก้และชื่อ Dashboard ใน Sidebar เพื่อประหยัดพื้นที่
 with st.sidebar:
+    st.image("https://comci.southeast.ac.th/wp-content/uploads/2023/10/logo-comci-01.png", width=150) # ลิงก์รูปโลโก้โดยตรง
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
 
-# Metrics - ปรับขนาดให้เล็กลงด้วยการใช้ container
+st.title("Dashboard “Tracking GHGs Emission”")
+
+# Metrics
 metrics = get_latest_data()
 cols = st.columns(len(metrics))
 for i, (label, val) in enumerate(metrics.items()):
-    cols[i].metric(label, val, delta=None) # เอา delta ออกเพื่อให้ดูสะอาดขึ้น
+    cols[i].metric(label, val)
 
-# Graph - บังคับความสูงของกราฟ (height=400) ไม่ให้ล้นหน้าจอ
+# Graph
 df_hist = get_history(selected, mode)
 fig = px.line(df_hist, x='Date', y='Value', template="plotly_dark", height=400)
 fig.update_layout(
-    margin=dict(l=20, r=20, t=30, b=20), # ลด Margin รอบกราฟ
+    margin=dict(l=20, r=20, t=30, b=20),
     yaxis_title=UNIT_MAP[selected],
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)"
 )
 fig.update_traces(mode='lines+markers')
 st.plotly_chart(fig, use_container_width=True)
+
+# Footer Credit มุมล่างขวา
+st.markdown("""
+    <div style="text-align: right; font-size: 10px; color: gray;">
+        produced by AE-IET [SBU]
+    </div>
+""", unsafe_allow_html=True)
