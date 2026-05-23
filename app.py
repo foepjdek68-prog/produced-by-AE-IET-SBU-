@@ -31,27 +31,36 @@ def get_history(pollutant, mode):
     return pd.DataFrame({'Date': dates, 'Value': vals})
 
 # 4. UI
-# หัวข้อหลักแบบธรรมดา
 st.title("Tracking GHGs Emission")
 st.subheader("Dashboard ระบบติดตามการปล่อยก๊าซเรือนกระจก")
 
-# Sidebar
 with st.sidebar:
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
     
-    # ดันเนื้อหาลงด้านล่างด้วยเว้นบรรทัด
-    st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)
-    
-    # ย้ายโลโก้และเครดิตมาไว้ที่นี่
-    st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=100)
-    st.caption("SBU - Engineering")
+    # ใช้ CSS ยืดความสูง Sidebar ให้ดันเนื้อหาล่างลงไป
     st.markdown("""
-        <div style="font-size: 10px; color: gray;">
-            produced by AE-IET [SBU]
-        </div>
+        <style>
+            [data-testid="stSidebarContent"] {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+            .sidebar-footer {
+                margin-top: auto;
+                padding-bottom: 20px;
+            }
+        </style>
     """, unsafe_allow_html=True)
+    
+    # ส่วนของโลโก้และเครดิตที่ถูกดันลงล่าง
+    with st.container():
+        st.markdown('<div class="sidebar-footer">', unsafe_allow_html=True)
+        st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=100)
+        st.caption("SBU - Engineering")
+        st.markdown('<div style="font-size: 10px; color: gray;">produced by AE-IET [SBU]</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # Metrics
 metrics = get_latest_data()
