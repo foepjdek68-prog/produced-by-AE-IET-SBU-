@@ -130,11 +130,13 @@ def fetch_dashboard_data():
     try:
         # ยิงดึงข้อมูลจาก Backend API ตามแผน 100%
         response = requests.get(BACKEND_API_URL, timeout=3)
-        if response.status_code == 200:
+        if response.status_code == 200: # 🔥 แก้ไขจุดบั๊กตรงนี้เรียบร้อยครับ
             data = response.json()
             df_latest = pd.DataFrame(data['latest'])
             df_history = pd.DataFrame(data['history'])
             return df_latest, df_history
+        else:
+            raise Exception("API status error")
     except Exception:
         # =====================================================================
         # MOCK DATA (ระบบจะสลับมาใช้ตรงนี้อัตโนมัติหากยังไม่ได้เปิด Server FastAPI)
