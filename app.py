@@ -88,7 +88,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. DATA BRIDGE SYSTEM
+# 2. DATA BRIDGE SYSTEM (ปรับโมเดลรองรับ Timeline ย้อนหลัง 1 ปี)
 # =====================================================================
 BACKEND_API_URL = "http://localhost:8000/api/v1/ghg-metrics"
 
@@ -120,18 +120,20 @@ def fetch_dashboard_data():
                 "humidity": 64.0
             })
         
+        # จำลองข้อมูลย้อนหลังรายเดือนตลอดรอบ 1 ปีเต็ม (12 เดือน)
         history_list = []
+        months = ["มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค."]
         for r in regions:
-            for h in range(24):
+            for idx, m in enumerate(months):
                 history_list.append({
-                    "timestamp": pd.Timestamp.now() - pd.Timedelta(hours=h),
+                    "month": m,
                     "region": r,
-                    "co2": 410 + (h * 0.8) + (23 if r == "Central" else 2),
-                    "ch4": 1810 + (h * 1.6) + (55 if r == "Central" else 0),
-                    "no2": 20 + h + (22 if r == "Central" else 0),
-                    "temp": 26 + (h % 6),
-                    "pm25": 20 + (h * 0.5),
-                    "humidity": 60 + (h % 5)
+                    "co2": 415 + (idx * 1.5) + (15 if r == "Central" else 0),
+                    "ch4": 1800 + (idx * 5.0) + (45 if r == "Central" else 0),
+                    "no2": 25 + idx + (12 if r == "Central" else 0),
+                    "temp": 28 + (idx % 4),
+                    "pm25": 18 + (idx * 2 if idx > 6 else idx * 0.5), # จำลองหน้าแล้งฝุ่นสูง
+                    "humidity": 75 - (idx * 1.2)
                 })
         return pd.DataFrame(latest_list), pd.DataFrame(history_list)
 
@@ -177,8 +179,8 @@ st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 # =====================================================================
 # 4. EXECUTIVE SUMMARY STRIPS
 # =====================================================================
-selected_region = "Central" 
-region_data = df_latest[df_latest['region'] == selected_region].iloc[0]
+selected_region_init = "Central" 
+region_data = df_latest[df_latest['region'] == selected_region_init].iloc[0]
 
 m1, m2, m3, m4, m5, m6 = st.columns(6)
 m1.metric(label="คาร์บอนไดออกไซด์ (CO₂)", value=f"{int(region_data['co2'])} ppm")
@@ -191,21 +193,20 @@ m6.metric(label="ความชื้นในอากาศ", value=f"{int(re
 st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 5. CONTROL & GEOSPATIAL MAP WORKSPACE (แถวบน: แผนที่ + กล่องเลือกด้านขวา)
+# 5. UPPER ZONE: MAP (LEFT) & CONTROLS (RIGHT)
 # =====================================================================
-col_map_zone, col_ctrl_zone = st.columns([2.2, 0.8])
+col_map_inner, col_ctrl_inner = st.columns([2.3, 0.7])
 
-with col_map_zone:
+with col_ctrl_inner:
     with st.container(border=True):
-        st.markdown("<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 8px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
-        
-        # ส่วนควบคุม Dropdown จะอยู่ฝั่งขวา แต่ค่าจะถูกเรียกใช้ในแผนที่ฝั่งซ้ายโดยตรง
-        with col_ctrl_zone:
-            with st.container(border=True):
-                selected_metric_th = st.selectbox("เลือกสารมลพิษ/ตัวชี้วัด", list(METRIC_MAP.keys()), index=0)
-                selected_metric = METRIC_MAP[selected_metric_th]
-                selected_region_th = st.selectbox("เลือกภูมิภาค", list(REGION_MAP.keys()), index=0)
-                selected_region = REGION_MAP[selected_region_th]
+        selected_metric_th = st.selectbox("เลือกสารมลพิษ/ตัวชี้วัด", list(METRIC_MAP.keys()), index=0)
+        selected_metric = METRIC_MAP[selected_metric_th]
+        selected_region_th = st.selectbox("เลือกภูมิภาค", list(REGION_MAP.keys()), index=0)
+        selected_region = REGION_MAP[selected_region_th]
+
+with col_map_inner:
+    with st.container(border=True):
+        st.markdown("<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
         
         df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 20000 + 12000
         view_state = pdk.ViewState(latitude=13.4, longitude=100.6, zoom=4.6, pitch=0)
@@ -227,13 +228,13 @@ with col_map_zone:
         ), use_container_width=True)
 
 # =====================================================================
-# 6. ANALYTICS DISPLAY LAYER (แถวล่าง: ตาราง + กราฟ)
+# 6. LOWER ZONE: COMPARATIVE TABLE & 1-YEAR TREND CHART
 # =====================================================================
-col_rank, col_trend = st.columns([1.3, 1.7])
+col_rank_zone, col_trend_zone = st.columns([1.3, 1.7])
 
-with col_rank:
+with col_rank_zone:
     with st.container(border=True):
-        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 8px;'>เปรียบเทียบรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>เปรียบเทียบรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True)
         
         df_rank = df_latest.sort_values(by=selected_metric, ascending=False)
         
@@ -245,19 +246,19 @@ with col_rank:
         
         st.markdown(table_html, unsafe_allow_html=True)
 
-with col_trend:
+with col_trend_zone:
     with st.container(border=True):
-        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #38bdf8; padding-left: 6px; margin-bottom: 8px;'>แนวโน้มสถานการณ์ {selected_region_th} (24 ชม.)</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #38bdf8; padding-left: 6px; margin-bottom: 6px;'>แนวโน้มสถานการณ์ {selected_region_th} ในรอบ 1 ปี (รายเดือน)</div>", unsafe_allow_html=True)
         
-        df_region_history = df_history[df_history['region'] == selected_region].sort_values('timestamp')
+        df_region_history = df_history[df_history['region'] == selected_region]
         
-        fig = px.area(df_region_history, x='timestamp', y=selected_metric, height=135)
+        fig = px.area(df_region_history, x='month', y=selected_metric, height=135)
         fig.update_layout(
             margin=dict(l=10, r=10, t=5, b=15),
             paper_bgcolor='rgba(0,0,0,0)', 
             plot_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#64748b", size=9),
-            xaxis=dict(showgrid=False, nticks=4, tickformat="%H:%M", title=None),
+            xaxis=dict(showgrid=False, title=None),
             yaxis=dict(showgrid=True, gridcolor="rgba(51,65,85,0.15)", title=None)
         )
         fig.update_traces(
