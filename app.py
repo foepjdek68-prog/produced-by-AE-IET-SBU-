@@ -7,33 +7,34 @@ from datetime import datetime
 # 1. SETUP
 st.set_page_config(layout="wide", page_title="GHG Monitor Board")
 
-# 2. CSS STYLING (ปรับแต่งให้รันผ่านและสวยงาม)
+# 2. CSS STYLING: ปรับพื้นหลัง Sidebar และตรึง Footer
 st.markdown("""
     <style>
-        /* ฟอนต์ */
-        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap');
-        html, body, [class*="css"] { font-family: 'Kanit', sans-serif !important; }
-        
-        .stApp { background-color: #0e1117; }
-
-        /* กรอบ Metric */
-        [data-testid="stMetric"] { 
-            background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; 
-            border: 1px solid rgba(255,255,255,0.1); text-align: center;
+        /* ปรับสีพื้นหลัง Sidebar ให้ดูพรีเมียม */
+        [data-testid="stSidebar"] { 
+            background-color: #0b0e14 !important; 
+            border-right: 1px solid #262730;
         }
-
-        /* จัด Sidebar ให้ตรึงล่างสุดแบบชัวร์ๆ */
+        
+        /* ตรึงตำแหน่ง Footer ไว้ล่างสุดของ Sidebar */
         section[data-testid="stSidebar"] > div {
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
-        .footer-container {
-            margin-top: auto; 
+        
+        /* สไตล์กรอบแบรนด์ด้านล่าง */
+        .brand-box {
+            margin-top: auto;
             padding: 20px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 15px;
-            text-align: left;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* สไตล์ Metric */
+        [data-testid="stMetric"] { 
+            background: #161b22; padding: 20px; border-radius: 12px; border: 1px solid #30363d;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -42,22 +43,22 @@ st.markdown("""
 st.title("🌍 Tracking GHGs Emission")
 
 # Metrics
-cols = st.columns(6)
 data = {"CO₂": 433, "CH₄": 1865, "NO₂": 42.1, "PM2.5": 22.4, "Temp": 33.2, "Humid": 64}
+cols = st.columns(len(data))
 for i, (k, v) in enumerate(data.items()):
     cols[i].metric(k, v)
 
-# Sidebar
+# SIDEBAR: ปรับให้เหลือแค่เมนูหลัก
 with st.sidebar:
-    st.markdown("## 📋 เมนูควบคุมระบบ")
+    st.markdown("### 📋 เมนูควบคุม")
     selected = st.selectbox("เลือกสารมลพิษ:", list(data.keys()))
-    mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"])
+    mode = st.radio("รูปแบบ:", ["รายวัน", "รายเดือน"])
     
-    # กลุ่มล่างสุด (ใช้ div ครอบ)
+    # กลุ่มแบรนด์ (ย้ายไปล่างสุด)
     st.markdown("""
-        <div class="footer-container">
-            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="80">
-            <div style="font-weight:bold; margin-top:10px;">AE-IET [SBU]</div>
+        <div class="brand-box">
+            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="70">
+            <div style="font-weight:bold; margin-top:10px; color:white;">AE-IET [SBU]</div>
             <div style="font-size:11px; color:#888;">Produced by Engineering Team</div>
         </div>
     """, unsafe_allow_html=True)
