@@ -4,7 +4,7 @@ import plotly.express as px
 import numpy as np
 from datetime import datetime
 
-# 1. SETUP - ใช้ wide mode
+# 1. SETUP
 st.set_page_config(layout="wide", page_title="GHG Monitor Board")
 
 # 2. MAPPING
@@ -31,9 +31,9 @@ def get_history(pollutant, mode):
     return pd.DataFrame({'Date': dates, 'Value': vals})
 
 # 4. UI
-# เพิ่มโลโก้และชื่อ Dashboard ใน Sidebar เพื่อประหยัดพื้นที่
 with st.sidebar:
-    st.image("https://comci.southeast.ac.th/wp-content/uploads/2023/10/logo-comci-01.png", width=150) # ลิงก์รูปโลโก้โดยตรง
+    # เรียกใช้ไฟล์โลโก้ที่คุณอัปโหลดมา (SBU.png)
+    st.image("SBU.png", width=150) 
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
@@ -60,7 +60,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 # Footer Credit มุมล่างขวา
 st.markdown("""
-    <div style="text-align: right; font-size: 10px; color: gray;">
+    <div style="text-align: right; font-size: 10px; color: gray; margin-top: 20px;">
         produced by AE-IET [SBU]
     </div>
 """, unsafe_allow_html=True)
