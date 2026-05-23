@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from datetime import datetime
-import os
 
 # 1. SETUP
 st.set_page_config(layout="wide", page_title="GHG Monitor Board")
@@ -18,7 +17,7 @@ UNIT_MAP = {
     "Humidity (%)": "Relative Humidity (%)"
 }
 
-# 3. DATA
+# 3. DATA FUNCTIONS
 def get_latest_data():
     return {"CO₂ (ppm)": 433, "CH₄ (ppb)": 1865, "NO₂ (ppb)": 42.1, "PM 2.5": 22.4, "Temp (°C)": 33.2, "Humidity (%)": 64}
 
@@ -33,12 +32,8 @@ def get_history(pollutant, mode):
 
 # 4. UI
 with st.sidebar:
-    # ตรวจสอบว่าไฟล์มีอยู่จริงก่อนโหลด
-    if os.path.exists("SBU.png"):
-        st.image("SBU.png", width=150)
-    else:
-        st.warning("ไม่พบไฟล์รูป SBU.png ในโฟลเดอร์")
-        
+    # โลโก้คณะ
+    st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=150)
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
@@ -63,12 +58,10 @@ fig.update_layout(
 fig.update_traces(mode='lines+markers')
 st.plotly_chart(fig, use_container_width=True)
 
-# Footer Credit (ปรับมาไว้ท้ายสุดของหน้าด้วย container)
-footer = st.container()
-with footer:
-    st.markdown("""
-        <hr style="border: 0; border-top: 1px solid #ccc;">
-        <div style="text-align: right; font-size: 12px; color: #888;">
-            produced by AE-IET [SBU]
-        </div>
-    """, unsafe_allow_html=True)
+# Footer Credit
+st.markdown("""
+    <hr style="border: 0; border-top: 1px solid #333;">
+    <div style="text-align: right; font-size: 10px; color: gray;">
+        produced by AE-IET [SBU]
+    </div>
+""", unsafe_allow_html=True)
