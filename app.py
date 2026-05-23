@@ -22,16 +22,20 @@ def get_latest_data():
     return {"CO₂ (ppm)": 433, "CH₄ (ppb)": 1865, "NO₂ (ppb)": 42.1, "PM 2.5": 22.4, "Temp (°C)": 33.2, "Humidity (%)": 64}
 
 def get_history(pollutant, mode):
-    periods = 12 if mode == "รายเดือน" else 30
+    # แก้ไขบั๊กตรงนี้: กำหนดจำนวนวันแยกชัดเจน
+    n = 12 if mode == "รายเดือน" else 30
     freq = 'MS' if mode == "รายเดือน" else 'D'
-    dates = pd.date_range(end=datetime.now(), periods=periods, freq=freq)
+    
+    dates = pd.date_range(end=datetime.now(), periods=n, freq=freq)
+    
     mapping = {"Temp": 30, "CO₂": 430, "CH₄": 1800, "NO₂": 40, "PM 2.5": 25, "Humidity": 60}
     base = next((val for key, val in mapping.items() if key in pollutant), 50)
-    vals = np.random.normal(base, 5, len(periods) if isinstance(periods, int) else 30)
+    
+    # สร้างข้อมูลสุ่มโดยใช้ n
+    vals = np.random.normal(base, 5, n)
     return pd.DataFrame({'Date': dates, 'Value': vals})
 
-# 4. UI - MAIN LAYOUT
-# Header: ชื่อผลงานและโลโก้
+# 4. UI
 col_h1, col_h2 = st.columns([4, 1])
 with col_h1:
     st.title("Tracking GHGs Emission")
@@ -40,30 +44,28 @@ with col_h2:
     st.image("https://comci.southeast.ac.th/2025/img/SBU.png", width=120)
     st.caption("SBU - Engineering")
 
-# Sidebar: การตั้งค่าและเครดิตผู้ผลิต
 with st.sidebar:
     st.header("Settings")
     selected = st.selectbox("เลือกสารมลพิษ", list(UNIT_MAP.keys()))
     mode = st.radio("รูปแบบการแสดงผล:", ["รายวัน", "รายเดือน"], horizontal=True)
     
-    # ย้ายเครดิตมาไว้ล่างสุดของ Sidebar
     st.markdown("---")
     st.markdown(
         """
-        <div style="font-size: 10px; color: gray; margin-top: auto;">
+        <div style="font-size: 10px; color: gray;">
             produced by AE-IET [SBU]
         </div>
         """, 
         unsafe_allow_html=True
     )
 
-# Metrics Section
+# Metrics
 metrics = get_latest_data()
 cols = st.columns(len(metrics))
 for i, (label, val) in enumerate(metrics.items()):
     cols[i].metric(label, val)
 
-# Graph Section
+# Graph
 df_hist = get_history(selected, mode)
 fig = px.line(df_hist, x='Date', y='Value', template="plotly_dark", height=400)
 fig.update_layout(
