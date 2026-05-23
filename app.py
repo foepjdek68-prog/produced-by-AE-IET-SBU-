@@ -2,22 +2,11 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
-from datetime import datetime
 
 # 1. SETUP
 st.set_page_config(layout="wide", page_title="GHG Monitor Board")
 
-# 2. MAPPING (ใส่หน่วยกำกับให้ชัดเจน)
-DATA_MAP = {
-    "CO₂": "433 ppm",
-    "CH₄": "1865 ppb",
-    "NO₂": "42.1 ppb",
-    "PM2.5": "22.4 µg/m³",
-    "Temp": "33.2 °C",
-    "Humid": "64 %"
-}
-
-# 3. CSS STYLING
+# 2. CSS STYLING
 st.markdown("""
     <style>
         section[data-testid="stSidebar"] > div { display: flex; flex-direction: column; height: 100vh; }
@@ -26,20 +15,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 4. CONTENT
+# 3. CONTENT
 st.title("🌍 Tracking GHGs Emission")
 
-# Metrics Display (แยกค่าและหน่วย)
+# Metrics: ใส่ค่ารวมหน่วยเข้าไปเลย
 cols = st.columns(6)
-for i, (k, v) in enumerate(DATA_MAP.items()):
-    val_only = v.split(" ")[0]
-    unit_only = " ".join(v.split(" ")[1:])
-    cols[i].metric(label=k, value=val_only, help=unit_only) # ใช้ help แสดงหน่วย หรือจะเขียนต่อท้ายก็ได้
+metrics_data = {
+    "CO₂": "433 ppm",
+    "CH₄": "1865 ppb",
+    "NO₂": "42.1 ppb",
+    "PM 2.5": "22.4 µg/m³",
+    "Temp": "33.2 °C",
+    "Humid": "64 %"
+}
 
-# หากต้องการให้หน่วยโชว์ตรงๆ ในกรอบ Metric ให้ใช้แบบนี้ครับ:
-cols = st.columns(6)
-for i, (k, v) in enumerate(DATA_MAP.items()):
-    cols[i].metric(label=k, value=v) # ใส่ค่าเต็มที่มีหน่วยเข้าไปเลย
+for i, (label, val) in enumerate(metrics_data.items()):
+    cols[i].metric(label=label, value=val)
 
 # Graph
 df = pd.DataFrame({'Date': pd.date_range(start='2026-05-01', periods=30), 'Value': np.random.randn(30).cumsum()})
@@ -47,10 +38,10 @@ fig = px.line(df, x='Date', y='Value', template="plotly_dark")
 fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
 st.plotly_chart(fig, use_container_width=True)
 
-# 5. SIDEBAR
+# 4. SIDEBAR
 with st.sidebar:
     st.markdown("### 📋 เมนูควบคุม")
-    selected = st.selectbox("เลือกสารมลพิษ:", list(DATA_MAP.keys()))
+    selected = st.selectbox("เลือกสารมลพิษ:", list(metrics_data.keys()))
     mode = st.radio("รูปแบบ:", ["รายวัน", "รายเดือน"])
     
     st.markdown("""
