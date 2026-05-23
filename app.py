@@ -1,46 +1,42 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import numpy as np
+import time
+from datetime import datetime
 
 # 1. PAGE CONFIG
-st.set_page_config(layout="wide", page_title="GHG Monitor Board")
+st.set_page_config(layout="wide", page_title="GHG Real-time Monitor")
 
-# 2. CSS - แถบ Metrics ที่ปรับตัวตามจำนวนข้อมูล
-st.markdown("""
-    <style>
-    .metric-container { background-color: #0f172a; padding: 20px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 20px; }
-    .stApp { background-color: #020617; color: white; }
-    </style>
-""", unsafe_allow_html=True)
+# 2. LOGIC: ตรวจสอบว่าถึงนาทีที่ 00 หรือยัง
+def is_top_of_hour():
+    now = datetime.now()
+    return now.minute == 0 and now.second < 5 # อนุโลมช่วงเวลาอัปเดต 5 วินาที
 
-# 3. จำลองการดึงข้อมูลทุกตัว (Function นี้ต้องส่งคืนข้อมูลที่มีทุกค่า)
-def get_all_realtime_metrics():
-    # สมมติว่านี่คือข้อมูลที่ API ส่งกลับมา
+# 3. MOCK DATA (ส่วนนี้จะถูกเรียกใหม่ทุกครั้งที่นาทีเป็น 00)
+def get_latest_data():
     return {
-        "CO₂ (ppm)": 433,
-        "CH₄ (ppb)": 1865,
-        "NO₂ (ppb)": 42.1,
-        "SO₂ (ppb)": 15.5,
-        "O₃ (ppb)": 35.0,
-        "Temp (°C)": 33.2,
-        "Humidity (%)": 64,
-        "PM 2.5": 22.4
+        "CO₂ (ppm)": 433 + np.random.randint(-2, 2),
+        "CH₄ (ppb)": 1865 + np.random.randint(-5, 5),
+        "NO₂ (ppb)": 42.1 + np.random.randint(-1, 1),
+        "PM 2.5": 22.4 + np.random.randint(-1, 1)
     }
 
-# 4. แสดงผลแบบ DYNAMIC (แสดงทุกตัวที่ดึงมา)
-st.title("GHG Operational Monitor")
+# 4. DASHBOARD UI
+st.title("GHG Operational Monitor (Real-time)")
+st.caption(f"Last Update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-metrics = get_all_realtime_metrics()
+# แสดง Metrics
+metrics_data = get_latest_data()
+cols = st.columns(len(metrics_data))
+for i, (label, val) in enumerate(metrics_data.items()):
+    cols[i].metric(label, val)
 
-# สร้างแถวที่คำนวณจำนวนคอลัมน์ให้อัตโนมัติ (เช่น แบ่งทีละ 4-6 ตัวต่อแถว)
-st.markdown('<div class="metric-container">', unsafe_allow_html=True)
-cols = st.columns(len(metrics)) # สร้างคอลัมน์ตามจำนวนข้อมูลจริง
-
-for i, (label, value) in enumerate(metrics.items()):
-    cols[i].metric(label, value)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# 5. กราฟย้อนหลัง (ยังคงใช้การเลือกตามเดิม)
-st.subheader("Historical Trends Analysis")
-selected_pollutant = st.selectbox("เลือกสารมลพิษเพื่อดูย้อนหลัง", list(metrics.keys()))
-# ... (ส่วนกราฟของคุณ)
+# 5. AUTO-REFRESH LOGIC
+# ระบบจะตรวจสอบทุก 10 วินาที ถ้าถึงนาทีที่ 00 จะสั่งให้หน้าเว็บโหลดใหม่
+placeholder = st.empty()
+time.sleep(10)
+if is_top_of_hour():
+    st.rerun()
+else:
+    placeholder.text("Waiting for next hourly update at :00...")
