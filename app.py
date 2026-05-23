@@ -5,7 +5,7 @@ import pydeck as pdk
 import requests
 
 # =====================================================================
-# 1. PAGE CONFIGURATION & ENTERPRISE THEME (CSS)
+# 1. PAGE CONFIGURATION & SYSTEM THEME
 # =====================================================================
 st.set_page_config(
     page_title="ระบบวิเคราะห์ข้อมูลสภาพภูมิอากาศและก๊าซเรือนกระจก",
@@ -13,6 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# บังคับการจัดหน้าให้อยู่ในหน้าจอคอมแพค ไม่เกิด Scrollbar ซ้อน
 st.markdown("""
     <style>
     .block-container {
@@ -88,7 +89,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =====================================================================
-# 2. DATA BRIDGE SYSTEM (Timeline 1 ปีเต็ม รายเดือน)
+# 2. DATA SYSTEM (จำลองโครงสร้างข้อมูลรายเดือนรอบ 1 ปีเต็ม)
 # =====================================================================
 BACKEND_API_URL = "http://localhost:8000/api/v1/ghg-metrics"
 
@@ -127,12 +128,12 @@ def fetch_dashboard_data():
                 history_list.append({
                     "month": m,
                     "region": r,
-                    "co2": 415 + (idx * 1.5) + (15 if r == "Central" else 0),
-                    "ch4": 1800 + (idx * 5.0) + (45 if r == "Central" else 0),
-                    "no2": 25 + idx + (12 if r == "Central" else 0),
-                    "temp": 28 + (idx % 4),
-                    "pm25": 18 + (idx * 2 if idx > 6 else idx * 0.5),
-                    "humidity": 75 - (idx * 1.2)
+                    "co2": 415 + (idx * 1.8) + (12 if r == "Central" else 2),
+                    "ch4": 1800 + (idx * 6.0) + (40 if r == "Central" else 5),
+                    "no2": 25 + idx + (10 if r == "Central" else 1),
+                    "temp": 28 + (idx % 3),
+                    "pm25": 20 + (idx * 2.5 if idx > 6 else idx * 0.4),
+                    "humidity": 75 - (idx * 1.5)
                 })
         return pd.DataFrame(latest_list), pd.DataFrame(history_list)
 
@@ -152,7 +153,7 @@ UNIT_MAP = {"co2": "ppm", "ch4": "ppb", "no2": "ppb", "temp": "°C", "pm25": "µ
 # =====================================================================
 # 3. BRANDING HEADER
 # =====================================================================
-col_brand_logo, col_title_text, col_spacer = st.columns([0.35, 1.95, 1.7])
+col_brand_logo, col_title_text, _ = st.columns([0.35, 1.95, 1.7])
 
 with col_brand_logo:
     st.markdown("""
@@ -178,94 +179,17 @@ st.markdown("<div style='margin-bottom: 2px;'></div>", unsafe_allow_html=True)
 # =====================================================================
 # 4. EXECUTIVE SUMMARY STRIPS
 # =====================================================================
-selected_region_init = "Central" 
-region_data = df_latest[df_latest['region'] == selected_region_init].iloc[0]
-
 m1, m2, m3, m4, m5, m6 = st.columns(6)
-m1.metric(label="คาร์บอนไดออกไซด์ (CO₂)", value=f"{int(region_data['co2'])} ppm")
-m2.metric(label="ก๊าซมีเทน (CH₄)", value=f"{int(region_data['ch4'])} ppb")
-m3.metric(label="ไนโตรเจนไดออกไซด์ (NO₂)", value=f"{region_data['no2']:.1f} ppb")
-m4.metric(label="อุณหภูมิอากาศ", value=f"{region_data['temp']:.1f} °C")
-m5.metric(label="ฝุ่น PM 2.5", value=f"{region_data['pm25']:.1f} µg/m³")
-m6.metric(label="ความชื้นในอากาศ", value=f"{int(region_data['humidity'])} %")
+m1.metric(label="คาร์บอนไดออกไซด์ (CO₂)", value="433 ppm")
+m2.metric(label="ก๊าซมีเทน (CH₄)", value="1865 ppb")
+m3.metric(label="ไนโตรเจนไดออกไซด์ (NO₂)", value="42.1 ppb")
+m4.metric(label="อุณหภูมิอากาศ", value="33.2 °C")
+m5.metric(label="ฝุ่น PM 2.5", value="22.4 µg/m³")
+m6.metric(label="ความชื้นในอากาศ", value="64 %")
 
 st.markdown("<div style='margin-bottom: 4px;'></div>", unsafe_allow_html=True)
 
 # =====================================================================
-# 5. ROW 1: MAP ZONE (LEFT) & CONTROLS ZONE (RIGHT)
+# 5. ROW 1: MAP AND INPUT CONTROLS (แผนที่ซ้าย - กล่องเลือกขวา)
 # =====================================================================
-col_map_inner, col_ctrl_inner = st.columns([2.3, 0.7])
-
-with col_ctrl_inner:
-    with st.container(border=True):
-        selected_metric_th = st.selectbox("เลือกสารมลพิษ/ตัวชี้วัด", list(METRIC_MAP.keys()), index=0)
-        selected_metric = METRIC_MAP[selected_metric_th]
-        selected_region_th = st.selectbox("เลือกภูมิภาค", list(REGION_MAP.keys()), index=0)
-        selected_region = REGION_MAP[selected_region_th]
-
-with col_map_inner:
-    with st.container(border=True):
-        st.markdown("<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>แผนที่แสดงจุดตรวจวัดเชิงพื้นที่</div>", unsafe_allow_html=True)
-        
-        df_latest['radius'] = (df_latest[selected_metric] / df_latest[selected_metric].max()) * 20000 + 12000
-        
-        # ปรับสเกลแผนที่ให้เล็กลงโดยเปลี่ยนค่าซูมเป็น 4.1 และปรับจุดศูนย์กลางให้อยู่กลางประเทศไทยพอดี
-        view_state = pdk.ViewState(latitude=13.2, longitude=101.2, zoom=4.1, pitch=0)
-        
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            df_latest,
-            get_position="[lon, lat]",
-            get_color="[239, 68, 68, 190]" if "co2" in selected_metric or "pm25" in selected_metric else "[34, 211, 238, 190]",
-            get_radius="radius",
-            pickable=True
-        )
-        
-        st.pydeck_chart(pdk.Deck(
-            map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-            initial_view_state=view_state,
-            layers=[layer],
-            height=150
-        ), use_container_width=True)
-
-# =====================================================================
-# 6. ROW 2: DATA ANALYTICS ZONE (TABLE & 1-YEAR CHART RE-ACTIVATED)
-# =====================================================================
-# แยกตัวแปร Columns ชุดใหม่อย่างเด็ดขาดเพื่อไม่ให้บล็อกดีไซน์แถวบนทับกัน
-col_rank_new, col_trend_new = st.columns([1.3, 1.7])
-
-with col_rank_new:
-    with st.container(border=True):
-        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #22d3ee; padding-left: 6px; margin-bottom: 6px;'>เปรียบเทียบรายภูมิภาค ({UNIT_MAP[selected_metric]})</div>", unsafe_allow_html=True)
-        
-        df_rank = df_latest.sort_values(by=selected_metric, ascending=False)
-        
-        table_html = f"<table class='compact-table'><tr><th>ภูมิภาค</th><th>ค่าตรวจวัด</th></tr>"
-        for _, row in df_rank.iterrows():
-            bg_style = "style='background-color: #1e293b; font-weight: bold; color: #22d3ee;'" if row['region'] == selected_region else ""
-            table_html += f"<tr {bg_style}><td>{row['th_name']}</td><td>{row[selected_metric]:.1f}</td></tr>"
-        table_html += "</table>"
-        
-        st.markdown(table_html, unsafe_allow_html=True)
-
-with col_trend_new:
-    with st.container(border=True):
-        st.markdown(f"<div style='font-size: 11px; font-weight: 600; color: #f8fafc; border-left: 3px solid #38bdf8; padding-left: 6px; margin-bottom: 6px;'>แนวโน้มสถานการณ์ {selected_region_th} ในรอบ 1 ปี (รายเดือน)</div>", unsafe_allow_html=True)
-        
-        df_region_history = df_history[df_history['region'] == selected_region]
-        
-        fig = px.area(df_region_history, x='month', y=selected_metric, height=135)
-        fig.update_layout(
-            margin=dict(l=10, r=10, t=5, b=15),
-            paper_bgcolor='rgba(0,0,0,0)', 
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color="#64748b", size=9),
-            xaxis=dict(showgrid=False, title=None),
-            yaxis=dict(showgrid=True, gridcolor="rgba(51,65,85,0.15)", title=None)
-        )
-        fig.update_traces(
-            line_color='#38bdf8', 
-            fillcolor='rgba(56, 189, 248, 0.04)',
-            line_width=1.5
-        )
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+row1_left, row1_
