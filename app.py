@@ -1,100 +1,72 @@
-import streamlit as st
-import pandas as pd
 import requests
-import plotly.express as px
+import sqlite3
+import pandas as pd
 from datetime import datetime
 import pytz
+import time
 
-# ===== PAGE =====
-st.set_page_config(layout="wide", page_title="GHG Real Monitor", initial_sidebar_state="expanded")
+# ===== DB SETUP =====
+conn = sqlite3.connect("ghg_data.db")
+cursor = conn.cursor()
 
-# ===== CSS (คงของเดิม) =====
-st.markdown("""
-<style>
-::-webkit-scrollbar { display: none; }
-.stApp { overflow: hidden !important; height: 100vh !important; }
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS air_quality (
+    time TEXT,
+    station TEXT,
+    aqi REAL,
+    pm25 REAL
+)
+""")
 
-[data-testid="stMetric"] {
-    background: #161b22;
-    padding: 8px !important;
-    border-radius: 10px;
-    border: 1px solid #30363d;
-}
-[data-testid="stMetricValue"] { font-size: 20px !important; }
-[data-testid="stMetricLabel"] { font-size: 12px !important; }
-</style>
-""", unsafe_allow_html=True)
+conn.commit()
 
-# ===== REAL API FETCH (Air4Thai) =====
-def get_real_data():
+# ===== FETCH API (Air4Thai) =====
+def fetch_data():
 
-    # ตัวอย่าง endpoint (air4thai public endpoint)
     url = "http://air4thai.pcd.go.th/services/getNewAQI_JSON.php"
 
-    try:
-        res = requests.get(url, timeout=10)
-        data = res.json()
+    res = requests.get(url, timeout=10)
+    data = res.json()
 
-        records = data["stations"]
+    return data["stations"]
 
-        rows = []
-        for r in records:
-            rows.append({
-                "station": r["nameTH"],
-                "AQI": float(r["AQI"]["aqi"]),
-                "PM2.5": float(r["AQI"]["PM25"]["value"]) if "PM25" in r["AQI"] else None,
-                "time": r["AQI"]["date"]
-            })
+# ===== SAVE TO DB =====
+def save_to_db(stations):
 
-        df = pd.DataFrame(rows)
+    tz = pytz.timezone("Asia/Bangkok")
+    now = datetime.now(tz).isoformat()
 
-        df["time"] = pd.to_datetime(df["time"], errors="coerce")
+    for s in stations:
 
-        return df
+        try:
+            station = s["nameTH"]
+            aqi = float(s["AQI"]["aqi"])
 
-    except Exception as e:
-        st.error("❌ ดึงข้อมูล API ไม่ได้")
-        return pd.DataFrame()
+            pm25 = None
+            if "PM25" in s["AQI"]:
+                pm25 = float(s["AQI"]["PM25"]["value"])
 
+            cursor.execute("""
+                INSERT INTO air_quality (time, station, aqi, pm25)
+                VALUES (?, ?, ?, ?)
+            """, (now, station, aqi, pm25))
 
-df = get_real_data()
+        except:
+            continue
 
-# ===== CHECK =====
-if df.empty:
-    st.stop()
+    conn.commit()
 
-# ===== SIDEBAR =====
-with st.sidebar:
-    st.title("📊 Real Monitoring")
+# ===== LOOP (REAL-TIME COLLECTOR) =====
+if __name__ == "__main__":
 
-    station = st.selectbox("เลือกสถานี", df["station"].unique())
+    while True:
+        try:
+            stations = fetch_data()
+            save_to_db(stations)
 
-# ===== FILTER =====
-df_plot = df[df["station"] == station]
+            print("✔ saved at", datetime.now())
 
-latest = df_plot.iloc[-1]
+        except Exception as e:
+            print("error:", e)
 
-# ===== METRICS =====
-col1, col2 = st.columns(2)
-
-col1.metric("AQI", int(latest["AQI"]))
-col2.metric("PM2.5", latest["PM2.5"])
-
-# ===== GRAPH =====
-fig = px.line(
-    df_plot,
-    x="time",
-    y="AQI",
-    template="plotly_dark",
-    height=350
-)
-
-fig.update_traces(line_color="#00ffcc", line_width=3)
-
-fig.update_layout(
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(t=20, b=10, l=10, r=10)
-)
-
-st.plotly_chart(fig, use_container_width=True)
+        time.sleep(300)  # ทุก 5 นาที
