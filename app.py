@@ -98,7 +98,7 @@ st.markdown("---")
 
 period = st.radio(
     "ช่วงเวลา",
-    ["1 Day","1 Week","1 Month","1 Year"],
+    ["Day","Week","Month","Year"],
     horizontal=True
 )
 
