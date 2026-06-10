@@ -187,4 +187,52 @@ for key, info in database.items():
     label_short = key.split(' ')[0]
     metric_html += f"""
         <div class="metric-card">
-            <div class="metric-
+            <div class="metric-label">{label_short}</div>
+            <div class="metric-value">
+                <span class="metric-value-value">{info['current']}</span>
+                <span class="metric-value-unit">{info['unit']}</span>
+            </div>
+            <div class="metric-status {info['stat_class']}">● {info['status'].split(' ')[0]}</div>
+        </div>
+    """
+metric_html += '</div>'
+st.markdown(metric_html, unsafe_allow_html=True)
+
+
+# --- Bottom Part: Chart & Info ---
+chart_col, info_col = st.columns([1.35, 0.65])
+
+with chart_col:
+    # เริ่มกล่อง Chart Block
+    st.markdown('<div class="chart-block">', unsafe_allow_html=True)
+    st.markdown(f'<div class="chart-caption">📊 แนวโน้มความเปลี่ยนแปลง: <span style="color:#22d3ee">{selected}</span></div>', unsafe_allow_html=True)
+    
+    # เตรียมข้อมูลกราฟ
+    current_val = database[selected]["current"]
+    base_val = database[selected]["base"]
+    
+    if "รายวัน" in mode:
+        periods, freq, start_date = 30, 'D', '2026-05-01'
+    else:
+        periods, freq, start_date = 12, 'M', '2025-06-01'
+        
+    np.random.seed(42) 
+    fluctuations = np.random.uniform(-1.2, 1.2, periods)
+    trend_values = np.linspace(base_val, current_val - fluctuations[-1], periods) + fluctuations
+    trend_values[-1] = current_val 
+    
+    df_trend = pd.DataFrame({
+        'Date': pd.date_range(start=start_date, periods=periods, freq=freq),
+        'Value': np.round(trend_values, 1)
+    })
+    
+    # --- วาดกราฟ Plotly (ปรับปรุงใหม่ให้ดูดีขึ้น) ---
+    fig = px.area(df_trend, x='Date', y='Value', template="plotly_dark")
+    
+    # ปรับแต่งเส้นและสี (ใช้ Spline Shape เพื่อความนวล)
+    fig.update_traces(
+        mode='lines+markers',
+        line=dict(color='#22d3ee', width=3, shape='spline'), # เส้น Cyan, หนาขึ้น, โค้ง
+        fillcolor='rgba(34, 211, 238, 0.06)', # สี Fill อ่อนๆ
+        marker=dict(size=6, color='#0f172a', line=dict(width=2, color='#22d3ee')), # สไตล์จุด Marker
+        hovertemplate="<b>วันที่:http://googleusercontent.com/image_generation_content/1
