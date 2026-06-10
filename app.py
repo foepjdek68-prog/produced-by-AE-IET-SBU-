@@ -1,16 +1,18 @@
+import streamlit as pd
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from plotly.subplots import make_subplots
 from datetime import datetime
 
 # ==========================================
-# 1. PAGE CONFIGURATION & BACKGROUND CONTROL
+# 1. PAGE CONFIGURATION & LIGHTWEIGHT THEME
 # ==========================================
 st.set_page_config(layout="wide", page_title="Intelligent Environmental Dashboard")
 
-# ใช้ CSS ควบคุมสีพื้นหลังหลัก และล็อกไม่ให้แป้นพิมพ์คีย์บอร์ดเด้งเวลาคลิก Dropdown
+# ใช้ CSS แท้ คุมโทนสีเข้ม-ฟ้า (Cyber Dark) ตามดีไซน์เป้าหมาย และล็อกแป้นพิมพ์ไม่ให้เด้ง
 st.markdown("""
     <style>
         ::-webkit-scrollbar { display: none; }
@@ -21,12 +23,12 @@ st.markdown("""
         }
         .block-container { padding: 0.8rem 1.5rem !important; }
         
-        /* สไตล์กล่องหัวข้อแดชบอร์ด */
+        /* หัวเรื่องแดชบอร์ด */
         .hdr-box { text-align: center; margin-bottom: 10px; }
         .hdr-title { font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; margin: 0; }
         .hdr-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
         
-        /* 🔒 ล็อกช่อง Selectbox ทั้งหมด ไม่ให้เปิดแป้นพิมพ์เวลาทัชใช้งาน */
+        /* 🔒 ล็อกช่อง Dropdown Selectbox ทั้งหมด ห้ามคีย์บอร์ดเด้งเวลาใช้งาน */
         div[data-baseweb="select"] input {
             pointer-events: none !important;
             caret-color: transparent !important;
@@ -35,10 +37,10 @@ st.markdown("""
         div[data-baseweb="select"] * { color: #f8fafc !important; font-size: 12px !important; }
         label[data-testid="stWidgetLabel"] { font-size: 11px !important; color: #94a3b8 !important; margin-bottom: 2px !important; font-weight: bold; }
         
-        /* การ์ดตารางน้ำด้านล่างสุด */
+        /* กล่องแสดงผลตารางน้ำด้านล่าง */
         .water-card-frame {
             background-color: #1e293b; border: 1px solid #334155; 
-            border-radius: 4px; padding: 12px; height: 135px;
+            border-radius: 4px; padding: 12px; height: 140px;
         }
         .status-dot { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; display: inline-block; }
         .status-pass { background-color: #059669; color: #ffffff; }
@@ -47,7 +49,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. FAIL-SAFE STATIC DATA DICTIONARY
+# 2. STABLE DATA ENGINE (ฐานข้อมูลภูมิภาค)
 # ==========================================
 years_axis = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
 months_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -68,21 +70,21 @@ REGIONAL_DB = {
 }
 
 # ==========================================
-# 3. DASHBOARD MAIN HEADER
+# 3. MAIN HEADER
 # ==========================================
 st.markdown("""
 <div class="hdr-box">
     <div class="hdr-title">INTELLIGENT ENVIRONMENTAL & GHG MONITORING DASHBOARD</div>
-    <div class="hdr-sub">ระบบควบคุมสเกลหน้าจอความละเอียดสูง เสริมระบบสลับกราฟนิรภัยอัตโนมัติ</div>
+    <div class="hdr-sub">ระบบแดชบอร์ดแสดงผลความเร็วสูง ประมวลผลแบบเสถียร 100% Local Run</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. CONTROL BAR (เมนูควบคุมตัวกรองข้อมูลชั้นบนสุด)
+# 4. TOP CONTROL BAR (แถบเมนูคุมข้อมูล)
 # ==========================================
 ctrl_cols = st.columns([2.5, 2.5, 2.5, 2.5])
 with ctrl_cols[0]:
-    st.markdown(f'<div style="font-family:monospace; font-size:12px; color:#22d3ee; font-weight:700; margin-top:16px;">⏱️ REALTIME SYNC: ACTIVE</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-family:monospace; font-size:12px; color:#22d3ee; font-weight:700; margin-top:16px;">⏱️ SYSTEM STATUS: ONLINE</div>', unsafe_allow_html=True)
 with ctrl_cols[1]:
     selected_reg = st.selectbox("REGION (ภูมิภาค ตรวจสอบ)", list(REGIONAL_DB.keys()))
 with ctrl_cols[2]:
@@ -94,7 +96,7 @@ st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 db = REGIONAL_DB[selected_reg]
 
 # ==========================================
-# 5. TIER 1: 3 GAUGE CHARTS (ย้ายสีพื้นหลังการ์ดลงในพล็อตลีย์โดยตรง ไม่พึ่งพากล่องภายนอก)
+# 5. TIER 1: 3 GAUGE CHARTS (หน้าปัดเกจวัดรอบวงกลม)
 # ==========================================
 g1, g2, g3 = st.columns(3)
 
@@ -131,36 +133,26 @@ with g3:
 st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 # ==========================================
-# 6. TIER 2: MIDDLE SECTION (MAP & TREND CHARTS SPLIT 50/50)
+# 6. TIER 2: MIDDLE SECTION (HOTSPOT MATRIX & TRENDS)
 # ==========================================
 mid_left, mid_right = st.columns([1.1, 1.0])
 
 with mid_left:
-    # ระบบป้องกันแผนที่ค้าง (หากไม่มีเน็ตหรือโหลด Mapbox ไม่ได้ จะสลับไปแสดงกราฟจุดความหนาแน่นทันที)
-    try:
-        np.random.seed(42)
-        map_df = pd.DataFrame({
-            'lat': [13.7563, 13.6592, 13.8124, 13.5432, 14.0204, 13.7234],
-            'lon': [100.5018, 100.6024, 100.4124, 100.2642, 100.6145, 100.3245],
-            'intensity': [150, 115, 140, 80, 95, 110]
-        })
-        fig_map = px.density_mapbox(map_df, lat='lat', lon='lon', z='intensity', radius=20,
-                                    center=dict(lat=13.7563, lon=100.5218), zoom=8.2,
-                                    mapbox_style="carto-darkmatter", color_continuous_scale="Jet")
-        fig_map.update_layout(
-            height=205, margin=dict(t=25, b=5, l=5, r=5), coloraxis_showscale=False,
-            title={'text': "🔥 GHG & POLLUTION HOTSPOTS", 'font': {'size': 11, 'color': '#22d3ee', 'bold': True}},
-            paper_bgcolor="#1e293b", plot_bgcolor="#1e293b"
-        )
-        st.plotly_chart(fig_map, use_container_width=True, config={'displayModeBar': False})
-    except Exception:
-        # กราฟสำรองกรณีระบบเครือข่ายโหลดแผนที่ไม่ได้
-        fig_backup = px.scatter(map_df, x='lon', y='lat', size='intensity', color='intensity', color_continuous_scale="Jet")
-        fig_backup.update_layout(
-            height=205, template="plotly_dark", title="🔥 HOTSPOT DENSITY MATRIX (BACKUP MODE)",
-            paper_bgcolor="#1e293b", plot_bgcolor="#1e293b", coloraxis_showscale=False
-        )
-        st.plotly_chart(fig_backup, use_container_width=True, config={'displayModeBar': False})
+    # เปลียนเป็น 2D Density Heatmap ทำงานแบบออฟไลน์ได้ 100% ไม่พึ่งพาเน็ต หน้าจอไม่ค้าง
+    np.random.seed(42)
+    grid_data = pd.DataFrame({
+        'X_Coordinate': np.random.randint(1, 10, 40),
+        'Y_Coordinate': np.random.randint(1, 10, 40),
+        'Pollution_Level': np.random.randint(50, 180, 40)
+    })
+    fig_matrix = px.density_heatmap(grid_data, x='X_Coordinate', y='Y_Coordinate', z='Pollution_Level', 
+                                   color_continuous_scale="Jet", title="🔥 REAL-TIME GHG HOTSPOT GRID MATRIX")
+    fig_matrix.update_layout(
+        height=215, margin=dict(t=35, b=5, l=10, r=10), coloraxis_showscale=False,
+        template="plotly_dark", paper_bgcolor="#1e293b", plot_bgcolor="#1e293b",
+        title_font=dict(size=11, color="#22d3ee")
+    )
+    st.plotly_chart(fig_matrix, use_container_width=True, config={'displayModeBar': False})
 
 with mid_right:
     # กราฟบน: 30-Year Trend
@@ -174,17 +166,17 @@ with mid_right:
     )
     st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': False})
         
-    st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
     
-    # กราฟล่าง: Monthly Bars
-    fig_combo = go.Figure()
-    fig_combo.add_trace(go.Bar(x=months_axis, y=db["pm25_series"], name='PM2.5', marker_color='#f97316', yaxis='y1'))
-    fig_combo.add_trace(go.Scatter(x=months_axis, y=db["temp_series"], name='Temp', line=dict(color='#22d3ee', width=2), yaxis='y2'))
+    # 🛠️ แก้ไขบั๊กกราฟผสม: ใช้ระบบย่อย make_subplots ที่ถูกต้องของพล็อตลีย์ ป้องกันการหยุดทำงาน
+    fig_combo = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_combo.add_trace(go.Bar(x=months_axis, y=db["pm25_series"], name='PM2.5', marker_color='#f97316'), secondary_y=False)
+    fig_combo.add_trace(go.Scatter(x=months_axis, y=db["temp_series"], name='Temp', line=dict(color='#22d3ee', width=2)), secondary_y=True)
     fig_combo.update_layout(
         height=95, margin=dict(t=25, b=5, l=15, r=15), template="plotly_dark",
         paper_bgcolor="#1e293b", plot_bgcolor="#1e293b", showlegend=False,
         title={'text': "📊 MONTHLY TEMPERATURE VS. AIR QUALITY", 'font': {'size': 11, 'color': '#22d3ee', 'bold': True}},
-        xaxis_showgrid=False, yaxis_showgrid=False, yaxis=dict(side='left'), yaxis2=dict(overlaying='y', side='right')
+        xaxis_showgrid=False, yaxis_showgrid=False
     )
     st.plotly_chart(fig_combo, use_container_width=True, config={'displayModeBar': False})
 
@@ -203,19 +195,19 @@ with bot_left:
         go.Bar(name='Unhealthy', x=elements, y=[90, 30, 45, 15], marker_color='#dc2626')
     ])
     fig_stack.update_layout(
-        barmode='stack', height=135, margin=dict(t=25, b=5, l=10, r=10), template="plotly_dark", 
+        barmode='stack', height=140, margin=dict(t=25, b=5, l=10, r=10), template="plotly_dark", 
         paper_bgcolor="#1e293b", plot_bgcolor="#1e293b", showlegend=False,
         title={'text': "📊 POLLUTION BREAKDOWN (PM2.5, NO₂, SO₂)", 'font': {'size': 11, 'color': '#22d3ee', 'bold': True}}
     )
     st.plotly_chart(fig_stack, use_container_width=True, config={'displayModeBar': False})
 
 with bot_right:
-    # ใช้กล่อง HTML ครอบเฉพาะตารางน้ำ มั่นใจได้ว่ารันผ่านได้ทุกระบบปฏิบัติการ
-    st.markdown('<div class="water-card_frame" style="background-color: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 12px; height: 135px;">', unsafe_allow_html=True)
+    # กล่อง HTML แสดงสถานะตารางวิเคราะห์น้ำและปุ่มดาวน์โหลดรายงานข้อมูล
+    st.markdown('<div class="water-card-frame">', unsafe_allow_html=True)
     st.markdown('<div style="font-size: 11px; color: #22d3ee; font-weight: 700; margin-bottom: 6px;">💧 WATER QUALITY MONITORING & EXPORT REPORT</div>', unsafe_allow_html=True)
     
     html_table = """
-    <table style="width:100%; border-collapse: collapse; font-size:11px; color:#ffffff; margin-bottom: 8px;">
+    <table style="width:100%; border-collapse: collapse; font-size:11px; color:#ffffff; margin-bottom: 6px;">
         <tr style="border-bottom: 1px solid #334155; color:#94a3b8; font-weight:bold; text-align:left;">
             <th style="padding: 2px;">River Station</th>
             <th style="text-align:center; padding: 2px;">DO STATUS</th>
@@ -235,8 +227,8 @@ with bot_right:
     """
     st.markdown(html_table, unsafe_allow_html=True)
     
-    # 📥 ปุ่มดาวน์โหลดข้อมูล
-    dl_df = pd.DataFrame({'Parameter': ['CO2', 'Temp Anomaly', 'AQI'], 'Value': [db["co2"], db["temp"], db["aqi"]]})
+    # ปุ่มดาวน์โหลดข้อมูลสรุป
+    dl_df = pd.DataFrame({'Parameter': ['CO2', 'Temp', 'AQI'], 'Value': [db["co2"], db["temp"], db["aqi"]]})
     csv_bytes = dl_df.to_csv(index=False).encode('utf-8')
     st.download_button(label="📥 DOWNLOAD REPORT (.CSV)", data=csv_bytes, file_name="env_report.csv", mime="text/csv")
     st.markdown('</div>', unsafe_allow_html=True)
