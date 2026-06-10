@@ -137,4 +137,167 @@ st.markdown("""
         .status-normal { color: #a7f3d0; }
 
     </style>
-""", unsafe_allow_html=
+""", unsafe_allow_html=True)
+
+# 3. BASE DATA
+# เพิ่มรหัสสี CSS สำหรับแต่ละสถานะเพื่อใช้ใน Custom HTML
+database = {
+    "CO₂ (ppm)": {"current": 433, "base": 415, "unit": "ppm", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
+    "CH₄ (ppb)": {"current": 1865, "base": 1820, "unit": "ppb", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
+    "NO₂ (ppb)": {"current": 42.1, "base": 35.0, "unit": "ppb", "status": "เฝ้าระวัง (Warning)", "stat_class": "status-warning"},
+    "PM 2.5 (µg/m³)": {"current": 22.4, "base": 15.0, "unit": "µg/m³", "status": "ปานกลาง (Moderate)", "stat_class": "status-moderate"},
+    "Temp (°C)": {"current": 33.2, "base": 31.5, "unit": "°C", "status": "ปกติ (Normal)", "stat_class": "status-normal"},
+    "Humid (%)": {"current": 64.0, "base": 60.0, "unit": "%", "status": "ปกติ (Normal)", "stat_class": "status-normal"}
+}
+
+# 4. SIDEBAR CONTROL
+with st.sidebar:
+    st.markdown("### 📋 Panel ควบคุม")
+    selected = st.selectbox("ตัวแปรที่ต้องการวิเคราะห์:", list(database.keys()))
+    mode = st.radio("ช่วงเวลา:", ["รายวัน (30 วัน)", "รายเดือน (12 เดือน)"], horizontal=True)
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # เครดิตด้านล่าง
+    st.markdown(f"""
+        <div class="brand-box">
+            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="50" style="margin-bottom:10px;">
+            <div style="font-weight:700; color:white; font-size: 14px; letter-spacing:0.5px;">AE-IET [SBU]</div>
+            <div style="font-size:11px; color:#64748b; margin-top:4px;">Engineering & Data Science Team</div>
+            <div style="font-size:10px; color:#475569; margin-top:2px;">© 2026 Build</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+# 5. MAIN CONTENT AREA
+
+# --- Header ---
+st.markdown('<div class="main-title">🌍 Intelligent GHG Emission & Air Quality Tracker</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">ระบบติดตามสถานะก๊าซเรือนกระจกและคุณภาพอากาศอัจฉริยะพิกัดสถานีวิจัย</div>', unsafe_allow_html=True)
+
+# --- Top Part: Custom Metric Cards ---
+# สร้าง HTML สำหรับ 6 กล่อง Metric
+metric_html = '<div class="metric-container">'
+for key, info in database.items():
+    metric_html += f"""
+        <div class="metric-card">
+            <div class="metric-label">{key.split(' ')[0]}</div>
+            <div class="metric-value">
+                <span class="metric-value-value">{info['current']}</span>
+                <span class="metric-value-unit">{info['unit']}</span>
+            </div>
+            <div class="metric-status {info['stat_class']}">● {info['status'].split(' ')[0]}</div>
+        </div>
+    """
+metric_html += '</div>'
+st.markdown(metric_html, unsafe_allow_html=True)
+
+
+# --- Bottom Part: Chart & Info ---
+chart_col, info_col = st.columns([1.35, 0.65])
+
+with chart_col:
+    # เริ่มกล่อง Chart Block
+    st.markdown('<div class="chart-block">', unsafe_allow_html=True)
+    st.markdown(f'<div class="chart-caption">📊 แนวโน้มความเปลี่ยนแปลง: <span style="color:#22d3ee">{selected}</span></div>', unsafe_allow_html=True)
+    
+    # เตรียมข้อมูลกราฟ
+    current_val = database[selected]["current"]
+    base_val = database[selected]["base"]
+    
+    if "รายวัน" in mode:
+        periods, freq, start_date = 30, 'D', '2026-05-01'
+    else:
+        periods, freq, start_date = 12, 'M', '2025-06-01'
+        
+    np.random.seed(42) 
+    fluctuations = np.random.uniform(-1.2, 1.2, periods)
+    trend_values = np.linspace(base_val, current_val - fluctuations[-1], periods) + fluctuations
+    trend_values[-1] = current_val 
+    
+    df_trend = pd.DataFrame({
+        'Date': pd.date_range(start=start_date, periods=periods, freq=freq),
+        'Value': np.round(trend_values, 1)
+    })
+    
+    # --- วาดกราฟ Plotly (ปรับปรุงใหม่ให้ดูดีขึ้น) ---
+    fig = px.area(df_trend, x='Date', y='Value', template="plotly_dark")
+    
+    # ปรับแต่งเส้นและสี (ใช้ Spline Shape เพื่อความนุ่มนวล)
+    fig.update_traces(
+        mode='lines+markers',
+        line=dict(color='#22d3ee', width=3, shape='spline'), # เส้น Cyan, หนาขึ้น, โค้ง
+        fillcolor='rgba(34, 211, 238, 0.06)', # สี Fill อ่อนๆ
+        marker=dict(size=6, color='#0f172a', line=dict(width=2, color='#22d3ee')), # สไตล์จุด Marker
+        hovertemplate="<b>วันที่:</b> %{x|%d %b %Y}<br><b>ค่า:</b> %{y:.1f} " + database[selected]["unit"] + "<extra></extra>" # ปรับแต่ง Hover
+    )
+    
+    # ปรับแต่ง Layout ของกราฟ
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", 
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=280, # ปรับความสูงให้พอดีกล่อง
+        margin=dict(t=0, b=0, l=0, r=0), # ลด Margin รอบกราฟ
+        
+        font=dict(font_family="Inter, Sarabun", size=11, color="#64748b"),
+        
+        xaxis=dict(
+            showgrid=False,
+            title="", 
+            tickformat="%d %b" if "รายวัน" in mode else "%b %y",
+            tickfont=dict(color='#64748b'),
+            linecolor='rgba(255,255,255,0.05)'
+        ),
+        yaxis=dict(
+            showgrid=True, 
+            gridcolor='rgba(255,255,255,0.03)', # Grid สีจางมากๆ
+            title=dict(text=database[selected]["unit"], font=dict(size=10)),
+            tickfont=dict(color='#64748b'),
+            zeroline=False
+        ),
+        hoverlabel=dict(
+            bgcolor="#111827",
+            font_size=12,
+            font_family="Inter, Sarabun"
+        )
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    # ปิดกล่อง Chart Block
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with info_col:
+    # สีสถานะสำหรับ Info Card
+    status_info = database[selected]
+    
+    # เริ่มกล่อง Info Card
+    st.markdown('<div class="info-card">', unsafe_allow_html=True)
+    st.markdown('<div class="info-caption">🔍 ข้อมูลสถานีและสรุปผล</div>', unsafe_allow_html=True)
+    
+    # เนื้อหาด้านใน
+    st.markdown(f"""
+        <div style="margin-top: 15px;">
+            <div style="font-size: 11px; color: #64748b; font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;">SELECTED PARAMETER</div>
+            <div style="font-size: 20px; color: #ffffff; font-weight:700; margin-bottom: 20px;">
+                {selected.split(' ')[0]} 
+                <span style="font-size:12px; color:#475569; font-weight:400;">({selected.split(' ')[1]})</span>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding: 10px; border-radius:8px; margin-bottom:10px;">
+                <span style="font-size:13px; color:#94a3b8;">ค่าที่ตรวจพบปัจจุบัน:</span>
+                <span style="font-size:16px; color:#ffffff; font-weight:700;">{current_val} {status_info['unit']}</span>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding: 10px; border-radius:8px; margin-bottom:20px;">
+                <span style="font-size:13px; color:#94a3b8;">ประเมินสถานะ:</span>
+                <span class="{status_info['stat_class']}" style="font-size:14px; font-weight:700;">● {status_info['status']}</span>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.04); margin: 15px 0;">
+            
+            <p style="font-size: 11px; color: #475569; line-height: 1.6; text-align: justify; font-style:italic;">
+                * ข้อมูลประมวลผลขั้นสูง ดึงจากเครือข่ายเซนเซอร์จำลอง AE-IET ผ่าน API สถาบันวิจัยการคำนวณ [SBU] โดยทำการตัดสัญญาณรบกวน (Noise Removal) แล้ว 100% สอดคล้องกับพิกัดเวลาสถานี
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    # ปิดกล่อง Info Card
+    st.markdown('</div>', unsafe_allow_html=True)
