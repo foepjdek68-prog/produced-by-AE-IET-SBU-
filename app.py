@@ -4,193 +4,77 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-# 1. SETUP & CONFIGURATION (ตั้งค่าหน้าจอขยายกว้างเต็มจอ)
-st.set_page_config(layout="wide", page_title="Environmental & GHG Dashboard")
+# 1. INITIAL SETUP (ตั้งค่าหน้าจอให้กว้างพอดีสัดส่วน)
+st.set_page_config(layout="wide", page_title="Environmental & GHG Dashboard", initial_sidebar_state="collapsed")
 
-# 2. CLEAN & READABLE MODERN CSS (เน้นตัวใหญ่ สบายตา ไม่อึดอัด)
+# 2. COMPACT CYBER DARK THEME CSS (ปรับลดขนาดโครงสร้างให้กะทัดรัด ไม่ใหญ่เกินไป)
 st.markdown("""
     <style>
-        /* ปล่อยให้หน้าเพจเลื่อนลงได้ตามธรรมชาติ ตัวหนังสือจะได้ไม่ถูกบีบจนเล็ก */
+        ::-webkit-scrollbar { display: none; }
         html, body, [data-testid="stAppViewContainer"] { 
             background-color: #0b111e !important;
             color: #ffffff !important;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
         }
-        .block-container { padding: 1.5rem 2.0rem !important; }
+        /* กระชับพื้นที่ขอบหน้าจอ */
+        .block-container { padding: 0.6rem 1.2rem !important; }
         
-        /* ส่วนหัวข้อหลักใหญ่ชัดเจน */
-        .main-title-box { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #1e293b; }
-        .title-main { font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; }
-        .title-sub { font-size: 16px; color: #94a3b8; margin-top: 5px; }
+        /* ส่วนหัวข้อหลัก ขนาดพอดีคำ */
+        .main-title-box { text-align: center; margin-bottom: 10px; }
+        .title-main { font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; margin: 0; }
+        .title-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
         
-        /* แผงควบคุมกลุ่มปุ่มกด */
-        .control-section {
-            background-color: #0f172a; padding: 15px; border-radius: 8px; 
-            border: 1px solid #1e293b; margin-bottom: 20px;
+        /* แถบควบคุมบนหน้าจอ */
+        .control-bar {
+            background-color: #0f172a; padding: 6px 12px; border-radius: 6px;
+            border: 1px solid #1e293b; margin-bottom: 10px;
         }
         
-        /* กล่องเนื้อหาแยกเป็นสัดส่วน */
+        /* กล่องแสดงผลย่อย (Compact Box) */
         .panel-box {
-            background-color: #0f172a; border: 1px solid #1e293b; border-radius: 8px;
-            padding: 15px; height: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 15px;
+            background-color: #0f172a; border: 1px solid #1e293b; border-radius: 6px;
+            padding: 10px; height: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .panel-title { font-size: 15px; color: #38bdf8; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+        .panel-title { font-size: 11px; color: #38bdf8; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
         
-        /* การ์ดแสดงตัวเลขตัวใหญ่พิเศษ */
-        .metric-card-large {
+        /* การ์ดสรุปตัวเลขแบบพอดีสายตา */
+        .metric-card-compact {
             background: linear-gradient(180deg, #141b2d 0%, #0c101b 100%);
-            border: 1px solid #22d3ee44; border-radius: 8px; padding: 15px; text-align: center;
+            border: 1px solid #22d3ee33; border-radius: 6px; padding: 8px 12px; text-align: center;
         }
-        .card-label { font-size: 13px; color: #94a3b8; font-weight: 600; margin-bottom: 5px; }
-        .card-value { font-size: 32px; font-weight: 800; color: #22d3ee; }
-        .card-unit { font-size: 14px; color: #64748b; font-weight: bold; }
-        
-        /* ปรับแต่งสไตล์ปุ่มกดวิทยุ (Radio) ให้ดูเหมือนแถบเมนูจิ้มง่าย */
-        div[data-testid="stRadio"] > label { font-size: 14px !important; font-weight: 700 !important; color: #38bdf8 !important; margin-bottom: 6px; }
-        div[data-testid="stRadio"] div[role="radiogroup"] { gap: 15px; }
+        .card-label { font-size: 10px; color: #94a3b8; font-weight: 600; }
+        .card-value { font-size: 24px; font-weight: 800; color: #22d3ee; margin: 2px 0; }
+        .card-unit { font-size: 11px; color: #475569; font-weight: bold; }
+
+        /* 🔒 ล็อกส่วน INPUT ของ SELECTBOX เพื่อให้จิ้มเลือกได้อย่างเดียว แป้นพิมพ์ไม่เด้ง */
+        div[data-baseweb="select"] input {
+            pointer-events: none !important;
+            caret-color: transparent !important;
+        }
+        div[data-baseweb="select"] { background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 4px; }
+        div[data-baseweb="select"] * { color: #ffffff !important; font-size: 12px !important; }
+        label[data-testid="stWidgetLabel"] { font-size: 11px !important; color: #94a3b8 !important; margin-bottom: 2px !important; font-weight: 600; }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. RELIABLE DATA MATRIX (ฐานข้อมูลสารมลพิษ)
+# 3. RELIABLE DATA MATRIX (คลังข้อมูลมลพิษ)
 years_30y = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
 
 CORE_DATA = {
-    "📌 ภาคกลาง (Central)": {
-        "co2_now": 421.5, "ch4_now": 1919.4, "no2_now": 330.8, "temp_anomaly": 1.8, "aqi_val": 85, "aqi_txt": "คุณภาพอากาศปานกลาง (Moderate)", "co_now": 1.2,
+    "ภาคกลาง (Central Thailand)": {
+        "co2_now": 421.5, "ch4_now": 1919.4, "no2_now": 330.8, "temp_anomaly": 1.8, "aqi_val": 85, "aqi_txt": "ปานกลาง (Moderate)", "co_now": 1.2,
         "co2_history": [290, 312, 335, 362, 378, 395, 421.5],
         "ch4_history": [1620, 1690, 1740, 1810, 1845, 1880, 1919.4],
         "no2_history": [150, 190, 225, 270, 295, 315, 330.8],
         "map_coords": [13.7563, 100.5018],
         "time_modes": {
-            "📊 1 เดือนล่าสุด": {"x": ["สัปดาห์ 1", "สัปดาห์ 2", "สัปดาห์ 3", "สัปดาห์ 4"], "pm25": [35, 58, 85, 42], "temp": [26, 28, 29, 27]},
-            "📊 1 ปีล่าสุด": {"x": ["ม.ค.", "มี.ค.", "พ.ค.", "ก.ค.", "ก.ย.", "พ.ย."], "pm25": [65, 85, 30, 15, 22, 45], "temp": [24, 28, 30, 28, 26, 24]},
-            "📊 5 ปีล่าสุด": {"x": ["2022", "2023", "2024", "2025", "2026"], "pm25": [38, 42, 45, 40, 43], "temp": [1.4, 1.5, 1.7, 1.6, 1.8]}
+            "1 เดือนล่าสุด (1 Month)": {"x": ["สัปดาห์ 1", "สัปดาห์ 2", "สัปดาห์ 3", "สัปดาห์ 4"], "pm25": [35, 58, 85, 42], "temp": [26, 28, 29, 27]},
+            "1 ปีล่าสุด (1 Year)": {"x": ["ม.ค.", "มี.ค.", "พ.ค.", "ก.ค.", "ก.ย.", "พ.ย."], "pm25": [65, 85, 30, 15, 22, 45], "temp": [24, 28, 30, 28, 26, 24]},
+            "5 ปีล่าสุด (5 Years)": {"x": ["2022", "2023", "2024", "2025", "2026"], "pm25": [38, 42, 45, 40, 43], "temp": [1.4, 1.5, 1.7, 1.6, 1.8]}
         },
         "breakdown": {"PM2.5": [40, 35, 25], "PM10": [50, 40, 10], "NO₂": [45, 35, 20], "SO₂": [80, 15, 5]}
     },
-    "📌 ภาคเหนือ (North)": {
-        "co2_now": 412.8, "ch4_now": 1850.2, "no2_now": 120.4, "temp_anomaly": 2.4, "aqi_val": 165, "aqi_txt": "เริ่มมีผลต่อสุขภาพ (Unhealthy)", "co_now": 2.3,
+    "ภาคเหนือ (Northern Thailand)": {
+        "co2_now": 412.8, "ch4_now": 1850.2, "no2_now": 120.4, "temp_anomaly": 2.4, "aqi_val": 165, "aqi_txt": "เริ่มมีผลต่อสุขภาพ", "co_now": 2.3,
         "co2_history": [288, 305, 328, 352, 368, 384, 412.8],
         "ch4_history": [1590, 1640, 1700, 1760, 1790, 1820, 1850.2],
-        "no2_history": [60, 75, 90, 102, 110, 115, 120.4],
-        "map_coords": [18.7883, 98.9853],
-        "time_modes": {
-            "📊 1 เดือนล่าสุด": {"x": ["สัปดาห์ 1", "สัปดาห์ 2", "สัปดาห์ 3", "สัปดาห์ 4"], "pm25": [90, 120, 165, 80], "temp": [22, 25, 27, 24]},
-            "📊 1 ปีล่าสุด": {"x": ["ม.ค.", "มี.ค.", "พ.ค.", "ก.ค.", "ก.ย.", "พ.ย."], "pm25": [95, 150, 45, 12, 18, 65], "temp": [19, 26, 29, 27, 24, 21]},
-            "📊 5 ปีล่าสุด": {"x": ["2022", "2023", "2024", "2025", "2026"], "pm25": [55, 62, 70, 58, 66], "temp": [1.9, 2.1, 2.4, 2.2, 2.4]}
-        },
-        "breakdown": {"PM2.5": [15, 25, 60], "PM10": [30, 30, 40], "NO₂": [70, 20, 10], "SO₂": [90, 8, 2]}
-    }
-}
-
-# 4. TOP MAIN HEADER
-st.markdown("""
-<div class="main-title-box">
-    <div class="title-main">INTELLIGENT ENVIRONMENTAL & GHG MONITORING DASHBOARD</div>
-    <div class="title-sub">ระบบแดชบอร์ดอัจฉริยะติดตามก๊าซเรือนกระจกและมลพิษทางอากาศ (ประเทศไทย)</div>
-</div>
-""", unsafe_allow_html=True)
-
-# 5. CONTROL PANEL (ปรับเป็นแบบวิทยุ ปุ่มจิ้มเลือกแนวนอน ห้ามพิมพ์ 100%)
-st.markdown('<div class="control-section">', unsafe_allow_html=True)
-c_col1, c_col2, c_col3 = st.columns(3)
-with c_col1:
-    sel_region = st.radio("📍 เลือกภูมิภาคที่ต้องการดูข้อมูล:", list(CORE_DATA.keys()), horizontal=True)
-with c_col2:
-    sel_metric = st.radio("💨 เลือกก๊าซมลพิษหลัก:", ["CO₂ (คาร์บอนฯ)", "CH₄ (มีเทน)", "NO₂ (ไนโตรเจนฯ)"], horizontal=True)
-with c_col3:
-    sel_time = st.radio("📅 เลือกช่วงเวลาแสดงผลกรรองข้อมูล:", ["📊 1 เดือนล่าสุด", "📊 1 ปีล่าสุด", "📊 5 ปีล่าสุด"], horizontal=True)
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Mapping Data ให้สอดคล้องกันตามปุ่มที่จิ้มเลือก
-dataset = CORE_DATA[sel_region]
-metric_short = sel_metric.split(" ")[0]
-
-if metric_short == "CO₂":
-    active_value, active_unit, active_range, active_history = dataset["co2_now"], "ppm", [250, 460], dataset["co2_history"]
-elif metric_short == "CH₄":
-    active_value, active_unit, active_range, active_history = dataset["ch4_now"], "ppb", [1500, 2000], dataset["ch4_history"]
-else:
-    active_value, active_unit, active_range, active_history = dataset["no2_now"], "ppb", [0, 400], dataset["no2_history"]
-
-# --- 6. SECTION 1: ตัวเลขสรุปภาพรวมขนาดใหญ่ (MAIN VALUES) ---
-st.markdown("### 📈 ข้อมูลสรุปสถานการณ์ปัจจุบัน (Current Summary)")
-m_col1, m_col2, m_col3 = st.columns(3)
-
-with m_col1:
-    st.markdown(f'<div class="metric-card-large"><div class="card-label">1. ระดับก๊าซ {metric_short} ในชั้นบรรยากาศ</div><div class="card-value">{active_value} <span class="card-unit">{active_unit}</span></div></div>', unsafe_allow_html=True)
-with m_col2:
-    st.markdown(f'<div class="metric-card-large"><div class="card-label">2. ค่าความเบี่ยงเบนอุณหภูมิสะสม</div><div class="card-value" style="color:#f97316;">+{dataset["temp_anomaly"]} <span class="card-unit">°C</span></div></div>', unsafe_allow_html=True)
-with m_col3:
-    aqi_color = "#eab308" if dataset["aqi_val"] <= 100 else "#ef4444"
-    st.markdown(f'<div class="metric-card-large"><div class="card-label">3. ดัชนีคุณภาพอากาศสากล (AQI)</div><div class="card-value" style="color:{aqi_color};">{dataset["aqi_val"]}</div><div style="font-size:12px; color:{aqi_color}; font-weight:bold; margin-top:2px;">{dataset["aqi_txt"]}</div></div>', unsafe_allow_html=True)
-
-# --- 7. SECTION 2: แผงกราฟขนาดใหญ่ มองง่าย สบายตา ---
-st.markdown("<br>### 📊 แผนภูมิวิเคราะห์แนวโน้มเชิงลึก (Analytical Trends)", unsafe_allow_html=True)
-graph_col1, graph_col2 = st.columns(2)
-
-# กราฟซ้าย: แสดงแนวโน้ม 30 ปีตามสารที่เลือก
-with graph_col1:
-    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
-    st.markdown(f"<div class='panel-title'>📉 แนวโน้มปริมาณสะสมของก๊าซ {metric_short} ย้อนหลัง 30 ปี</div>", unsafe_allow_html=True)
-    df_trend = pd.DataFrame({'Year': years_30y, 'Value': active_history})
-    fig_area = px.area(df_trend, x='Year', y='Value', template="plotly_dark")
-    fig_area.update_traces(line=dict(color='#22d3ee', width=3), fillcolor='rgba(34, 211, 238, 0.1)', mode='lines+markers')
-    fig_area.update_layout(
-        height=240, margin=dict(t=10, b=10, l=10, r=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(title="ปี ค.ศ. (Historical Years)", font=dict(size=12)),
-        yaxis=dict(title=f"ความเข้มข้น ({active_unit})", font=dict(size=12))
-    )
-    st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': False})
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# กราฟขวา: แสดงการเปรียบเทียบสภาพอากาศรายเดือน/ปี ตามตัวกรองเวลากดเลือก
-with graph_col2:
-    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
-    st.markdown(f"<div class='panel-title'>🔀 การเปรียบเทียบค่าฝุ่นมลพิษกับระดับอุณหภูมิ ({sel_time})</div>", unsafe_allow_html=True)
-    time_data = dataset["time_modes"][sel_time]
-    
-    fig_combo = go.Figure()
-    # แท่งสีส้ม (ฝุ่น)
-    fig_combo.add_trace(go.Bar(x=time_data["x"], y=time_data["pm25"], name='ค่าฝุ่น PM2.5 (µg/m³)', marker_color='#f97316', yaxis='y1'))
-    # เส้นสีฟ้า (อุณหภูมิ)
-    fig_combo.add_trace(go.Scatter(x=time_data["x"], y=time_data["temp"], name='อุณหภูมิ (°C)', line=dict(color='#22d3ee', width=3), yaxis='y2'))
-    
-    fig_combo.update_layout(
-        height=240, margin=dict(t=15, b=10, l=10, r=10), template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(title="แกนเวลาตรวจสอบ (Timeline)"),
-        yaxis=dict(title="ปริมาณฝุ่นละออง (µg/m³)", side='left'),
-        yaxis2=dict(title="ระดับอุณหภูมิเฉลี่ย (°C)", overlaying='y', side='right', showgrid=False)
-    )
-    st.plotly_chart(fig_combo, use_container_width=True, config={'displayModeBar': False})
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 8. SECTION 3: ตารางข้อมูลวิเคราะห์ด้านล่างสุด ---
-st.markdown("<br>### 📋 ข้อมูลตรวจสอบความถูกต้องของระบบเชื่อมโยง API", unsafe_allow_html=True)
-bot_col1, bot_col2 = st.columns([1.3, 1.0])
-
-with bot_col1:
-    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
-    st.markdown("<div class='panel-title'>🔍 รายละเอียดความปลอดภัยของสารมลพิษย่อยแยกประเภท</div>", unsafe_allow_html=True)
-    b_data = dataset["breakdown"]
-    comp_keys = list(b_data.keys())
-    fig_stack = go.Figure(data=[
-        go.Bar(name='ระดับปลอดภัย (Low)', x=comp_keys, y=[b_data[k][0] for k in comp_keys], marker_color='#10b981'),
-        go.Bar(name='ระดับปานกลาง (Moderate)', x=comp_keys, y=[b_data[k][1] for k in comp_keys], marker_color='#eab308'),
-        go.Bar(name='ระดับเริ่มอันตราย (Unhealthy)', x=comp_keys, y=[b_data[k][2] for k in comp_keys], marker_color='#ef4444')
-    ])
-    fig_stack.update_layout(barmode='stack', height=130, margin=dict(t=5, b=5, l=5, r=5), template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-    st.plotly_chart(fig_stack, use_container_width=True, config={'displayModeBar': False})
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with bot_col2:
-    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
-    st.markdown("<div class='panel-title'>🌐 สถานะการดึงข้อมูลจากแหล่งสถานีวัด (API Integration)</div>", unsafe_allow_html=True)
-    validation_df = pd.DataFrame({
-        'สถานีรับข้อมูล (Source Station)': ['Air4Thai (กรมควบคุมมลพิษ)', 'TMD (กรมอุตุนิยมวิทยา)', 'Sentinel-5P (ดาวเทียมตรวจวัด)'],
-        'ค่าที่อ่านได้ล่าสุด': [f"{dataset['no2_now']} ppb", "ความเร็ว/ทิศทางลมปกติ", f"{dataset['co2_now']} ppm"],
-        'สถานะเครือข่าย': ["🟢 เชื่อมต่อปกติ (Sync)", "🟢 ทำงานปกติ", "🟢 ผ่านการตรวจสอบค่า"]
-    })
-    st.dataframe(validation_df, hide_index=True, use_container_width=True, height=130)
-    st.markdown('</div>', unsafe_allow_html=True)
+        "no2_history":
