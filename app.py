@@ -7,12 +7,8 @@ from datetime import datetime
 import pytz
 import os
 
-# ===== PAGE SETTING =====
-st.set_page_config(
-    layout="wide",
-    page_title="GHG Monitor Board",
-    initial_sidebar_state="expanded"
-)
+# ===== PAGE =====
+st.set_page_config(layout="wide", page_title="GHG Monitor Board")
 
 # ===== CSS =====
 st.markdown("""
@@ -22,14 +18,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ===== DATA FILE =====
 DATA_FILE = "ghg_data.csv"
 
 # ===== LOAD DATA =====
 def get_sensor_data():
 
-    bkk_tz = pytz.timezone("Asia/Bangkok")
-    now = datetime.now(bkk_tz)
+    tz = pytz.timezone("Asia/Bangkok")
+    now = datetime.now(tz)
 
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
@@ -48,7 +43,6 @@ def get_sensor_data():
 
         df.to_csv(DATA_FILE, index=False)
 
-    # ===== CLEAN =====
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     df = df.dropna(subset=["Date"])
     df = df.sort_values("Date")
@@ -62,82 +56,49 @@ latest_data = df.iloc[-1]
 # ===== SIDEBAR =====
 with st.sidebar:
 
-    st.markdown("### 📋 เมนูควบคุม")
+    pollutants = [c for c in df.columns if c != "Date"]
 
-    pollutants = [col for col in df.columns if col != "Date"]
-
-    selected_pollutant = st.selectbox(
-        "สารมลพิษที่ต้องการดูสถิติ:",
-        pollutants
-    )
-
-    mode = st.radio(
-        "รูปแบบข้อมูล:",
-        ["รายชั่วโมง (24h)", "รายวัน"]
-    )
-
-    if st.button("🔄 อัปเดตข้อมูล"):
-        st.rerun()
-
-# ===== HEADER =====
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.title("🌍 Tracking GHGs Emission")
-
-with col2:
-    st.markdown(
-        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}"
-    )
+    selected = st.selectbox("เลือกตัวแปร", pollutants)
 
 # ===== METRICS =====
 cols = st.columns(len(pollutants))
 
-for i, col_name in enumerate(pollutants):
+for i, c in enumerate(pollutants):
+    val = latest_data[c]
+    delta = val - df.iloc[-2][c] if len(df) > 1 else 0
 
-    val = latest_data[col_name]
+    cols[i].metric(c, int(round(val, 0)), int(round(delta, 0)))
 
-    delta_val = val - df.iloc[-2][col_name] if len(df) > 1 else 0
-
-    cols[i].metric(
-        label=col_name,
-        value=int(round(val, 0)),
-        delta=int(round(delta_val, 0))
-    )
-
-# ===== GRAPH FIX =====
+# ===== GRAPH =====
 df_plot = df.copy()
 
 df_plot["Date"] = pd.to_datetime(df_plot["Date"], errors="coerce")
-df_plot[selected_pollutant] = pd.to_numeric(df_plot[selected_pollutant], errors="coerce")
+df_plot[selected] = pd.to_numeric(df_plot[selected], errors="coerce")
 
-df_plot = df_plot.dropna(subset=["Date", selected_pollutant])
-
-st.write("DEBUG ROWS:", len(df_plot))  # <-- ถ้ายัง 0 = data มีปัญหา
+df_plot = df_plot.dropna(subset=["Date", selected])
 
 if df_plot.empty:
-    st.error("❌ ไม่มีข้อมูลสำหรับกราฟ (หลัง clean แล้วว่าง)")
+    st.error("ไม่มีข้อมูล")
     st.stop()
+
+# ===== 🔥 FIX Y AXIS (ROUND TO NEAREST 10) =====
+y_min = np.floor(df_plot[selected].min() / 10) * 10
+y_max = np.ceil(df_plot[selected].max() / 10) * 10
 
 fig = px.line(
     df_plot,
     x="Date",
-    y=selected_pollutant,
-    title=f"แนวโน้ม {selected_pollutant}",
+    y=selected,
     template="plotly_dark",
     height=300
 )
 
 fig.update_traces(mode="lines+markers")
 
-# ===== Y AXIS = STEP 10 =====
 fig.update_yaxes(
-    dtick=10  # 👈 หลัก 10 ตามที่ต้องการ
-)
-
-fig.update_layout(
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)"
+    range=[y_min, y_max],
+    tick0=y_min,
+    dtick=10  # ทุก 10 หน่วย + ไม่มีเลขแปลก ๆ
 )
 
 st.plotly_chart(fig, use_container_width=True)
