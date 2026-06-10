@@ -261,4 +261,5 @@ with bottom_col3:
         'SO2 / O3 Evaluation': [f"{db['so2']} ppb", "Wind Speed Verification", f"{db['o3']} ppb", "Cross-checked"],
         'System Status': ["🟢 Active & Syncing", "🟢 Active", "🟢 Processing", "🟡 Standby Mode"]
     })
-    st.dataframe(river_df, hide_index=True, use_container_
+    st.dataframe(river_df, hide_index=True, use_container_width=True, height=120)
+    st.markdown('</div>', unsafe_allow_html=True)
