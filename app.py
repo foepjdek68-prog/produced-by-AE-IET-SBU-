@@ -188,4 +188,97 @@ with m_col6:
 
 
 # --- 6. SECTION 2: MIDDLE VISUALIZATION (ปรับแก้โค้ดกราฟวิเคราะห์ตรงนี้ให้เปลี่ยนตามเลือก) ---
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_
+st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+layout_col1, layout_col2, layout_col3 = st.columns([1.1, 0.9, 1.0])
+
+# ฝั่งซ้าย: แผนที่ความร้อนระบุพิกัดมลพิษสะสม
+with layout_col1:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown("<div class='panel-header'>GHG & POLLUTION HOTSPOTS (REGIONAL ANALYSIS)</div>", unsafe_allow_html=True)
+    np.random.seed(42)
+    center_lat, center_lon = current_data["map_center"]
+    map_df = pd.DataFrame({
+        'lat': [center_lat + np.random.uniform(-0.06, 0.06) for _ in range(12)],
+        'lon': [center_lon + np.random.uniform(-0.06, 0.06) for _ in range(12)],
+        'intensity': np.random.randint(60, 140, 12)
+    })
+    fig_map = px.density_mapbox(map_df, lat='lat', lon='lon', z='intensity', radius=28,
+                                center=dict(lat=center_lat, lon=center_lon), zoom=9,
+                                mapbox_style="carto-darkmatter")
+    fig_map.update_layout(height=250, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_map, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# 🛠️ ฝั่งกลาง: แก้ไขให้ผูกค่าตาม 'selected_metric' ดึงประวัติก๊าซแต่ละตัวมาพล็อตแบบ Dynamic
+with layout_col2:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    
+    # 1. เปลี่ยนชื่อหัวข้อแผงตามก๊าซที่เลือกจริง
+    unit_label = m_store[selected_metric]["unit"]
+    st.markdown(f"<div class='panel-header'>30-YEAR {selected_metric} EMISSIONS TREND ({unit_label.upper()}/YR)</div>", unsafe_allow_html=True)
+    
+    # 2. ดึงชุดประวัติย้อนหลังของก๊าซนั้น ๆ ออกจากฐานข้อมูลตรงพิกัดภูมิภาคที่เลือก
+    years_x = [1930, 1950, 1970, 1990, 2010, 2026]
+    historical_y = m_store[selected_metric]["history"]  # ดึงอาเรย์ค่าจริงมาใช้งานตรงนี้!
+    
+    df_trend = pd.DataFrame({'Year': years_x, 'Emissions': historical_y})
+    
+    # 3. สั่งวาดกราฟพื้นที่เชื่อมโยงข้อมูลสมบูรณ์แบบ
+    fig_trend = px.area(df_trend, x='Year', y='Emissions', template="plotly_dark")
+    fig_trend.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.08)', mode='lines+markers')
+    fig_trend.update_layout(
+        height=250, margin=dict(t=10, b=5, l=5, r=5), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', title=unit_label) # กำหนดป้ายแกน Y ตามหน่วยก๊าซจริง
+    )
+    st.plotly_chart(fig_trend, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ฝั่งขวา: กราฟแท่งรายเดือนเปรียบเทียบอุณหภูมิและอากาศ
+with layout_col3:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown("<div class='panel-header'>MONTHLY TEMPERATURE VS. AIR QUALITY</div>", unsafe_allow_html=True)
+    months = ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov']
+    base_aqi = m_store["AQI"]["val"]
+    monthly_aqi = [max(10, v) for v in [base_aqi + 20, base_aqi, base_aqi - 30, base_aqi - 40, base_aqi - 10, base_aqi + 15]]
+    
+    fig_bar = px.bar(x=months, y=monthly_aqi, template="plotly_dark")
+    fig_bar.update_traces(marker_color='#f97316', opacity=0.85)
+    fig_bar.update_layout(height=250, margin=dict(t=10, b=5, l=5, r=5), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)'))
+    st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+# --- 7. SECTION 3: BOTTOM ANALYSIS PANELS ---
+st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+bottom_col1, bottom_col2 = st.columns([1.1, 0.9])
+
+# ด้านล่างซ้าย: POLLUTION BREAKDOWN
+with bottom_col1:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown("<div class='panel-header'>POLLUTION BREAKDOWN (GHGs & PARTICULATE MATTER CRITERIA)</div>", unsafe_allow_html=True)
+    s_data = current_data["stack_data"]
+    comp_list = list(s_data.keys())
+    fig_stack = go.Figure(data=[
+        go.Bar(name='Low/Safe', x=comp_list, y=[s_data[c][0] for c in comp_list], marker_color='#10b981'),
+        go.Bar(name='Moderate', x=comp_list, y=[s_data[c][1] for c in comp_list], marker_color='#eab308'),
+        go.Bar(name='Unhealthy', x=comp_list, y=[s_data[c][2] for c in comp_list], marker_color='#ef4444')
+    ])
+    fig_stack.update_layout(barmode='stack', height=135, margin=dict(t=10, b=5, l=5, r=5), template="plotly_dark",
+                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False,
+                            xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
+    st.plotly_chart(fig_stack, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ด้านล่างขวา: WATER QUALITY MONITORING
+with bottom_col2:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown("<div class='panel-header'>WATER QUALITY MONITORING (MAJOR RIVERS STATUS)</div>", unsafe_allow_html=True)
+    river_df = pd.DataFrame({
+        'River Station (ลุ่มน้ำหลัก)': ['Chao Phraya (แม่น้ำเจ้าพระยา)', 'Tha Chin (แม่น้ำท่าจีน)', 'Mae Klong (แม่น้ำแม่กลอง)'],
+        'Dissolved Oxygen (DO)': current_data["river_do"],
+        'Environmental Status': current_data["river_status"]
+    })
+    st.dataframe(river_df, hide_index=True, use_container_width=True, height=130)
+    st.markdown('</div>', unsafe_allow_html=True)
