@@ -5,102 +5,110 @@ from utils.database import load_data, save_data
 from utils.api_loader import fetch_data
 
 st.set_page_config(
-    page_title="Integrated Environmental Dashboard",
+    page_title="Smart Environmental Monitoring Dashboard",
+    page_icon="🌍",
     layout="wide"
 )
+
+# --------------------------
+# Load Data
+# --------------------------
 
 df = load_data()
 
 if df.empty:
-
     df = fetch_data()
-
     save_data(df)
 
 latest = df.iloc[-1]
 
-st.title("🌍 Integrated Environmental & GHG Dashboard")
+# --------------------------
+# Header
+# --------------------------
 
-st.caption(
-    "Thailand Environmental Monitoring Platform"
-)
+st.title("🌍 Smart Environmental Monitoring Dashboard")
+st.caption("Integrated Environmental Monitoring Platform")
 
-st.info(
-    f"Last Update : {latest['Date']}"
-)
-
+# --------------------------
 # KPI
+# --------------------------
 
-c1,c2,c3,c4,c5,c6 = st.columns(6)
+k1,k2,k3,k4,k5,k6 = st.columns(6)
 
-c1.metric("CO₂", round(latest["CO2"],1))
-c2.metric("CH₄", round(latest["CH4"],1))
-c3.metric("NO₂", round(latest["NO2"],1))
-c4.metric("PM2.5", round(latest["PM25"],1))
-c5.metric("Temp", round(latest["Temp"],1))
-c6.metric("Humidity", round(latest["Humidity"],1))
-
-st.markdown("---")
-
-st.subheader("📈 Environmental Trend")
-
-selected = st.selectbox(
-    "Select Parameter",
-    ["CO2","CH4","NO2","PM25","Temp","Humidity"]
-)
-
-fig = px.line(
-    df.tail(168),
-    x="Date",
-    y=selected,
-    template="plotly_dark"
-)
-
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
+k1.metric("CO₂", round(latest["CO2"],1))
+k2.metric("CH₄", round(latest["CH4"],1))
+k3.metric("NO₂", round(latest["NO2"],1))
+k4.metric("PM2.5", round(latest["PM25"],1))
+k5.metric("Temp (°C)", round(latest["Temp"],1))
+k6.metric("Humidity (%)", round(latest["Humidity"],1))
 
 st.markdown("---")
 
-left,right = st.columns(2)
+# --------------------------
+# Graph + Summary
+# --------------------------
+
+left,right = st.columns([4,1])
 
 with left:
 
-    st.subheader("🔗 Data Sources")
+    st.subheader("📈 Environmental Trend")
 
-    st.success("Air4Thai")
-    st.success("TMD")
+    selected = st.selectbox(
+        "Select Parameter",
+        ["CO2","CH4","NO2","PM25","Temp","Humidity"]
+    )
 
-    st.warning("OpenAQ (Planned)")
-    st.warning("Sentinel-5P (Planned)")
+    fig = px.line(
+        df.tail(168),
+        x="Date",
+        y=selected,
+        template="plotly_dark"
+    )
+
+    fig.update_layout(
+        height=500,
+        margin=dict(l=10,r=10,t=30,b=10)
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
 
 with right:
 
-    st.subheader("⚙️ System Status")
+    st.subheader("📊 Summary")
 
-    st.success("Database Online")
-    st.success("Dashboard Active")
-    st.success("Analytics Ready")
+    st.metric(
+        "Average",
+        round(df[selected].mean(),2)
+    )
+
+    st.metric(
+        "Maximum",
+        round(df[selected].max(),2)
+    )
+
+    st.metric(
+        "Minimum",
+        round(df[selected].min(),2)
+    )
+
+    st.metric(
+        "Records",
+        len(df)
+    )
 
 st.markdown("---")
 
-st.subheader("📌 Project Objective")
+# --------------------------
+# Latest Data
+# --------------------------
 
-st.info("""
-พัฒนา Web Dashboard เพื่อรวบรวมและเชื่อมโยงข้อมูลมลพิษ
-จากหลายแหล่งมาไว้ในที่เดียว
+st.subheader("📄 Latest Records")
 
-ช่วยให้สามารถติดตามและเฝ้าระวังสถานการณ์
-ด้านสิ่งแวดล้อมได้อย่างมีประสิทธิภาพ
-""")
-
-st.markdown("---")
-
-st.caption("""
-👨‍💻 Developed By
-
-- Member 1
-- Member 2
-- Member 3
-""")
+st.dataframe(
+    df.tail(10),
+    use_container_width=True
+)
