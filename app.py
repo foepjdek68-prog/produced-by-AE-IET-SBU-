@@ -3,40 +3,56 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-# กำหนด Config ให้หน้าจอเต็มความกว้าง
-st.set_page_config(layout="wide", page_title="Environmental Dashboard")
+# 1. Page Configuration
+st.set_page_config(layout="wide", page_title="Professional Dashboard")
 
-# 1. CSS จัดระเบียบการ์ด
+# 2. Injection Style: คุมหน้าตาแบบเข้ม (Dark Mode & Professional)
 st.markdown("""
     <style>
-        .card { background-color: #121826; padding: 20px; border-radius: 10px; border: 1px solid #1e293b; margin-bottom: 20px; }
+        .stApp { background-color: #0b111e; }
+        .metric-card { background: #121826; padding: 20px; border-radius: 12px; border: 1px solid #1e293b; }
+        h1, h2, h3 { color: #f8fafc; font-family: 'Inter', sans-serif; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("📊 Environmental Monitoring System")
+# 3. Helper: สร้างการ์ดข้อมูล (Modularize)
+def metric_card(label, value, delta):
+    st.markdown(f"""
+        <div class="metric-card">
+            <div style="color: #94a3b8; font-size: 12px; font-weight: 700;">{label}</div>
+            <div style="font-size: 24px; font-weight: 800; color: white;">{value}</div>
+            <div style="color: #10b981; font-size: 12px;">{delta}</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-# 2. จัด Layout ส่วนบน (Metrics)
-m1, m2, m3 = st.columns(3)
-m1.metric("CO₂ Level", "421.5 ppm", "+0.3%")
-m2.metric("Temp Anomaly", "1.8°C", "+0.1°C")
-m3.metric("AQI", "85", "Moderate")
+# 4. Main UI Layout
+st.title("Environmental Monitoring System")
 
-st.markdown("---")
+# Row 1: Metrics
+c1, c2, c3 = st.columns(3)
+with c1: metric_card("CO₂ Level", "421.5 ppm", "+0.3% vs last month")
+with c2: metric_card("Temp Anomaly", "1.8°C", "+0.1°C")
+with c3: metric_card("AQI", "85", "Moderate")
 
-# 3. จัด Layout ส่วนกลาง (Charts & Maps) - ใช้ Columns 2 ส่วน
-col_left, col_right = st.columns([1, 1])
+st.write("##") # Spacer
 
-with col_left:
-    st.subheader("Emission Trends")
-    # ตัวอย่างกราฟที่คุมขนาดไว้ในกรอบ
-    fig = go.Figure(data=go.Scatter(x=[1,2,3,4], y=[10,20,15,25], mode='lines'))
-    fig.update_layout(template="plotly_dark", height=300, margin=dict(l=20,r=20,t=20,b=20))
+# Row 2: Charts (Grid 2x2)
+col_a, col_b = st.columns([1, 1])
+
+with col_a:
+    st.subheader("Emission Trend")
+    fig = go.Figure(data=go.Scatter(y=[200, 300, 400, 350, 500], mode='lines+markers', line=dict(color='#38bdf8')))
+    fig.update_layout(template="plotly_dark", height=300, margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig, use_container_width=True)
 
-with col_right:
-    st.subheader("Regional Heatmap")
-    # ตรวจสอบว่า Contour ไม่ล้นกรอบ
-    x = np.linspace(0, 10, 50)
-    y = np.linspace(0, 10, 50)
-    X, Y = np.meshgrid(x, y)
-    Z = np.sin(X) * np.cos(Y)
+with col_b:
+    st.subheader("Pollution Distribution")
+    fig2 = go.Figure(data=go.Bar(y=[12, 15, 8, 22], marker_color='#ef4444'))
+    fig2.update_layout(template="plotly_dark", height=300, margin=dict(l=10, r=10, t=10, b=10))
+    st.plotly_chart(fig2, use_container_width=True)
+
+# Row 3: Water Quality Table (ตามแบบในรูปที่คุณส่งมา)
+st.subheader("Water Quality Monitoring")
+data = {
+    "River": ["Chao Phraya", "Tha Chin", "Mae Klong"],
+    "DO Status": ["PASS", "
