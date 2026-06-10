@@ -1,72 +1,54 @@
-import requests
-import sqlite3
+import streamlit as st
 import pandas as pd
-from datetime import datetime
-import pytz
-import time
+import sqlite3
+import plotly.express as px
 
-# ===== DB SETUP =====
-conn = sqlite3.connect("ghg_data.db")
-cursor = conn.cursor()
+# ===== PAGE =====
+st.set_page_config(layout="wide", page_title="GHG Real System")
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS air_quality (
-    time TEXT,
-    station TEXT,
-    aqi REAL,
-    pm25 REAL
+# ===== DB READ =====
+def load_data():
+
+    conn = sqlite3.connect("ghg_data.db")
+
+    df = pd.read_sql_query("""
+        SELECT * FROM air_quality
+    """, conn)
+
+    df["time"] = pd.to_datetime(df["time"])
+
+    return df
+
+df = load_data()
+
+if df.empty:
+    st.warning("ยังไม่มีข้อมูล")
+    st.stop()
+
+# ===== SIDEBAR =====
+stations = df["station"].unique()
+
+station = st.selectbox("เลือกสถานี", stations)
+
+df_plot = df[df["station"] == station]
+
+# ===== METRICS =====
+latest = df_plot.iloc[-1]
+
+col1, col2 = st.columns(2)
+
+col1.metric("AQI", int(latest["aqi"]))
+col2.metric("PM2.5", latest["pm25"])
+
+# ===== GRAPH =====
+fig = px.line(
+    df_plot,
+    x="time",
+    y="aqi",
+    template="plotly_dark",
+    height=350
 )
-""")
 
-conn.commit()
+fig.update_traces(line_width=3, line_color="#00ffcc")
 
-# ===== FETCH API (Air4Thai) =====
-def fetch_data():
-
-    url = "http://air4thai.pcd.go.th/services/getNewAQI_JSON.php"
-
-    res = requests.get(url, timeout=10)
-    data = res.json()
-
-    return data["stations"]
-
-# ===== SAVE TO DB =====
-def save_to_db(stations):
-
-    tz = pytz.timezone("Asia/Bangkok")
-    now = datetime.now(tz).isoformat()
-
-    for s in stations:
-
-        try:
-            station = s["nameTH"]
-            aqi = float(s["AQI"]["aqi"])
-
-            pm25 = None
-            if "PM25" in s["AQI"]:
-                pm25 = float(s["AQI"]["PM25"]["value"])
-
-            cursor.execute("""
-                INSERT INTO air_quality (time, station, aqi, pm25)
-                VALUES (?, ?, ?, ?)
-            """, (now, station, aqi, pm25))
-
-        except:
-            continue
-
-    conn.commit()
-
-# ===== LOOP (REAL-TIME COLLECTOR) =====
-if __name__ == "__main__":
-
-    while True:
-        try:
-            stations = fetch_data()
-            save_to_db(stations)
-
-            print("✔ saved at", datetime.now())
-
-        except Exception as e:
-            print("error:", e)
-
-        time.sleep(300)  # ทุก 5 นาที
+st.plotly_chart(fig, use_container_width=True)
