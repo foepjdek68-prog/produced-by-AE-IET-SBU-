@@ -4,17 +4,17 @@ import plotly.express as px
 from datetime import datetime
 import pytz
 import os
+from streamlit.runtime.scriptrunner import add_script_run_ctx
+import time
 
 # ===== PAGE SETTING =====
-
 st.set_page_config(
     layout="wide",
     page_title="GHG Monitor Board",
     initial_sidebar_state="expanded"
 )
 
-# ===== CSS =====
-
+# ===== CSS (ไม่แตะ) =====
 st.markdown("""
 <style>
 ::-webkit-scrollbar {
@@ -55,42 +55,31 @@ section[data-testid="stSidebar"] > div {
 </style>
 """, unsafe_allow_html=True)
 
-# ===== DATA FILE =====
+# ===== AUTO REFRESH (REAL-TIME FIX) =====
+st.markdown(
+    "<meta http-equiv='refresh' content='60'>",
+    unsafe_allow_html=True
+)
 
+# ===== DATA FILE =====
 DATA_FILE = "ghg_data.csv"
 
 # ===== LOAD DATA =====
-
 def get_sensor_data():
 
     bkk_tz = pytz.timezone("Asia/Bangkok")
-
     now = datetime.now(bkk_tz)
 
-    current_hour = now.replace(
-        minute=0,
-        second=0,
-        microsecond=0
-    )
+    current_hour = now.replace(minute=0, second=0, microsecond=0)
 
     if os.path.exists(DATA_FILE):
-
         df = pd.read_csv(DATA_FILE)
 
-        df["Date"] = pd.to_datetime(
-            df["Date"],
-            errors="coerce"
-        )
-
+        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
         df = df.dropna(subset=["Date"])
 
     else:
-
-        dates = pd.date_range(
-            end=current_hour,
-            periods=24,
-            freq="h"
-        )
+        dates = pd.date_range(end=current_hour, periods=24, freq="h")
 
         df = pd.DataFrame({
             "Date": dates,
@@ -106,40 +95,25 @@ def get_sensor_data():
 
     return df, now, current_hour
 
-# ===== GET DATA =====
 
 df, current_time, current_hour = get_sensor_data()
 
 # ===== ADD NEW HOUR =====
+if len(df) > 0:
+    last_time = pd.to_datetime(df.iloc[-1]["Date"])
 
-last_time = pd.to_datetime(df.iloc[-1]["Date"])
-
-if last_time != current_hour:
-
-    new_row = {
-        "Date": current_hour,
-        "CO₂ (ppm)": df.iloc[-1]["CO₂ (ppm)"],
-        "CH₄ (ppb)": df.iloc[-1]["CH₄ (ppb)"],
-        "NO₂ (ppb)": df.iloc[-1]["NO₂ (ppb)"],
-        "PM 2.5 (µg/m³)": df.iloc[-1]["PM 2.5 (µg/m³)"],
-        "Temp (°C)": df.iloc[-1]["Temp (°C)"],
-        "Humid (%)": df.iloc[-1]["Humid (%)"]
-    }
-
-    df.loc[len(df)] = new_row
-
-    df.to_csv(DATA_FILE, index=False)
+    if last_time != current_hour:
+        new_row = df.iloc[-1].copy()
+        new_row["Date"] = current_hour
+        df.loc[len(df)] = new_row
+        df.to_csv(DATA_FILE, index=False)
 
 # ===== SIDEBAR =====
-
 with st.sidebar:
 
     st.markdown("### 📋 เมนูควบคุม")
 
-    pollutants = [
-        col for col in df.columns
-        if col != "Date"
-    ]
+    pollutants = [col for col in df.columns if col != "Date"]
 
     selected_pollutant = st.selectbox(
         "สารมลพิษที่ต้องการดูสถิติ:",
@@ -148,13 +122,7 @@ with st.sidebar:
 
     period = st.selectbox(
         "ช่วงเวลา",
-        [
-            "24 ชั่วโมง",
-            "7 วัน",
-            "30 วัน",
-            "90 วัน",
-            "ทั้งหมด"
-        ]
+        ["24 ชั่วโมง", "7 วัน", "30 วัน", "90 วัน", "ทั้งหมด"]
     )
 
     if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
@@ -172,30 +140,22 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ===== FILTER =====
-
 if period == "24 ชั่วโมง":
     df_show = df.tail(24)
-
 elif period == "7 วัน":
     df_show = df.tail(24 * 7)
-
 elif period == "30 วัน":
     df_show = df.tail(24 * 30)
-
 elif period == "90 วัน":
     df_show = df.tail(24 * 90)
-
 else:
     df_show = df
 
 df_show = df_show.copy()
-
 df_show["Date"] = pd.to_datetime(df_show["Date"])
-
 df_show = df_show.sort_values("Date")
 
 # ===== HEADER =====
-
 col_title, col_time = st.columns([2, 1])
 
 with col_title:
@@ -203,40 +163,32 @@ with col_title:
 
 with col_time:
     st.markdown(
-        f"""
-        <div style='text-align:right;margin-top:25px;color:#888;'>
-        🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}
-        </div>
-        """,
+        f"<div style='text-align:right;margin-top:25px;color:#888;'>"
+        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}"
+        f"</div>",
         unsafe_allow_html=True
     )
 
-# ===== METRICS =====
-
+# ===== METRICS (FIX) =====
 latest_data = df_show.iloc[-1]
-
-cols = st.columns(6)
+cols_ui = st.columns(len(pollutants))
 
 for i, col_name in enumerate(pollutants):
 
     val = latest_data[col_name]
 
     if len(df_show) > 1:
-        delta_val = round(
-            val - df_show.iloc[-2][col_name],
-            1
-        )
+        delta_val = val - df_show.iloc[-2][col_name]
     else:
         delta_val = 0
 
-    cols[i].metric(
+    cols_ui[i].metric(
         label=col_name,
-        value=f"{val}",
-        delta=f"{delta_val}"
+        value=round(val, 2),
+        delta=round(delta_val, 2)
     )
 
 # ===== GRAPH =====
-
 if len(df_show) == 0:
     st.warning("ไม่มีข้อมูล")
     st.stop()
@@ -250,29 +202,16 @@ fig = px.line(
     height=500
 )
 
-fig.update_traces(
-    line_color="#00ffcc",
-    line_width=3
-)
+fig.update_traces(line_width=3)
 
-fig.update_xaxes(
-    tickformat="%d/%m %H:%M"
-)
+fig.update_xaxes(tickformat="%d/%m %H:%M")
 
 fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(
-        t=40,
-        b=10,
-        l=10,
-        r=10
-    ),
+    margin=dict(t=40, b=10, l=10, r=10),
     xaxis_title=None,
     yaxis_title=None
 )
 
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
+st.plotly_chart(fig, use_container_width=True)
