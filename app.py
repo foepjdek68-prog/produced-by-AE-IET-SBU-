@@ -11,7 +11,7 @@ from datetime import datetime
 # ==========================================
 st.set_page_config(layout="wide", page_title="Intelligent Environmental & GHG Dashboard")
 
-# Injection of Custom Enterprise CSS Style
+# ฉีดสไตล์ CSS สำหรับการปรับแต่งส่วนติดต่อผู้ใช้ระดับองค์กร (Enterprise UI)
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;700;800&family=Sarabun:wght=400;700&display=swap');
@@ -85,6 +85,7 @@ st.markdown("""
 years = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+# ตรวจสอบและแก้ไขชื่อตัวแปรให้สมบูรณ์ ป้องกันการเกิด NameError
 DATA_SET = {
     "CENTRAL (ภาคกลาง)": {
         "co2": 421.5, "co2_sub": "+0.3% vs. last month", "co2_sub_col": "#ef4444",
@@ -127,4 +128,64 @@ with col_f4:
     st.selectbox("TIME RANGE:", ["1 MONTH WINDOW", "30 YEARS HISTORICAL"])
 
 st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-ctx = DATA_
+ctx = DATA_SET[selected_reg]
+
+# ==========================================
+# 5. VISUALIZATION: KPI GAUGES
+# ==========================================
+st.markdown('<div style="font-size: 12px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; margin-bottom: 10px;">KEY ENVIRONMENTAL METRICS</div>', unsafe_allow_html=True)
+g1, g2, g3 = st.columns(3)
+
+def generate_clean_gauge(value, min_val, max_val, title_text, color):
+    fig = go.Figure(go.Indicator(
+        mode="gauge",
+        value=value,
+        gauge={
+            'axis': {'range': [min_val, max_val], 'visible': False},
+            'bar': {'color': color, 'thickness': 0.26},
+            'bgcolor': '#1a2333',
+            'borderwidth': 0
+        }
+    ))
+    fig.update_layout(
+        title={'text': f"<b>{title_text}</b>", 'font': {'size': 11, 'color': '#94a3b8', 'family': 'Inter'}, 'y': 0.95},
+        height=100,
+        margin=dict(t=40, b=10, l=35, r=35),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    return fig
+
+with g1:
+    with st.container(border=True):
+        st.plotly_chart(generate_clean_gauge(ctx["co2"], 350, 500, "1 🔵 ATMOSPHERIC CO₂ LEVEL", "#38bdf8"), use_container_width=True, config={'displayModeBar': False})
+        st.markdown(f'<div style="text-align: center; font-size: 26px; font-weight: 800; color: #ffffff; margin-top: -15px;">{ctx["co2"]} <span style="font-size:14px; color:#94a3b8; font-weight:400;">ppm</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align: center; font-size: 11px; font-weight: 700; color: {ctx["co2_sub_col"]}; margin-bottom: 5px;">{ctx["co2_sub"]}</div>', unsafe_allow_html=True)
+
+with g2:
+    with st.container(border=True):
+        # แก้ไขอาร์กิวเมนต์สีของกราฟ Gauge ให้เป็น String Literal ห้ามใส่ตัวแปรลอย ป้องกัน NameError
+        st.plotly_chart(generate_clean_gauge(ctx["temp"], 0, 4, "2 🟠 AV. TEMPERATURE ANOMALY", "#f97316"), use_container_width=True, config={'displayModeBar': False})
+        st.markdown(f'<div style="text-align: center; font-size: 26px; font-weight: 800; color: #f97316; margin-top: -15px;">{ctx["temp_lbl"]}</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align: center; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 5px;">Anomaly Threshold</div>', unsafe_allow_html=True)
+
+with g3:
+    with st.container(border=True):
+        st.plotly_chart(generate_clean_gauge(ctx["aqi"], 0, 200, "3 🟡 AIR QUALITY INDEX (AQI)", ctx["aqi_col"]), use_container_width=True, config={'displayModeBar': False})
+        st.markdown(f'<div style="text-align: center; font-size: 26px; font-weight: 800; color: #ffffff; margin-top: -15px;">{ctx["aqi"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align: center; font-size: 11px; font-weight: 700; color: {ctx["aqi_col"]}; margin-bottom: 5px;">{ctx["aqi_lbl"]}</div>', unsafe_allow_html=True)
+
+# ==========================================
+# 6. VISUALIZATION: REGIONAL MAP & TIMELINES
+# ==========================================
+m_left, m_right = st.columns([1.1, 1.0])
+
+with m_left:
+    with st.container(border=True):
+        st.markdown('<div class="card-header" style="color:#38bdf8;">GHG & POLLUTION HOTSPOTS (BANGKOK & PERIPHERY)</div>', unsafe_allow_html=True)
+        
+        grid_res = 100
+        x_axis = np.linspace(0, 10, grid_res)
+        y_axis = np.linspace(0, 10, grid_res)
+        MX, MY = np.meshgrid(x_axis, y_axis)
+        MZ = np.exp(-((MX - 5)**2 + (MY - 5)**2) / 5.5) * 160 + np.exp(-((MX - 7.5
