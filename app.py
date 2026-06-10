@@ -94,7 +94,7 @@ with st.sidebar:
     mode = st.radio("รูปแบบข้อมูล:", ["รายชั่วโมง (24h)", "รายวัน"])
     
     # ปุ่มกด Refresh ข้อมูลด้วยตัวเอง
-   if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
+    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
     if "history_df" in st.session_state:
         del st.session_state["history_df"]
 
