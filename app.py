@@ -1,18 +1,16 @@
-import streamlit as pd
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-from datetime import datetime
 
 # ==========================================
-# 1. PAGE CONFIGURATION & LIGHTWEIGHT THEME
+# 1. PAGE CONFIGURATION & CYBER DARK THEME
 # ==========================================
 st.set_page_config(layout="wide", page_title="Intelligent Environmental Dashboard")
 
-# ใช้ CSS แท้ คุมโทนสีเข้ม-ฟ้า (Cyber Dark) ตามดีไซน์เป้าหมาย และล็อกแป้นพิมพ์ไม่ให้เด้ง
+# ฉีด CSS ควบคุมโทนสีการ์ด และจัดแต่งปุ่มกดเมนู (Radio) ให้ดูโมเดิร์นคล้ายแผงควบคุม
 st.markdown("""
     <style>
         ::-webkit-scrollbar { display: none; }
@@ -24,20 +22,24 @@ st.markdown("""
         .block-container { padding: 0.8rem 1.5rem !important; }
         
         /* หัวเรื่องแดชบอร์ด */
-        .hdr-box { text-align: center; margin-bottom: 10px; }
+        .hdr-box { text-align: center; margin-bottom: 12px; }
         .hdr-title { font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; margin: 0; }
         .hdr-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
         
-        /* 🔒 ล็อกช่อง Dropdown Selectbox ทั้งหมด ห้ามคีย์บอร์ดเด้งเวลาใช้งาน */
-        div[data-baseweb="select"] input {
-            pointer-events: none !important;
-            caret-color: transparent !important;
+        /* 🛠️ ปรับแต่งปุ่มกด Radio แนวนอนให้ดูเหมือนปุ่มกดสไตล์แผงควบคุมระดับสูง */
+        div[data-testid="stRadio"] > label {
+            font-size: 11px !important; color: #22d3ee !important; font-weight: 700 !important; text-transform: uppercase;
         }
-        div[data-baseweb="select"] { background-color: #1e293b !important; border: 1px solid #334155 !important; border-radius: 4px; }
-        div[data-baseweb="select"] * { color: #f8fafc !important; font-size: 12px !important; }
-        label[data-testid="stWidgetLabel"] { font-size: 11px !important; color: #94a3b8 !important; margin-bottom: 2px !important; font-weight: bold; }
+        div[data-testid="stRadio"] div[role="radiogroup"] {
+            background-color: #1e293b !important; border: 1px solid #334155 !important; 
+            padding: 4px !important; border-radius: 6px !important; gap: 10px !important;
+        }
+        div[data-testid="stRadio"] div[role="radiogroup"] label {
+            background-color: #020617 !important; padding: 4px 10px !important; 
+            border-radius: 4px !important; border: 1px solid #1e293b;
+        }
         
-        /* กล่องแสดงผลตารางน้ำด้านล่าง */
+        /* ตารางวิเคราะห์น้ำด้านล่าง */
         .water-card-frame {
             background-color: #1e293b; border: 1px solid #334155; 
             border-radius: 4px; padding: 12px; height: 140px;
@@ -55,13 +57,13 @@ years_axis = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
 months_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 REGIONAL_DB = {
-    "📌 CENTRAL (ภาคกลาง)": {
+    "📌 CENTRAL": {
         "co2": 421.5, "temp": 1.8, "aqi": 85, "aqi_color": "#eab308",
         "co2_history": [240, 320, 490, 680, 820, 990, 1420],
         "pm25_series": [22, 26, 35, 40, 28, 18, 15, 14, 19, 23, 25, 30],
         "temp_series": [26, 28, 30, 32, 31, 30, 29, 29, 28, 27, 26, 25]
     },
-    "📌 NORTH (ภาคเหนือ)": {
+    "📌 NORTH": {
         "co2": 412.8, "temp": 2.4, "aqi": 165, "aqi_color": "#ef4444",
         "co2_history": [210, 270, 410, 550, 690, 840, 1150],
         "pm25_series": [45, 68, 95, 120, 75, 30, 22, 19, 24, 38, 48, 55],
@@ -75,28 +77,29 @@ REGIONAL_DB = {
 st.markdown("""
 <div class="hdr-box">
     <div class="hdr-title">INTELLIGENT ENVIRONMENTAL & GHG MONITORING DASHBOARD</div>
-    <div class="hdr-sub">ระบบแดชบอร์ดแสดงผลความเร็วสูง ประมวลผลแบบเสถียร 100% Local Run</div>
+    <div class="hdr-sub">ระบบควบคุมแดชบอร์ดความหนาแน่นสูง ป้องกันการเปิดแป้นพิมพ์คีย์บอร์ด 100%</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. TOP CONTROL BAR (แถบเมนูคุมข้อมูล)
+# 4. TOP CONTROL BAR (เปลี่ยนเป็น st.radio แนวนอน ป้องการพิมพ์ข้อความ)
 # ==========================================
-ctrl_cols = st.columns([2.5, 2.5, 2.5, 2.5])
+ctrl_cols = st.columns([1.5, 3.5, 3.5, 3.5])
 with ctrl_cols[0]:
-    st.markdown(f'<div style="font-family:monospace; font-size:12px; color:#22d3ee; font-weight:700; margin-top:16px;">⏱️ SYSTEM STATUS: ONLINE</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-family:monospace; font-size:12px; color:#22d3ee; font-weight:700; margin-top:24px;">⏱️ MONITOR: ACTIVE</div>', unsafe_allow_html=True)
 with ctrl_cols[1]:
-    selected_reg = st.selectbox("REGION (ภูมิภาค ตรวจสอบ)", list(REGIONAL_DB.keys()))
+    # เลือกภูมิภาคผ่านปุ่มกดแท็บ คีย์บอร์ดไม่เด้งแน่นอน
+    selected_reg = st.radio("REGION (ภูมิภาค ตรวจสอบ)", list(REGIONAL_DB.keys()), horizontal=True)
 with ctrl_cols[2]:
-    st.selectbox("DATA SOURCE (แหล่งอ้างอิง)", ["INTEGRATED ALL STATIONS", "SATELLITE API"])
+    st.radio("DATA SOURCE (แหล่งอ้างอิง)", ["ALL STATIONS", "SATELLITE API"], horizontal=True)
 with ctrl_cols[3]:
-    st.selectbox("TIME FILTER (ช่วงสเกลเวลา)", ["1 MONTH", "30 YEARS TREND"])
+    st.radio("TIME FILTER (ช่วงสเกลเวลา)", ["1 MONTH", "30 YEARS TREND"], horizontal=True)
 
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
 db = REGIONAL_DB[selected_reg]
 
 # ==========================================
-# 5. TIER 1: 3 GAUGE CHARTS (หน้าปัดเกจวัดรอบวงกลม)
+# 5. TIER 1: 3 GAUGE CHARTS
 # ==========================================
 g1, g2, g3 = st.columns(3)
 
@@ -130,15 +133,14 @@ with g3:
     fig_g3.update_layout(height=100, margin=dict(t=30, b=10, l=15, r=15), paper_bgcolor="#1e293b", plot_bgcolor="#1e293b")
     st.plotly_chart(fig_g3, use_container_width=True, config={'displayModeBar': False})
 
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 
 # ==========================================
-# 6. TIER 2: MIDDLE SECTION (HOTSPOT MATRIX & TRENDS)
+# 6. TIER 2: MIDDLE SECTION (GRID MATRIX & TRENDS)
 # ==========================================
 mid_left, mid_right = st.columns([1.1, 1.0])
 
 with mid_left:
-    # เปลียนเป็น 2D Density Heatmap ทำงานแบบออฟไลน์ได้ 100% ไม่พึ่งพาเน็ต หน้าจอไม่ค้าง
     np.random.seed(42)
     grid_data = pd.DataFrame({
         'X_Coordinate': np.random.randint(1, 10, 40),
@@ -168,7 +170,7 @@ with mid_right:
         
     st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
     
-    # 🛠️ แก้ไขบั๊กกราฟผสม: ใช้ระบบย่อย make_subplots ที่ถูกต้องของพล็อตลีย์ ป้องกันการหยุดทำงาน
+    # กราฟล่าง: Monthly Bars (กราฟผสมสองแกนอย่างมั่นคง)
     fig_combo = make_subplots(specs=[[{"secondary_y": True}]])
     fig_combo.add_trace(go.Bar(x=months_axis, y=db["pm25_series"], name='PM2.5', marker_color='#f97316'), secondary_y=False)
     fig_combo.add_trace(go.Scatter(x=months_axis, y=db["temp_series"], name='Temp', line=dict(color='#22d3ee', width=2)), secondary_y=True)
@@ -180,7 +182,7 @@ with mid_right:
     )
     st.plotly_chart(fig_combo, use_container_width=True, config={'displayModeBar': False})
 
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 
 # ==========================================
 # 7. TIER 3: BOTTOM ANALYSIS & WATER TABLE
@@ -202,7 +204,7 @@ with bot_left:
     st.plotly_chart(fig_stack, use_container_width=True, config={'displayModeBar': False})
 
 with bot_right:
-    # กล่อง HTML แสดงสถานะตารางวิเคราะห์น้ำและปุ่มดาวน์โหลดรายงานข้อมูล
+    # ตารางคุณภาพน้ำ HTML ล็อกการดาวน์โหลดรายงาน
     st.markdown('<div class="water-card-frame">', unsafe_allow_html=True)
     st.markdown('<div style="font-size: 11px; color: #22d3ee; font-weight: 700; margin-bottom: 6px;">💧 WATER QUALITY MONITORING & EXPORT REPORT</div>', unsafe_allow_html=True)
     
@@ -227,7 +229,7 @@ with bot_right:
     """
     st.markdown(html_table, unsafe_allow_html=True)
     
-    # ปุ่มดาวน์โหลดข้อมูลสรุป
+    # ปุ่มดาวน์โหลดรายงานวิเคราะห์ไฟล์
     dl_df = pd.DataFrame({'Parameter': ['CO2', 'Temp', 'AQI'], 'Value': [db["co2"], db["temp"], db["aqi"]]})
     csv_bytes = dl_df.to_csv(index=False).encode('utf-8')
     st.download_button(label="📥 DOWNLOAD REPORT (.CSV)", data=csv_bytes, file_name="env_report.csv", mime="text/csv")
