@@ -98,17 +98,17 @@ st.markdown("---")
 
 period = st.radio(
     "ช่วงเวลา",
-    ["24 ชั่วโมง","7 วัน","30 วัน","1 ปี"],
+    ["1 Day","1 Week","1 Month","1 Year"],
     horizontal=True
 )
 
-if period == "1 Day":
+if period == "1 วัน":
     df_plot = df.tail(24)
 
-elif period == "1 Week":
+elif period == "7 วัน":
     df_plot = df.tail(24*7)
 
-elif period == "Month":
+elif period == "30 วัน":
     df_plot = df.tail(24*30)
 
 else:
