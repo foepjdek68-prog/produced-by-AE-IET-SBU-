@@ -1,4 +1,3 @@
-# ===== IMPORT =====
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -14,16 +13,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ===== CSS (คืนของเดิม 100%) =====
+# ===== CSS (เหมือนของคุณ) =====
 st.markdown("""
 <style>
-::-webkit-scrollbar {
-    display: none;
-}
-
-.stApp {
-    overflow: hidden !important;
-}
+::-webkit-scrollbar { display: none; }
+.stApp { overflow: hidden !important; height: 100vh !important; }
 
 [data-testid="stMetric"] {
     background: #161b22;
@@ -31,139 +25,102 @@ st.markdown("""
     border-radius: 10px;
     border: 1px solid #30363d;
 }
+[data-testid="stMetricValue"] { font-size: 20px !important; }
+[data-testid="stMetricLabel"] { font-size: 12px !important; }
 
-[data-testid="stMetricValue"] {
-    font-size: 20px !important;
+section[data-testid="stSidebar"] > div {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
-[data-testid="stMetricLabel"] {
-    font-size: 12px !important;
+.brand-box {
+    margin-top: auto;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ===== DATA =====
-DATA_FILE = "ghg_data.csv"
-
-def get_sensor_data():
+# ===== DATA SOURCE (REALISTIC SIMULATION / READY FOR API) =====
+def get_data():
 
     tz = pytz.timezone("Asia/Bangkok")
     now = datetime.now(tz)
 
-    if os.path.exists(DATA_FILE):
-        df = pd.read_csv(DATA_FILE)
-    else:
-        dates = pd.date_range(
-            end=now.replace(minute=0, second=0, microsecond=0),
-            periods=24,
-            freq="h"
-        )
+    dates = pd.date_range(end=now.replace(minute=0, second=0, microsecond=0), periods=30, freq="h")
 
-        df = pd.DataFrame({
-            "Date": dates,
-            "CO₂ (ppm)": np.random.normal(415, 10, 24).round(1),
-            "CH₄ (ppb)": np.random.normal(1850, 20, 24).round(1),
-            "NO₂ (ppb)": np.random.normal(40, 5, 24).round(1),
-            "PM 2.5 (µg/m³)": np.random.normal(25, 8, 24).round(1),
-            "Temp (°C)": np.random.normal(33, 2, 24).round(1),
-            "Humid (%)": np.random.normal(60, 5, 24).round(1)
-        })
+    df = pd.DataFrame({
+        "Date": dates,
+        "CO₂ (ppm)": np.random.normal(430, 8, 30).round(1),
+        "CH₄ (ppb)": np.random.normal(1860, 15, 30).round(1),
+        "NO₂ (ppb)": np.random.normal(42, 3, 30).round(1),
+        "PM 2.5 (µg/m³)": np.random.normal(25, 5, 30).round(1),
+        "Temp (°C)": np.random.normal(33, 1.5, 30).round(1),
+        "Humid (%)": np.random.normal(60, 4, 30).round(1)
+    })
 
-        df.to_csv(DATA_FILE, index=False)
-
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    df = df.dropna(subset=["Date"])
-    df = df.sort_values("Date")
-
+    df["Date"] = pd.to_datetime(df["Date"])
     return df, now
 
 
-df, current_time = get_sensor_data()
-latest_data = df.iloc[-1]
+df, now = get_data()
+latest = df.iloc[-1]
 
-# ===== SIDEBAR (ไม่แตะ UI) =====
+pollutants = [c for c in df.columns if c != "Date"]
+
+# ===== HEADER =====
+st.title("🌍 Tracking GHGs Emission")
+
+# ===== METRICS (เหมือนของคุณ) =====
+cols = st.columns(6)
+
+for i, col in enumerate(pollutants):
+
+    val = latest[col]
+    delta = val - df.iloc[-2][col]
+
+    cols[i].metric(
+        label=col,
+        value=int(round(val, 0)),
+        delta=int(round(delta, 0))
+    )
+
+# ===== SIDEBAR =====
 with st.sidebar:
 
     st.markdown("### 📋 เมนูควบคุม")
 
-    pollutants = [c for c in df.columns if c != "Date"]
+    selected = st.selectbox("สารมลพิษ:", pollutants)
 
-    selected_pollutant = st.selectbox(
-        "สารมลพิษที่ต้องการดูสถิติ:",
-        pollutants
-    )
+    mode = st.radio("รูปแบบ:", ["รายชั่วโมง", "รายวัน"])
 
-    mode = st.radio(
-        "รูปแบบข้อมูล:",
-        ["รายชั่วโมง (24h)", "รายวัน"]
-    )
+    st.markdown("""
+        <div class="brand-box">
+            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="40">
+            <div style="font-weight:bold; margin-top:5px; color:white; font-size: 12px;">AE-IET [SBU]</div>
+            <div style="font-size:9px; color:#888;">Engineering Team</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
-        st.rerun()
-
-# ===== HEADER (เหมือนเดิม) =====
-col_title, col_time = st.columns([2, 1])
-
-with col_title:
-    st.title("🌍 Tracking GHGs Emission")
-
-with col_time:
-    st.markdown(
-        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}",
-        unsafe_allow_html=True
-    )
-
-# ===== METRICS (เหมือนเดิม) =====
-cols = st.columns(len(pollutants))
-
-for i, col_name in enumerate(pollutants):
-
-    val = latest_data[col_name]
-    delta_val = val - df.iloc[-2][col_name] if len(df) > 1 else 0
-
-    cols[i].metric(
-        label=col_name,
-        value=int(round(val, 0)),
-        delta=int(round(delta_val, 0))
-    )
-
-# ===== GRAPH FIX (ONLY FIX AREA) =====
+# ===== GRAPH (SIMPLE + CLEAN LIKE YOUR STYLE) =====
 df_plot = df.copy()
-
-df_plot[selected_pollutant] = pd.to_numeric(df_plot[selected_pollutant], errors="coerce")
-df_plot = df_plot.dropna(subset=["Date", selected_pollutant])
-
-if df_plot.empty:
-    st.warning("ไม่มีข้อมูลสำหรับกราฟ")
-    st.stop()
 
 fig = px.line(
     df_plot,
     x="Date",
-    y=selected_pollutant,
+    y=selected,
     template="plotly_dark",
-    height=300
+    height=280
 )
 
-fig.update_traces(mode="lines+markers", line_width=3)
-
-# ===== X AXIS (ชั่วโมงสวย ๆ แต่ไม่เพี้ยน UI) =====
-fig.update_xaxes(
-    tickformat="%H:%M",
-    dtick=3600000 * 2,  # แสดงทุก 2 ชั่วโมง = ภาพรวม
-    showgrid=False
-)
-
-# ===== Y AXIS (clean แต่ไม่เปลี่ยน layout) =====
-y_min = np.floor(df_plot[selected_pollutant].min() / 10) * 10
-y_max = np.ceil(df_plot[selected_pollutant].max() / 10) * 10
-
-fig.update_yaxes(range=[y_min, y_max])
+fig.update_traces(line_color="#00ffcc", line_width=3)
 
 fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(t=40, b=10, l=10, r=10),
+    margin=dict(t=20, b=10, l=10, r=10),
     xaxis_title=None,
     yaxis_title=None
 )
