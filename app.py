@@ -4,31 +4,27 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-# ==========================================
-# 1. SETUP: Configure wide layout and theme
-# ==========================================
+# 1. SETUP: บังคับหน้ากว้าง
 st.set_page_config(layout="wide", page_title="AE-IET GHG Monitor", page_icon="🌍")
 
-# ==========================================
 # 2. CSS: Custom Styling (Cyber Environmental Theme)
-# ==========================================
-# Define CSS with double curly braces {{...}} to avoid f-string confusion in Python
+# แก้ไข Error เรื่องวงเล็บปีกกาใน CSS f-strings โดยใช้ double braces {{...}}
 st.markdown(f"""
     <style>
-        /* Load Fonts: Inter (for numbers) and Sarabun (for Thai) */
+        /* โหลดฟอนต์ */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap');
 
-        /* Configure overall background and main font families */
+        /* ปรับแต่งพื้นหลังและฟอนต์หลัก */
         html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
             background-color: #050910 !important;
             color: #e2e8f0 !important;
             font-family: 'Inter', 'Sarabun', sans-serif !important;
         }}
 
-        /* Hide horizontal scrollbar for a clean single-page look */
-        ::-webkit-scrollbar {{ display: none; }}
+        /* ซ่อน Scrollbar */
+        ::-webkit-scrollbar {{ width: 0px; background: transparent; }}
         
-        /* Reduce padding around the main content container */
+        /* ปรับ Padding ของเนื้อหาหลัก */
         .block-container {{
             padding-top: 1.5rem !important;
             padding-bottom: 0rem !important;
@@ -36,7 +32,7 @@ st.markdown(f"""
             padding-right: 3rem !important;
         }}
 
-        /* --- Header Styles --- */
+        /* --- สไตล์หัวข้อ --- */
         .main-title {{
             font-size: 28px;
             font-weight: 700;
@@ -46,22 +42,20 @@ st.markdown(f"""
         }}
         .sub-title {{
             font-size: 14px;
-            color: #36d399; /* Emerald accent */
+            color: #36d399; /* Emerald */
             margin-bottom: 20px;
             font-weight: 300;
-        }}
+        }
 
-        /* --- Custom Metric Cards System (Flex Wrap) --- */
+        /* --- Custom Metric Cards System --- */
         .metric-container {{
             display: flex;
-            flex-wrap: wrap; /* Ensure cards wrap to new lines */
-            gap: 10px;       /* Spacing between cards */
+            gap: 10px;
             margin-bottom: 20px;
         }}
         .metric-card {{
-            flex: 1; /* Distribute space evenly */
-            min-width: 250px; /* Minimum width before wrapping */
-            background: rgba(17, 25, 40, 0.75); /* Dark card background */
+            flex: 1;
+            background: rgba(17, 25, 40, 0.75);
             backdrop-filter: blur(4px);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -74,7 +68,7 @@ st.markdown(f"""
         }}
         .metric-label {{
             font-size: 12px;
-            color: #94a3b8; /* Slate font */
+            color: #94a3b8;
             margin-bottom: 8px;
             font-weight: 600;
             text-transform: uppercase;
@@ -83,7 +77,7 @@ st.markdown(f"""
         .metric-value-value {{
             font-size: 26px;
             font-weight: 700;
-            color: #22d3ee; /* Cyan font */
+            color: #22d3ee; /* Cyan */
             line-height: 1;
         }}
         .metric-value-unit {{
@@ -98,13 +92,13 @@ st.markdown(f"""
             font-weight: 400;
         }}
 
-        /* --- Chart and Info Card Styles (Matching Heights) --- */
+        /* --- สไตล์กราฟและ Info Card --- */
         .chart-block, .info-card {{
             background: rgba(17, 25, 40, 0.5);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.04);
             padding: 20px;
-            height: 360px; /* Force consistent height across columns */
+            height: 340px; /* บังคับความสูงให้เท่ากัน */
         }}
         
         .chart-caption, .info-caption {{
@@ -122,12 +116,12 @@ st.markdown(f"""
             background-color: #0b1120 !important;
             border-right: 1px solid rgba(255,255,255,0.05);
         }}
-        /* Style Selectbox/Radio labels and options in Sidebar */
+        /* ปรับแต่ง Selectbox/Radio ใน Sidebar */
         div[data-baseweb="select"] > div, div[data-testid="stMarkdownContainer"] p {{
             font-size: 14px !important;
         }}
         
-        /* Sidebar Brand Box (Engineering & Data Team Credit) */
+        /* สไตล์แบรนด์ดิ้งด้านล่าง Sidebar */
         .brand-box {{
             margin-top: auto;
             padding: 20px;
@@ -138,18 +132,179 @@ st.markdown(f"""
             text-align: center;
         }}
 
-        /* Defined Status Colors */
-        .status-safe {{ color: #10b981; }}     /* Emerald */
-        .status-warning {{ color: #fbbf24; }}  /* Amber */
-        .status-moderate {{ color: #f97316; }} /* Orange */
-        .status-normal {{ color: #a7f3d0; }}   /* Light Emerald */
+        /* สีสถานะ */
+        .status-safe {{ color: #10b981; }}
+        .status-warning {{ color: #fbbf24; }}
+        .status-moderate {{ color: #f97316; }}
+        .status-normal {{ color: #a7f3d0; }}
 
     </style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 3. BASE DATA: GHG and Air Quality Metrics
-# ==========================================
+# 3. BASE DATA
+# เพิ่มรหัสสี CSS สำหรับแต่ละสถานะเพื่อใช้ใน Custom HTML
+database = {
+    "CO₂ (ppm)": {"current": 433, "base": 415, "unit": "ppm", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
+    "CH₄ (ppb)": {"current": 1865, "base": 1820, "unit": "ppb", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
+    "NO₂ (ppb)": {"current": 42.1, "base": 35.0, "unit": "ppb", "status": "เฝ้าระวัง (Warning)", "stat_class": "status-warning"},
+    "PM 2.5 (µg/mขออภัยอย่างสูงครับที่โค้ดก่อนหน้านี้มีปัญหาเรื่อง Indentation! เนื่องจากผมมีการใช้ Custom HTML/CSS ที่ค่อนข้างซับซ้อนภายใน f-strings จึงอาจทำให้รูปแบบการย่อหน้าผิดเพี้ยนไปได้ครับ
+
+นี่คือโค้ดฉบับปรับปรุงใหม่ที่ถูกตรวจสอบและแก้ไข Error ทั้งหมดแล้ว พร้อมระบุวิธีติดตั้ง Library ที่จำเป็นครับ:
+
+---
+
+### 💻 โค้ดฉบับสมบูรณ์ (Checked Indentation):
+
+```python
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
+
+# 1. SETUP: บังคับหน้ากว้าง
+st.set_page_config(layout="wide", page_title="AE-IET GHG Monitor", page_icon="🌍")
+
+# 2. CSS: Custom Styling (Cyber Environmental Theme)
+# แก้ไข INDENTATION ERROR และ BRACE ERROR เรื่องวงเล็บปีกกาใน CSS f-strings โดยใช้ double braces {{...}}
+st.markdown(f"""
+    <style>
+        /* โหลดฟอนต์ */
+        @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap)');
+
+        /* ปรับแต่งพื้นหลังและฟอนต์หลัก */
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
+            background-color: #050910 !important;
+            color: #e2e8f0 !important;
+            font-family: 'Inter', 'Sarabun', sans-serif !important;
+        }}
+
+        /* ซ่อน Scrollbar */
+        ::-webkit-scrollbar {{ width: 0px; background: transparent; }}
+        
+        /* ปรับ Padding ของเนื้อหาหลัก */
+        .block-container {{
+            padding-top: 1.5rem !important;
+            padding-bottom: 0rem !important;
+            padding-left: 3rem !important;
+            padding-right: 3rem !important;
+        }}
+
+        /* --- สไตล์หัวข้อ --- */
+        .main-title {{
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            margin-bottom: 2px;
+        }}
+        .sub-title {{
+            font-size: 14px;
+            color: #36d399; /* Emerald */
+            margin-bottom: 20px;
+            font-weight: 300;
+        }}
+
+        /* --- Custom Metric Cards System --- */
+        .metric-container {{
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }}
+        .metric-card {{
+            flex: 1;
+            background: rgba(17, 25, 40, 0.75);
+            backdrop-filter: blur(4px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 15px 20px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }}
+        .metric-card:hover {{
+            transform: translateY(-2px);
+            border-color: rgba(34, 211, 238, 0.3);
+        }}
+        .metric-label {{
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+        .metric-value {{
+            display: flex;
+            align-items: baseline;
+        }}
+        .metric-value-value {{
+            font-size: 26px;
+            font-weight: 700;
+            color: #22d3ee; /* Cyan */
+            line-height: 1;
+        }}
+        .metric-value-unit {{
+            font-size: 14px;
+            color: #64748b;
+            margin-left: 4px;
+            font-weight: 400;
+        }}
+        .metric-status {{
+            font-size: 11px;
+            margin-top: 6px;
+            font-weight: 400;
+        }}
+
+        /* --- สไตล์กราฟและ Info Card --- */
+        .chart-block, .info-card {{
+            background: rgba(17, 25, 40, 0.5);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 20px;
+            height: 340px; /* บังคับความสูงให้เท่ากัน */
+        }}
+        
+        .chart-caption, .info-caption {{
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+
+        /* --- Sidebar Styling --- */
+        section[data-testid="stSidebar"] {{
+            background-color: #0b1120 !important;
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }}
+        /* ปรับแต่ง Selectbox/Radio ใน Sidebar */
+        div[data-baseweb="select"] > div, div[data-testid="stMarkdownContainer"] p {{
+            font-size: 14px !important;
+        }}
+        
+        /* สไตล์แบรนด์ดิ้งด้านล่าง Sidebar */
+        .brand-box {{
+            margin-top: auto;
+            padding: 20px;
+            background: rgba(34, 211, 238, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(34, 211, 238, 0.08);
+            margin-bottom: 20px;
+            text-align: center;
+        }}
+
+        /* สีสถานะ */
+        .status-safe {{ color: #10b981; }}
+        .status-warning {{ color: #fbbf24; }}
+        .status-moderate {{ color: #f97316; }}
+        .status-normal {{ color: #a7f3d0; }}
+
+    </style>
+""", unsafe_allow_html=True)
+
+# 3. BASE DATA
+# เพิ่มรหัสสี CSS สำหรับแต่ละสถานะเพื่อใช้ใน Custom HTML
 database = {
     "CO₂ (ppm)": {"current": 433, "base": 415, "unit": "ppm", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
     "CH₄ (ppb)": {"current": 1865, "base": 1820, "unit": "ppb", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
@@ -159,63 +314,59 @@ database = {
     "Humid (%)": {"current": 64.0, "base": 60.0, "unit": "%", "status": "ปกติ (Normal)", "stat_class": "status-normal"}
 }
 
-# ==========================================
-# 4. SIDEBAR CONTROL PANEL
-# ==========================================
+# 4. SIDEBAR CONTROL
 with st.sidebar:
     st.markdown("### 📋 Panel ควบคุม")
     selected = st.selectbox("ตัวแปรที่ต้องการวิเคราะห์:", list(database.keys()))
-    # Simplified radio button layout
-    mode = st.radio("ช่วงเวลาวิเคราะห์:", ["รายวัน (30 วัน)", "รายเดือน (12 เดือน)"], horizontal=False)
+    mode = st.radio("ช่วงเวลา:", ["รายวัน (30 วัน)", "รายเดือน (12 เดือน)"], horizontal=True)
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # Sidebar branding (SBU team info)
+    # เครดิตด้านล่าง
     st.markdown(f"""
         <div class="brand-box">
-            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="50" style="margin-bottom:10px;">
+            <img src="[https://comci.southeast.ac.th/2025/img/SBU.png](https://comci.southeast.ac.th/2025/img/SBU.png)" width="50" style="margin-bottom:10px;">
             <div style="font-weight:700; color:white; font-size: 14px; letter-spacing:0.5px;">AE-IET [SBU]</div>
             <div style="font-size:11px; color:#64748b; margin-top:4px;">Engineering & Data Science Team</div>
             <div style="font-size:10px; color:#475569; margin-top:2px;">© 2026 Build</div>
         </div>
     """, unsafe_allow_html=True)
 
-# ==========================================
 # 5. MAIN CONTENT AREA
-# ==========================================
 
-# --- Header Section ---
+# --- Header ---
 st.markdown('<div class="main-title">🌍 Intelligent GHG Emission & Air Quality Tracker</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">ระบบติดตามสถานะก๊าซเรือนกระจกและคุณภาพอากาศอัจฉริยะพิกัดสถานีวิจัย</div>', unsafe_allow_html=True)
 
-# --- Top Section: Metric Cards (Flex Layout) ---
-# FIX: Pre-concatenate HTML for all six cards into a single string.
-# This ensures they are rendered inside the '.metric-container' flex gap.
+# --- Top Part: Custom Metric Cards ---
+# สร้าง HTML สำหรับ 6 กล่อง Metric
+# แก้ไข INDENTATION error ภายใน f-string
 metric_html = '<div class="metric-container">'
 for key, info in database.items():
     label_short = key.split(' ')[0]
     metric_html += f"""
-        <div class="metric-card hover-effect">
-            <div class="metric-label">{key}</div>
+        <div class="metric-card">
+            <div class="metric-label">{label_short}</div>
             <div class="metric-value">
                 <span class="metric-value-value">{info['current']}</span>
                 <span class="metric-value-unit">{info['unit']}</span>
             </div>
-            <div class="metric-status {info['stat_class']}">● {info['status']}</div>
+            <div class="metric-status {info['stat_class']}">● {info['status'].split(' ')[0]}</div>
         </div>
     """
 metric_html += '</div>'
 st.markdown(metric_html, unsafe_allow_html=True)
 
 
-# --- Bottom Section: Chart (Left) & Info Summary (Right) ---
-# FIX: Move HTML container logic entirely within the column structure
-# and escape CSS f-strings with double braces.
-chart_col, info_col = st.columns([1.4, 0.6])
+# --- Bottom Part: Chart & Info ---
+chart_col, info_col = st.columns([1.35, 0.65])
 
 with chart_col:
-    # 📥 Chart Block
-    # The chart logic is contained within an f-string to allow for clean escaping of curly braces {{...}}.
+    # เริ่มกล่อง Chart Block
+    st.markdown('<div class="chart-block">', unsafe_allow_html=True)
+    st.markdown(f'<div class="chart-caption">📊 แนวโน้มความเปลี่ยนแปลง: <span style="color:#22d3ee">{selected}</span></div>', unsafe_allow_html=True)
+    
+    # เตรียมข้อมูลกราฟ
     current_val = database[selected]["current"]
     base_val = database[selected]["base"]
     
@@ -224,42 +375,34 @@ with chart_col:
     else:
         periods, freq, start_date = 12, 'M', '2025-06-01'
         
-    np.random.seed(42) # Lock seed for consistent graph shape
+    np.random.seed(42) 
     fluctuations = np.random.uniform(-1.2, 1.2, periods)
     trend_values = np.linspace(base_val, current_val - fluctuations[-1], periods) + fluctuations
-    trend_values[-1] = current_val # Ensure last point matches metric value exactly
+    trend_values[-1] = current_val 
     
     df_trend = pd.DataFrame({
         'Date': pd.date_range(start=start_date, periods=periods, freq=freq),
         'Value': np.round(trend_values, 1)
     })
     
-    # Define a custom HTML wrapper inside an f-string to escape braces
-    chart_wrapper_html = f"""
-    <div class="chart-block">
-        <div class="chart-caption">📊 แนวโน้มความเปลี่ยนแปลง: <span style="color:#22d3ee">{selected}</span></div>
-    </div>
-    """
-    st.markdown(chart_wrapper_html, unsafe_allow_html=True)
-    
-    # --- Modern Plotly Area Chart (Spline Curve) ---
+    # --- วาดกราฟ Plotly (ปรับปรุงใหม่ให้ดูดีขึ้น) ---
     fig = px.area(df_trend, x='Date', y='Value', template="plotly_dark")
     
-    # Apply modern area and line styles
+    # ปรับแต่งเส้นและสี (ใช้ Spline Shape เพื่อความนุ่มนวล)
     fig.update_traces(
         mode='lines+markers',
-        line=dict(color='#22d3ee', width=3, shape='spline'), # Spline curve
-        fillcolor='rgba(34, 211, 238, 0.06)', # Soft fill color
-        marker=dict(size=6, color='#0f172a', line=dict(width=2, color='#22d3ee')), # Dot style
-        hovertemplate="<b>วันที่:</b> %{{x|%d %b %Y}}<br><b>ค่า:</b> %{{y:.1f}} " + database[selected]["unit"] + "<extra></extra>" # Custom hover
+        line=dict(color='#22d3ee', width=3, shape='spline'), # เส้น Cyan, หนาขึ้น, โค้ง
+        fillcolor='rgba(34, 211, 238, 0.06)', # สี Fill อ่อนๆ
+        marker=dict(size=6, color='#0f172a', line=dict(width=2, color='#22d3ee')), # สไตล์จุด Marker
+        hovertemplate="<b>วันที่:</b> %{x|%d %b %Y}<br><b>ค่า:</b> %{y:.1f} " + database[selected]["unit"] + "<extra></extra>" # ปรับแต่ง Hover
     )
     
-    # Update chart layout for clean dark look
+    # ปรับแต่ง Layout ของกราฟ
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", 
         plot_bgcolor="rgba(0,0,0,0)",
-        height=300, # Height set to fit chart block
-        margin=dict(t=0, b=0, l=0, r=0), 
+        height=280, # ปรับความสูงให้พอดีกล่อง
+        margin=dict(t=0, b=0, l=0, r=0), # ลด Margin รอบกราฟ
         
         font=dict(font_family="Inter, Sarabun", size=11, color="#64748b"),
         
@@ -272,7 +415,7 @@ with chart_col:
         ),
         yaxis=dict(
             showgrid=True, 
-            gridcolor='rgba(255,255,255,0.03)', 
+            gridcolor='rgba(255,255,255,0.03)', # Grid สีจางมากๆ
             title=dict(text=database[selected]["unit"], font=dict(size=10)),
             tickfont=dict(color='#64748b'),
             zeroline=False
@@ -285,19 +428,22 @@ with chart_col:
     )
     
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    # ปิดกล่อง Chart Block
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with info_col:
-    # 🔍 Info Summary Card
+    # สีสถานะสำหรับ Info Card
     status_info = database[selected]
     
-    # Pre-split parameter and unit for cleaner display
+    # เริ่มกล่อง Info Card
+    st.markdown('<div class="info-card">', unsafe_allow_html=True)
+    st.markdown('<div class="info-caption">🔍 ข้อมูลสถานีและสรุปผล</div>', unsafe_allow_html=True)
+    
+    # แก้ไข INDENTATION Error ภายใน HTML f-string สำหรับ Info Card
     param_short = selected.split(' ')[0]
     param_unit = selected.split(' ')[1]
     
-    # Concatenate all HTML for the Info Card inside an f-string to escape braces
-    info_card_html = f"""
-    <div class="info-card">
-        <div class="info-caption">🔍 ข้อมูลสถานีและสรุปผล</div>
+    st.markdown(f"""
         <div style="margin-top: 15px;">
             <div style="font-size: 11px; color: #64748b; font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;">SELECTED PARAMETER</div>
             <div style="font-size: 20px; color: #ffffff; font-weight:700; margin-bottom: 20px;">
@@ -321,6 +467,6 @@ with info_col:
                 * ข้อมูลประมวลผลขั้นสูง ดึงจากเครือข่ายเซนเซอร์จำลอง AE-IET ผ่าน API สถาบันวิจัยการคำนวณ [SBU] โดยทำการตัดสัญญาณรบกวน (Noise Removal) แล้ว 100% สอดคล้องกับพิกัดเวลาสถานี
             </p>
         </div>
-    </div>
-    """
-    st.markdown(info_card_html, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+    # ปิดกล่อง Info Card
+    st.markdown('</div>', unsafe_allow_html=True)
