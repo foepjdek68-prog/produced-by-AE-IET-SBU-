@@ -56,6 +56,20 @@ st.markdown("""
         .status-dot { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; display: inline-block; }
         .status-pass { background-color: #059669; color: #ffffff; }
         .status-warn { background-color: #dc2626; color: #ffffff; }
+        
+        /* ปรับแต่งปุ่มดาวน์โหลดให้เข้ากับธีม */
+        .stDownloadButton button {
+            background-color: #020617 !important;
+            color: #22d3ee !important;
+            border: 1px solid #334155 !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            padding: 4px 10px !important;
+        }
+        .stDownloadButton button:hover {
+            border-color: #22d3ee !important;
+            color: #ffffff !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -96,7 +110,9 @@ st.markdown("""
 with st.container():
     c1, c2, c3, c4 = st.columns([2.5, 2.5, 2.5, 2.5])
     with c1:
-        st.markdown(f'<div style="font-family:monospace; font-size:12px; color:#22d3ee; font-weight:700; margin-top:16px;">🕒 MARCH 2026 | 20:26:26</div>', unsafe_allow_html=True)
+        # อัปเดตเวลาให้เป็นปัจจุบันโดยอัตโนมัติ
+        current_time_str = datetime.now().strftime("%B %Y | %H:%M:%S").upper()
+        st.markdown(f'<div style="font-family:monospace; font-size:12px; color:#22d3ee; font-weight:700; margin-top:16px;">🕒 {current_time_str}</div>', unsafe_allow_html=True)
     with c2:
         selected_region = st.selectbox("REGION (ภูมิภาค ตรวจสอบ)", list(REGIONAL_DATA.keys()))
     with c3:
@@ -171,69 +187,4 @@ with mid_right:
     # กราฟบน: 30-Year Trend
     with st.container(border=True):
         st.markdown('<div class="card-header-text">📈 30-YEAR CO₂ EMISSIONS TREND (KT/YR)</div>', unsafe_allow_html=True)
-        df_30y = pd.DataFrame({'Year': years_axis, 'CO2': db["co2_history"]})
-        fig_area = px.area(df_30y, x='Year', y='CO2', template="plotly_dark")
-        fig_area.update_traces(line=dict(color='#22d3ee', width=2), fillcolor='rgba(34, 211, 238, 0.1)')
-        fig_area.update_layout(height=70, margin=dict(t=0, b=0, l=10, r=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_showgrid=False, yaxis_showgrid=False)
-        st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': False})
-        
-    st.markdown("<div style='margin-bottom: 8px;'></div>", unsafe_allow_html=True)
-    
-    # กราฟล่าง: Monthly Bars
-    with st.container(border=True):
-        st.markdown('<div class="card-header-text">📊 MONTHLY TEMPERATURE VS. AIR QUALITY</div>', unsafe_allow_html=True)
-        fig_combo = go.Figure()
-        fig_combo.add_trace(go.Bar(x=months_axis, y=db["pm25_series"], name='PM2.5', marker_color='#f97316', yaxis='y1'))
-        fig_combo.add_trace(go.Scatter(x=months_axis, y=db["temp_series"], name='Temp', line=dict(color='#22d3ee', width=2), yaxis='y2'))
-        fig_combo.update_layout(
-            height=70, margin=dict(t=0, b=0, l=10, r=10), template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False,
-            xaxis_showgrid=False, yaxis_showgrid=False, yaxis=dict(side='left'), yaxis2=dict(overlaying='y', side='right')
-        )
-        st.plotly_chart(fig_combo, use_container_width=True, config={'displayModeBar': False})
-
-st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-
-# ==========================================
-# 7. TIER 3: BOTTOM ANALYSIS (STACKED BARS & WATER QUALITY)
-# ==========================================
-bot_left, bot_right = st.columns([1.1, 1.0])
-
-with bot_left:
-    with st.container(border=True):
-        st.markdown('<div class="card-header-text">📊 POLLUTION BREAKDOWN (PM2.5, NO₂, SO₂)</div>', unsafe_allow_html=True)
-        elements = ['PM2.5', 'PM10', 'NO₂', 'SO₂']
-        fig_stack = go.Figure(data=[
-            go.Bar(name='Low', x=elements, y=[75, 85, 110, 120], marker_color='#059669'),
-            go.Bar(name='Moderate', x=elements, y=[55, 65, 45, 35], marker_color='#d97706'),
-            go.Bar(name='Unhealthy', x=elements, y=[90, 30, 45, 15], marker_color='#dc2626')
-        ])
-        fig_stack.update_layout(barmode='stack', height=95, margin=dict(t=0, b=0, l=5, r=5), template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
-        st.plotly_chart(fig_stack, use_container_width=True, config={'displayModeBar': False})
-
-with bot_right:
-    with st.container(border=True):
-        st.markdown('<div class="card-header-text">💧 WATER QUALITY MONITORING & EXPORT REPORT</div>', unsafe_allow_html=True)
-        
-        html_table = """
-        <table style="width:100%; border-collapse: collapse; font-size:11px; color:#ffffff; margin-bottom: 6px;">
-            <tr style="border-bottom: 1px solid #334155; color:#94a3b8; font-weight:bold; text-align:left;">
-                <th style="padding: 2px;">River Station</th>
-                <th style="text-align:center; padding: 2px;">DO STATUS</th>
-                <th style="text-align:center; padding: 2px;">COD STATUS</th>
-            </tr>
-            <tr style="border-bottom: 1px solid #334155;">
-                <td style="padding: 4px; font-weight:700; color:#22d3ee;">🔵 Chao Phraya (Main)</td>
-                <td style="text-align:center;"><span class="status-dot status-pass">DO PASS</span></td>
-                <td style="text-align:center;"><span class="status-dot status-warn">COD WARN</span></td>
-            </tr>
-            <tr>
-                <td style="padding: 4px; font-weight:700; color:#22d3ee;">🔵 Tha Chin (Delta)</td>
-                <td style="text-align:center;"><span class="status-dot status-pass">DO PASS</span></td>
-                <td style="text-align:center;"><span class="status-dot status-pass">DO PASS</span></td>
-            </tr>
-        </table>
-        """
-        st.markdown(html_table, unsafe_allow_html=True)
-        
-        
+        df_30y = pd.DataFrame({'Year': years_axis, 'CO2': db["
