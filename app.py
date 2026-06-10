@@ -1,5 +1,14 @@
 import streamlit as st
 
+from utils.database import load_data, save_data
+from utils.api_loader import fetch_data
+
+df = load_data()
+
+if df.empty:
+    df = fetch_data()
+    save_data(df)
+
 st.set_page_config(
     page_title="GHG Tracking System",
     layout="wide"
