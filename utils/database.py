@@ -11,19 +11,19 @@ def load_data():
     conn = get_connection()
 
     try:
+
         df = pd.read_sql(
             "SELECT * FROM ghg_data",
             conn
         )
 
-    except Exception as e:
-        print("Database Error:", e)
+    except:
+
         df = pd.DataFrame()
 
     conn.close()
 
     return df
-
 
 def save_data(df):
 
