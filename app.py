@@ -1,102 +1,143 @@
+# ===== IMPORT =====
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np
 from datetime import datetime
 import pytz
-import os
 
-# ===== PAGE =====
-st.set_page_config(layout="wide", page_title="GHG Monitor Board")
+# ===== PAGE SETTING =====
+st.set_page_config(
+    layout="wide",
+    page_title="GHG Monitor Board",
+    initial_sidebar_state="expanded"
+)
 
-# ===== DATA =====
-DATA_FILE = "ghg_data.csv"
+# ===== CSS =====
+st.markdown("""
+<style>
+...
+</style>
+""", unsafe_allow_html=True)
 
-def load_data():
-    tz = pytz.timezone("Asia/Bangkok")
-    now = datetime.now(tz)
-    current_hour = now.replace(minute=0, second=0, microsecond=0)
+# ===== LOAD DATA =====
+def get_sensor_data():
 
-    if os.path.exists(DATA_FILE):
-        df = pd.read_csv(DATA_FILE)
-    else:
-        dates = pd.date_range(end=current_hour, periods=24, freq="h")
-        df = pd.DataFrame({
-            "Date": dates,
-            "CO₂ (ppm)": [415]*24,
-            "CH₄ (ppb)": [1850]*24,
-            "NO₂ (ppb)": [40]*24,
-            "PM 2.5 (µg/m³)": [25]*24,
-            "Temp (°C)": [33]*24,
-            "Humid (%)": [60]*24
-        })
-        df.to_csv(DATA_FILE, index=False)
+    bkk_tz = pytz.timezone("Asia/Bangkok")
+    now = datetime.now(bkk_tz)
 
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    df = df.dropna(subset=["Date"])
-    df = df.sort_values("Date")
+    dates = pd.date_range(
+        end=now,
+        periods=24,
+        freq="h"
+    )
 
-    return df, now, current_hour
+    df = pd.DataFrame({
+        "Date": dates,
+        "CO₂ (ppm)": np.random.normal(415, 10, 24).round(1),
+        "CH₄ (ppb)": np.random.normal(1850, 20, 24).round(1),
+        "NO₂ (ppb)": np.random.normal(40, 5, 24).round(1),
+        "PM 2.5 (µg/m³)": np.random.normal(25, 8, 24).round(1),
+        "Temp (°C)": np.random.normal(33, 2, 24).round(1),
+        "Humid (%)": np.random.normal(60, 5, 24).round(1)
+    })
 
+    return df, now
 
-df, now, current_hour = load_data()
+# ===== GET CURRENT DATA =====
+df, current_time = get_sensor_data()
+latest_data = df.iloc[-1]
 
 # ===== SIDEBAR =====
 with st.sidebar:
-    st.title("Control")
 
-    pollutants = df.select_dtypes(include=["number"]).columns.tolist()
-    selected = st.selectbox("เลือกตัวแปร", pollutants)
+    st.markdown("### 📋 เมนูควบคุม")
 
-    period = st.selectbox(
-        "ช่วงเวลา",
-        ["24 ชั่วโมง", "7 วัน", "30 วัน", "90 วัน", "ทั้งหมด"]
+    pollutants = [
+        col for col in df.columns
+        if col != "Date"
+    ]
+
+    selected_pollutant = st.selectbox(
+        "สารมลพิษที่ต้องการดูสถิติ:",
+        pollutants
     )
 
-# ===== IMPORTANT FIX: ใช้ "ข้อมูลจริง" ไม่เดา =====
+    mode = st.radio(
+        "รูปแบบข้อมูล:",
+        [
+            "รายชั่วโมง (24h)",
+            "รายวัน"
+        ]
+    )
 
-df = df.sort_values("Date")
+    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
+        st.rerun()
 
-# หา min/max เวลาใน data จริง
-min_time = df["Date"].min()
-max_time = df["Date"].max()
+    st.markdown("""
+        <div class="brand-box">
+            ...
+        </div>
+    """, unsafe_allow_html=True)
 
-# map ช่วงเวลาแบบ "เวลา" ไม่ใช่ tail()
-if period == "24 ชั่วโมง":
-    start_time = max_time - pd.Timedelta(hours=24)
-elif period == "7 วัน":
-    start_time = max_time - pd.Timedelta(days=7)
-elif period == "30 วัน":
-    start_time = max_time - pd.Timedelta(days=30)
-elif period == "90 วัน":
-    start_time = max_time - pd.Timedelta(days=90)
-else:
-    start_time = min_time
+# ===== HEADER =====
+col_title, col_time = st.columns([2, 1])
 
-# ===== FILTER ด้วยเวลา (สำคัญมาก) =====
-df_show = df[df["Date"] >= start_time].copy()
+with col_title:
+    st.title("🌍 Tracking GHGs Emission")
 
-# ===== DEBUG (ดูว่ามีข้อมูลจริงไหม) =====
-st.write("DEBUG rows:", len(df_show))
-st.write("DEBUG date range:", df_show["Date"].min(), "→", df_show["Date"].max())
+with col_time:
+    st.markdown(
+        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}",
+        unsafe_allow_html=True
+    )
 
-# ===== กันกราฟว่าง =====
-if df_show.empty:
-    st.error("ไม่มีข้อมูลในช่วงเวลานี้ → data ยังไม่พอ (ต้องมีข้อมูลมากกว่านี้)")
-    st.stop()
+# ===== METRICS =====
+cols = st.columns(6)
 
-# ===== FIX TYPE =====
-df_show[selected] = pd.to_numeric(df_show[selected], errors="coerce")
-df_show = df_show.dropna(subset=[selected])
+for i, col_name in enumerate(pollutants):
+
+    val = latest_data[col_name]
+
+    delta_val = (
+        val - df.iloc[-2][col_name]
+    ).round(1)
+
+    cols[i].metric(
+        label=col_name,
+        value=f"{val}",
+        delta=f"{delta_val}"
+    )
 
 # ===== GRAPH =====
 fig = px.line(
-    df_show,
+    df,
     x="Date",
-    y=selected,
+    y=selected_pollutant,
+    title=f"แนวโน้ม {selected_pollutant}",
     template="plotly_dark",
-    height=500
+    height=300
 )
 
-fig.update_traces(mode="lines+markers")
+fig.update_traces(
+    line_color="#00ffcc",
+    line_width=3
+)
 
-st.plotly_chart(fig, use_container_width=True)
+fig.update_layout(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    margin=dict(
+        t=40,
+        b=10,
+        l=10,
+        r=10
+    ),
+    xaxis_title=None,
+    yaxis_title=None
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
