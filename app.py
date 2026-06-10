@@ -6,222 +6,238 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 # ==========================================
-# 1. PAGE SETUP & CYBER DARK THEME
+# 1. PREMIUM CYBER DARK INFOGRAPHIC THEME
 # ==========================================
 st.set_page_config(layout="wide", page_title="Intelligent Environmental Dashboard")
 
-# ควบคุม UI ให้เรียบร้อย สวยงาม และเสถียรบนทุกหน้าจอ
+# CSS ยกเครื่องหน้าตาใหม่ทั้งหมดให้ตรงปกอินโฟกราฟิก
 st.markdown("""
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Sarabun:wght@400;700&display=swap');
+        
         ::-webkit-scrollbar { display: none; }
+        
         html, body, [data-testid="stAppViewContainer"] { 
-            background-color: #0b1329 !important;
+            background-color: #0d111c !important;
             color: #f8fafc !important;
             font-family: 'Inter', 'Sarabun', sans-serif;
         }
-        .block-container { padding: 1.0rem 2.0rem !important; }
+        .block-container { padding: 1.5rem 2.5rem !important; }
         
-        /* สไตล์กล่อง Dropdown และ Label */
+        /* 📦 การ์ดคุมกล่องข้อความและกราฟให้มีมิติ */
+        .info-card {
+            background-color: #151c2e;
+            border: 1px solid #222f4c;
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .section-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        /* 🔒 ล็อก Dropdown ห้ามพิมพ์ตัวหนังสือหลุด */
         div[data-baseweb="select"] input { pointer-events: none !important; caret-color: transparent !important; }
         div[data-baseweb="select"] { background-color: #1c2541 !important; border: 1px solid #3a506b !important; border-radius: 4px; }
-        div[data-baseweb="select"] * { color: #ffffff !important; font-size: 13px !important; }
+        div[data-baseweb="select"] * { color: #ffffff !important; font-size: 12px !important; }
         label[data-testid="stWidgetLabel"] { font-size: 11px !important; color: #94a3b8 !important; font-weight: bold; }
         
-        /* ตารางรายงานดัชนีน้ำด้านล่าง */
-        .water-container { background-color: #1c2541; border: 1px solid #3a506b; border-radius: 6px; padding: 12px; height: 145px; }
-        .badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block; }
-        .badge-pass { background-color: #10b981; color: #ffffff; }
-        .badge-warn { background-color: #ef4444; color: #ffffff; }
+        /* 💧 สไตล์ Timeline ระบบตรวจสอบน้ำด้านล่างขวา */
+        .water-node {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed #222f4c;
+        }
+        .water-station { font-size: 12px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px; }
+        .badge-grid { display: flex; gap: 8px; }
+        .pills { padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 800; text-align: center; color: white; }
+        .pills-pass { background-color: #10b981; }
+        .pills-warn { background-color: #ef4444; }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CLEAN & STABLE DATA ENGINE (กัน Error)
+# 2. DATA CONFIGURATION & TIME SERIES
 # ==========================================
-years = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
-months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+years_axis = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
+months_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-REGIONAL_DB = {}
-
-# ข้อมูลภาคกลาง
-REGIONAL_DB["📌 CENTRAL (ภาคกลาง)"] = {
-    "co2": 421.5, "temp": 1.8, "aqi": 85, "aqi_color": "#eab308",
-    "co2_trend": [240, 320, 490, 680, 820, 990, 1420],
-    "pm25": [22, 26, 35, 40, 28, 18, 15, 14, 19, 23, 25, 30],
-    "temp_list": [26, 28, 30, 32, 31, 30, 29, 29, 28, 27, 26, 25]
-}
-
-# ข้อมูลภาคเหนือ
-REGIONAL_DB["📌 NORTH (ภาคเหนือ)"] = {
-    "co2": 412.8, "temp": 2.4, "aqi": 165, "aqi_color": "#ef4444",
-    "co2_trend": [210, 270, 410, 550, 690, 840, 1150],
-    "pm25": [45, 68, 95, 120, 75, 30, 22, 19, 24, 38, 48, 55],
-    "temp_list": [20, 23, 27, 31, 30, 29, 28, 28, 27, 25, 22, 19]
+REGIONAL_DB = {
+    "📌 CENTRAL (ภาคกลาง)": {
+        "co2": 421.5, "co2_sub": "+0.3% vs. last month", "temp": 1.8, "aqi": 85, "aqi_lbl": "Moderate", "aqi_col": "#f59e0b",
+        "co2_history": [250, 380, 520, 680, 850, 1050, 1420],
+        "pm25_series": [12, 14, 18, 24, 30, 28, 22, 15, 13, 11, 12, 14],
+        "temp_series": [18, 19, 23, 27, 30, 29, 28, 27, 26, 23, 20, 18]
+    },
+    "📌 NORTH (ภาคเหนือ)": {
+        "co2": 412.8, "co2_sub": "+0.1% vs. last month", "temp": 2.4, "aqi": 165, "aqi_lbl": "Unhealthy", "aqi_col": "#ef4444",
+        "co2_history": [210, 300, 450, 590, 720, 910, 1150],
+        "pm25_series": [45, 68, 95, 120, 75, 30, 22, 19, 24, 38, 48, 55],
+        "temp_series": [15, 18, 24, 29, 28, 27, 26, 25, 24, 22, 18, 15]
+    }
 }
 
 # ==========================================
-# 3. DASHBOARD HEADER AREA
+# 3. TOP MAIN HEADER
 # ==========================================
 st.markdown("""
-<div style="text-align: center; margin-bottom: 15px;">
-    <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;">
-        INTELLIGENT ENVIRONMENTAL & GHG MONITORING DASHBOARD (THAILAND)
-    </h2>
-    <p style="color: #48cae4; margin: 3px 0 0 0; font-size: 13px; font-weight: 500;">
-        แดชบอร์ดอัจฉริยะติดตามก๊าซเรือนกระจกและมลพิษ (ประเทศไทย)
-    </p>
+<div style="text-align: center; margin-bottom: 20px;">
+    <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">INTELLIGENT ENVIRONMENTAL & GHG MONITORING DASHBOARD (THAILAND)</h1>
+    <div style="color: #38bdf8; font-size: 13px; font-weight: 600; margin-top: 2px;">แดชบอร์ดอัจฉริยะติดตามก๊าซเรือนกระจกและมลพิษ (ประเทศไทย)</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. TOP INTERACTIVE NAVIGATION BAR
+# 4. FILTER BAR CONTROL
 # ==========================================
-nav_cols = st.columns([2, 3, 3, 3])
-with nav_cols[0]:
-    st.markdown('<div style="font-family: monospace; font-size: 12px; color: #06d6a0; font-weight: bold; margin-top: 25px;">⏱️ SYSTEM STATUS: ONLINE</div>', unsafe_allow_html=True)
-with nav_cols[1]:
-    sel_region = st.selectbox("REGION (ภูมิภาค)", list(REGIONAL_DB.keys()))
-with nav_cols[2]:
-    st.selectbox("DATA SOURCE (แหล่งข้อมูล)", ["INTEGRATED ALL STATIONS", "SATELLITE SENSORS"])
-with nav_cols[3]:
-    st.selectbox("TIME RANGE (ช่วงเวลา)", ["1 MONTH", "30 YEARS TREND"])
+ctrl_c = st.columns([2.5, 3, 3, 3])
+with ctrl_c[0]:
+    st.markdown('<div style="font-family: monospace; font-size: 13px; color: #10b981; font-weight: 800; margin-top: 24px;">⏱️ MARCH 2026 | 13:58:55</div>', unsafe_allow_html=True)
+with ctrl_c[1]:
+    selected_reg = st.selectbox("REGION:", list(REGIONAL_DB.keys()))
+with ctrl_c[2]:
+    st.selectbox("DATA SOURCE:", ["ALL SYSTEMS INTEGRATED", "SATELLITE ORBITAL"])
+with ctrl_c[3]:
+    st.selectbox("TIME:", ["1 MONTH WINDOW", "ALL TIME RECORD"])
 
 st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-data = REGIONAL_DB[sel_region]
+db = REGIONAL_DB[selected_reg]
 
 # ==========================================
-# 5. TIER 1: 3 METRIC GAUGE CHARTS
+# 5. TIER 1: KEY ENVIRONMENTAL METRICS (GAUGES)
 # ==========================================
-m1, m2, m3 = st.columns(3)
+st.markdown('<div class="section-header">📊 KEY ENVIRONMENTAL METRICS</div>', unsafe_allow_html=True)
+g1, g2, g3 = st.columns(3)
 
-with m1:
-    fig1 = go.Figure(go.Indicator(
-        mode="gauge+number", value=data["co2"],
-        title={'text': "<b>1 🔵 ATMOSPHERIC CO₂ LEVEL (PPM)</b>", 'font': {'size': 11, 'color': '#00b4d8'}},
-        number={'font': {'size': 22, 'color': '#ffffff'}},
-        gauge={'axis': {'range': [350, 500]}, 'bar': {'color': "#00b4d8"}, 'bgcolor': "#0b1329"}
+# ฟังก์ชันกลางสำหรับคุมหน้าตาเกจให้เพรียวบางสไตล์อินโฟกราฟิก
+def create_premium_gauge(val, min_v, max_v, title, color, suffix="", prefix=""):
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number", value=val,
+        number={'font': {'size': 26, 'color': '#ffffff', 'family': 'Inter'}, 'suffix': suffix, 'prefix': prefix},
+        gauge={
+            'axis': {'range': [min_v, max_v], 'visible': False},
+            'bar': {'color': color, 'thickness': 0.15},
+            'bgcolor': 'rgba(0,0,0,0)',
+            'bordercolor': 'rgba(0,0,0,0)'
+        }
     ))
-    fig1.update_layout(height=115, margin=dict(t=30, b=10, l=15, r=15), paper_bgcolor="#1c2541")
-    st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False})
-
-with m2:
-    fig2 = go.Figure(go.Indicator(
-        mode="gauge+number", value=data["temp"],
-        title={'text': "<b>2 🟠 AV. TEMPERATURE ANOMALY (°C)</b>", 'font': {'size': 11, 'color': '#ffb703'}},
-        number={'prefix': "+", 'font': {'size': 22, 'color': '#ffb703'}},
-        gauge={'axis': {'range': [0, 4]}, 'bar': {'color': "#ffb703"}, 'bgcolor': "#0b1329"}
-    ))
-    fig2.update_layout(height=115, margin=dict(t=30, b=10, l=15, r=15), paper_bgcolor="#1c2541")
-    st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
-
-with m3:
-    fig3 = go.Figure(go.Indicator(
-        mode="gauge+number", value=data["aqi"],
-        title={'text': "<b>3 🟡 AIR QUALITY INDEX (AQI)</b>", 'font': {'size': 11, 'color': '#eab308'}},
-        number={'font': {'size': 22, 'color': data["aqi_color"]}},
-        gauge={'axis': {'range': [0, 200]}, 'bar': {'color': data["aqi_color"]}, 'bgcolor': "#0b1329"}
-    ))
-    fig3.update_layout(height=115, margin=dict(t=30, b=10, l=15, r=15), paper_bgcolor="#1c2541")
-    st.plotly_chart(fig3, use_container_width=True, config={'displayModeBar': False})
-
-st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-
-# ==========================================
-# 6. TIER 2: HOTSPOT MAP & TIME TRENDS
-# ==========================================
-col_left, col_right = st.columns([1.1, 1.0])
-
-with col_left:
-    np.random.seed(10)
-    map_df = pd.DataFrame({
-        'Lat_Index': np.random.randint(1, 10, 45),
-        'Lon_Index': np.random.randint(1, 10, 45),
-        'Density': np.random.randint(40, 190, 45)
-    })
-    fig_map = px.density_heatmap(map_df, x='Lat_Index', y='Lon_Index', z='Density', color_continuous_scale="Turbid")
-    fig_map.update_layout(
-        height=230, margin=dict(t=35, b=5, l=10, r=10), coloraxis_showscale=False,
-        template="plotly_dark", paper_bgcolor="#1c2541", plot_bgcolor="#1c2541",
-        title={'text': "<b>🔥 REAL-TIME GHG HOTSPOT GRID MATRIX (BANGKOK)</b>", 'font': {'size': 11, 'color': '#00b4d8'}}
+    fig.update_layout(
+        height=85, margin=dict(t=0, b=0, l=10, r=10),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)"
     )
-    st.plotly_chart(fig_map, use_container_width=True, config={'displayModeBar': False})
+    return fig
 
-with col_right:
-    # ส่วนบน: Area Chart
-    trend_df = pd.DataFrame({'Year': years, 'CO2': data["co2_trend"]})
-    fig_area = px.area(trend_df, x='Year', y='CO2', template="plotly_dark")
-    fig_area.update_traces(line=dict(color='#00b4d8', width=2), fillcolor='rgba(0, 180, 216, 0.15)')
-    fig_area.update_layout(
-        height=100, margin=dict(t=25, b=5, l=15, r=15), paper_bgcolor="#1c2541", plot_bgcolor="#1c2541",
-        title={'text': "<b>📈 30-YEAR CO₂ EMISSIONS TREND (KT/YR)</b>", 'font': {'size': 11, 'color': '#00b4d8'}},
-    )
-    fig_area.update_xaxes(showgrid=False); fig_area.update_yaxes(showgrid=False)
-    st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': False})
-        
-    st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+with g1:
+    st.markdown(f'<div class="info-card"><div style="font-size:10px; font-weight:bold; color:#38bdf8; margin-bottom:2px;">1️⃣ ATMOSPHERIC CO₂ LEVEL</div>', unsafe_allow_html=True)
+    st.plotly_chart(create_premium_gauge(db["co2"], 350, 500, "CO2", "#0284c7", " ppm"), use_container_width=True, config={'displayModeBar': False})
+    st.markdown(f'<div style="text-align:center; font-size:11px; color:#ef4444; font-weight:bold; margin-top:-10px;">{db["co2_sub"]}</div></div>', unsafe_allow_html=True)
+
+with g2:
+    st.markdown(f'<div class="info-card"><div style="font-size:10px; font-weight:bold; color:#f97316; margin-bottom:2px;">2️⃣ AV. TEMPERATURE ANOMALY</div>', unsafe_allow_html=True)
+    st.plotly_chart(create_premium_gauge(db["temp"], 0, 4, "TEMP", "#e11d48", "°C", "+"), use_container_width=True, config={'displayModeBar': False})
+    st.markdown('<div style="text-align:center; font-size:11px; color:#94a3b8; margin-top:-10px;">Dangerous Threshold: +4.0°C</div></div>', unsafe_allow_html=True)
+
+with g3:
+    st.markdown(f'<div class="info-card"><div style="font-size:10px; font-weight:bold; color:#eab308; margin-bottom:2px;">3️⃣ AIR QUALITY INDEX (AQI)</div>', unsafe_allow_html=True)
+    st.plotly_chart(create_premium_gauge(db["aqi"], 0, 200, "AQI", db["aqi_col"]), use_container_width=True, config={'displayModeBar': False})
+    st.markdown(f'<div style="text-align:center; font-size:11px; color:{db["aqi_col"]}; font-weight:bold; margin-top:-10px;">{db["aqi_lbl"]}</div></div>', unsafe_allow_html=True)
+
+# ==========================================
+# 6. TIER 2: SMOOTH HOTSPOT CONTOUR & TRENDS
+# ==========================================
+mid_l, mid_r = st.columns([1.1, 1.0])
+
+with mid_l:
+    st.markdown('<div class="info-card" style="height: 295px;">', unsafe_allow_html=True)
+    st.markdown('<div class="section-header" style="color:#38bdf8;">🔥 GHG & POLLUTION HOTSPOTS (BANGKOK & PERIPHERY)</div>', unsafe_allow_html=True)
     
-    # ส่วนล่าง: Combo Chart Bar & Line
-    fig_combo = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_combo.add_trace(go.Bar(x=months, y=data["pm25"], name='PM2.5', marker_color='#ff7a00'), secondary_y=False)
-    fig_combo.add_trace(go.Scatter(x=months, y=data["temp_list"], name='Temp', line=dict(color='#00b4d8', width=2)), secondary_y=True)
-    fig_combo.update_layout(
-        height=100, margin=dict(t=25, b=5, l=15, r=15), template="plotly_dark",
-        paper_bgcolor="#1c2541", plot_bgcolor="#1c2541", showlegend=False,
-        title={'text': "<b>📊 MONTHLY TEMPERATURE VS. AIR QUALITY</b>", 'font': {'size': 11, 'color': '#00b4d8'}},
+    # 🌟 เทคนิคเด็ด: ใช้สูตรคณิตศาสตร์ทำคลื่นความร้อนโค้งมนแบบสากลแทนการสุ่มบล็อกหยาบๆ
+    grid_res = 80
+    x = np.linspace(0, 10, grid_res)
+    y = np.linspace(0, 10, grid_res)
+    X, Y = np.meshgrid(x, y)
+    # สมมติให้จุดศูนย์กลางความร้อนอยู่ที่กรุงเทพฯ (พิกัด 5,5) แผ่ออกเป็นทรงกลมไล่ระดับความสวยงาม
+    Z = np.exp(-((X - 5)**2 + (Y - 5)**2) / 6.5) * 160 + np.exp(-((X - 7)**2 + (Y - 3)**2) / 2.0) * 80
+    
+    fig_contour = go.Figure(data=go.Contour(
+        z=Z, x=x, y=y,
+        colorscale=[[0, '#10b981'], [0.4, '#f59e0b'], [1, '#7f1d1d']],
+        showscale=False, line_width=0, contours=dict(coloring='heatmap', smoothing=1.3)
+    ))
+    # ปักหมุดจำลองชื่อจังหวัดประกอบแผนที่
+    fig_contour.add_trace(go.Scatter(
+        x=[5, 7.5, 2.5, 1.5], y=[5, 2.5, 3.5, 6],
+        mode='markers+text',
+        text=['🔴 BANGKOK', 'SAMUT PRAKAN', 'KAMAT', 'FANG'],
+        textposition='top center',
+        textfont=dict(size=9, color='white', family='Inter'),
+        marker=dict(color='white', size=4)
+    ))
+    fig_contour.update_layout(
+        height=225, margin=dict(t=10, b=10, l=10, r=10),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
     )
-    fig_combo.update_xaxes(showgrid=False); fig_combo.update_yaxes(showgrid=False)
+    st.plotly_chart(fig_contour, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with mid_r:
+    st.markdown('<div class="info-card" style="height: 295px;">', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📈 CHARTS AREA</div>', unsafe_allow_html=True)
+    
+    # 1. 30-Year Area Chart (เส้นสมูทเรืองแสง)
+    df_trend = pd.DataFrame({'Year': years_axis, 'CO2': db["co2_history"]})
+    fig_area = px.area(df_trend, x='Year', y='CO2')
+    fig_area.update_traces(line=dict(color='#38bdf8', width=2, shape='spline'), fillcolor='rgba(56, 189, 248, 0.15)')
+    fig_area.update_layout(
+        height=100, margin=dict(t=5, b=5, l=10, r=10), template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        title={'text': "<b>30-YEAR CO₂ EMISSIONS TREND (KT/YR)</b>", 'font': {'size': 9, 'color': '#94a3b8'}},
+        xaxis=dict(showgrid=False, font=dict(size=8)), yaxis=dict(showgrid=False, font=dict(size=8))
+    )
+    st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': False})
+    
+    # 2. Combo Chart
+    fig_combo = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_combo.add_trace(go.Bar(x=months_axis, y=db["pm25_series"], name='PM2.5', marker_color='#f97316', marker_line_width=0), secondary_y=False)
+    fig_combo.add_trace(go.Scatter(x=months_axis, y=db["temp_series"], name='Temp', line=dict(color='#38bdf8', width=2, shape='spline')), secondary_y=True)
+    fig_combo.update_layout(
+        height=100, margin=dict(t=15, b=5, l=10, r=10), template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False,
+        title={'text': "<b>MONTHLY TEMPERATURE VS. AIR QUALITY</b>", 'font': {'size': 9, 'color': '#94a3b8'}},
+        xaxis=dict(showgrid=False, font=dict(size=8)), yaxis=dict(showgrid=False, font=dict(size=8)),
+        yaxis2=dict(showgrid=False, font=dict(size=8))
+    )
     st.plotly_chart(fig_combo, use_container_width=True, config={'displayModeBar': False})
-
-st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 7. TIER 3: POLLUTION BREAKDOWN & WATER REPORT
+# 7. TIER 3: POLLUTION BREAKDOWN & WATER NODES
 # ==========================================
-b_left, b_right = st.columns([1.1, 1.0])
+bot_l, bot_r = st.columns([1.1, 1.0])
 
-with b_left:
-    pollutants = ['PM2.5', 'PM10', 'NO₂', 'SO₂']
+with bot_l:
+    st.markdown('<div class="info-card" style="height: 200px;">', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📊 POLLUTION BREAKDOWN (PM2.5, NO₂, SO₂)</div>', unsafe_allow_html=True)
+    
+    elements = ['PM2.5', 'PM10', 'NO₂', 'NOx', 'SO₂']
     fig_stack = go.Figure()
-    # 🔒 แก้ไขบั๊กจุดนี้เรียบร้อยแล้ว: ปิดปีกกาและซิงเกิลโควตครบถ้วน ไม่พังแน่นอน
-    fig_stack.add_trace(go.Bar(name='Low', x=pollutants, y=[80, 90, 100, 110], marker_color='#10b981'))
-    fig_stack.add_trace(go.Bar(name='Moderate', x=pollutants, y=[60, 50, 40, 30], marker_color='#f59e0b'))
-    fig_stack.add_trace(go.Bar(name='Unhealthy', x=pollutants, y=[70, 40, 50, 20], marker_color='#ef4444'))
+    fig_stack.add_trace(go.Bar(name='Low', x=elements, y=[40, 50, 70, 60, 80], marker_color='#10b981'))
+    fig_stack.add_trace(go.Bar(name='Moderate', x=elements, y=[50, 45, 35, 40, 30], marker_color='#f59e0b'))
+    fig_stack.add_trace(go.Bar(name='Unhealthy', x=elements, y=[70, 35, 45, 55, 40], marker_color='#ef4444'))
     
     fig_stack.update_layout(
-        barmode='stack', height=145, margin=dict(t=25, b=5, l=10, r=10), template="plotly_dark", 
-        paper_bgcolor="#1c2541", plot_bgcolor="#1c2541", showlegend=False,
-        title={'text': "<b>📊 POLLUTION BREAKDOWN (PM2.5, NO₂, SO₂)</b>", 'font': {'size': 11, 'color': '#00b4d8'}}
+        barmode='stack', height=145, margin=dict(t=5, b=5, l=5, r=5), template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False,
+        xaxis=dict(showgrid=False, font=dict(size=9)), yaxis=dict(showgrid=False, font=dict(size=9))
     )
-    st.plotly_chart(fig_stack, use_container_width=True, config={'displayModeBar': False})
-
-with b_right:
-    st.markdown('<div class="water-container">', unsafe_allow_html=True)
-    st.markdown('<div style="font-size: 11px; color: #00b4d8; font-weight: bold; margin-bottom: 8px;">💧 WATER QUALITY MONITORING (MAJOR RIVERS)</div>', unsafe_allow_html=True)
-    
-    table_code = """
-    <table style="width:100%; border-collapse: collapse; font-size:11px; color:#ffffff;">
-        <tr style="border-bottom: 1px solid #3a506b; color:#94a3b8; font-weight:bold; text-align:left;">
-            <th style="padding: 3px;">River Station</th>
-            <th style="text-align:center; padding: 3px;">DO STATUS</th>
-            <th style="text-align:center; padding: 3px;">COD STATUS</th>
-        </tr>
-        <tr style="border-bottom: 1px solid #3a506b;">
-            <td style="padding: 5px; font-weight:bold; color:#48cae4;">Chao Phraya</td>
-            <td style="text-align:center;"><span class="badge badge-pass">DO PASS</span></td>
-            <td style="text-align:center;"><span class="badge badge-warn">COD WARN</span></td>
-        </tr>
-        <tr>
-            <td style="padding: 5px; font-weight:bold; color:#48cae4;">Tha Chin</td>
-            <td style="text-align:center;"><span class="badge badge-pass">DO PASS</span></td>
-            <td style="text-align:center;"><span class="badge badge-pass">DO PASS</span></td>
-        </tr>
-    </table>
-    """
-    st.markdown(table_code, unsafe_allow_html=True)
-    
-    # ปุ่มดาวน์โหลดรายงานแบบเสถียร
-    report_df = pd.DataFrame({'Metric': ['CO2', 'Temp Anomaly', 'AQI'], 'Current_Value': [data["co2"], data["temp"], data["aqi"]]})
-    csv_data = report_df.to_csv(index=False).encode('utf-8')
-    st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
-    st.download_button(label="📥 DOWNLOAD EXPORT REPORT (.CSV)", data=csv_data, file_name="environmental_report.csv", mime="text/csv")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.plotly_chart(fig_stack, use_container_width=True, config={'
