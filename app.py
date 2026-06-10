@@ -48,6 +48,7 @@ def get_sensor_data():
 
         df.to_csv(DATA_FILE, index=False)
 
+    # ===== CLEAN =====
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     df = df.dropna(subset=["Date"])
     df = df.sort_values("Date")
@@ -75,19 +76,18 @@ with st.sidebar:
         ["รายชั่วโมง (24h)", "รายวัน"]
     )
 
-    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
+    if st.button("🔄 อัปเดตข้อมูล"):
         st.rerun()
 
 # ===== HEADER =====
-col_title, col_time = st.columns([2, 1])
+col1, col2 = st.columns([2, 1])
 
-with col_title:
+with col1:
     st.title("🌍 Tracking GHGs Emission")
 
-with col_time:
+with col2:
     st.markdown(
-        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}",
-        unsafe_allow_html=True
+        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}"
     )
 
 # ===== METRICS =====
@@ -105,7 +105,7 @@ for i, col_name in enumerate(pollutants):
         delta=int(round(delta_val, 0))
     )
 
-# ===== GRAPH CLEAN =====
+# ===== GRAPH FIX =====
 df_plot = df.copy()
 
 df_plot["Date"] = pd.to_datetime(df_plot["Date"], errors="coerce")
@@ -113,12 +113,12 @@ df_plot[selected_pollutant] = pd.to_numeric(df_plot[selected_pollutant], errors=
 
 df_plot = df_plot.dropna(subset=["Date", selected_pollutant])
 
-# ===== CHECK =====
+st.write("DEBUG ROWS:", len(df_plot))  # <-- ถ้ายัง 0 = data มีปัญหา
+
 if df_plot.empty:
-    st.error("ไม่มีข้อมูลสำหรับกราฟ")
+    st.error("❌ ไม่มีข้อมูลสำหรับกราฟ (หลัง clean แล้วว่าง)")
     st.stop()
 
-# ===== GRAPH =====
 fig = px.line(
     df_plot,
     x="Date",
@@ -128,23 +128,16 @@ fig = px.line(
     height=300
 )
 
-fig.update_traces(
-    line_color="#00ffcc",
-    line_width=3
-)
+fig.update_traces(mode="lines+markers")
 
-# ===== 🔥 FIX Y-AXIS (NO DECIMAL, NO SCIENTIFIC) =====
+# ===== Y AXIS = STEP 10 =====
 fig.update_yaxes(
-    tickformat="d",   # integer only
-    separatethousands=True
+    dtick=10  # 👈 หลัก 10 ตามที่ต้องการ
 )
 
 fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(t=40, b=10, l=10, r=10),
-    xaxis_title=None,
-    yaxis_title=None
+    plot_bgcolor="rgba(0,0,0,0)"
 )
 
 st.plotly_chart(fig, use_container_width=True)
