@@ -1,59 +1,45 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import numpy as np
 
-# 1. SETUP: บังคับให้หน้าจอไม่แสดงแถบเลื่อน
-st.set_page_config(layout="wide", page_title="GHG Monitor Board", initial_sidebar_state="expanded")
+# 1. SETUP: บังคับหน้ากว้าง (Wide) และล็อก Layout หน้าจอเดี่ยวแบบแอปพลิเคชัน
+st.set_page_config(layout="wide", page_title="Dashboard Tracking GHGs Emission", initial_sidebar_state="collapsed")
 
-# 2. CSS: ล็อกความสูงและซ่อน Scrollbar
+# 2. CSS: ตกแต่งหน้าตาแบบ Midnight Cyber High-Contrast (ถอดดีไซน์จากรูปตัวอย่าง)
 st.markdown("""
     <style>
-        /* ซ่อนแถบเลื่อนของแอปทั้งหมด */
+        /* ล็อกมิติหน้าจอและซ่อน Scrollbar ของระบบ */
         ::-webkit-scrollbar { display: none; }
-        .stApp { overflow: hidden !important; height: 100vh !important; }
-        
-        /* ปรับ Metrics ให้กะทัดรัดที่สุด */
-        [data-testid="stMetric"] { 
-            background: #161b22; padding: 8px !important; border-radius: 10px; border: 1px solid #30363d;
+        html, body, [data-testid="stAppViewContainer"] { 
+            overflow: hidden !important; 
+            height: 100vh !important; 
+            background-color: #060b13 !important;
         }
-        [data-testid="stMetricValue"] { font-size: 20px !important; }
-        [data-testid="stMetricLabel"] { font-size: 12px !important; }
         
-        /* Sidebar layout */
-        section[data-testid="stSidebar"] > div { display: flex; flex-direction: column; height: 100vh; }
-        .brand-box { margin-top: auto; padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; }
-    </style>
-""", unsafe_allow_html=True)
+        /* จัดระยะห่างขอบแอปหลัก */
+        .block-container { padding: 1rem 2rem !important; }
 
-# 3. CONTENT
-st.title("🌍 Tracking GHGs Emission")
+        /* --- STYLING HEADER --- */
+        .header-container {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;
+        }
+        .header-title-box { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; }
+        .header-time { font-family: monospace; font-size: 18px; color: #94a3b8; font-weight: bold; }
 
-# Metrics
-metrics_data = {
-    "CO₂ (ppm)": "433", "CH₄ (ppb)": "1865", "NO₂ (ppb)": "42.1",
-    "PM 2.5 (µg/m³)": "22.4", "Temp (°C)": "33.2", "Humid (%)": "64"
-}
-cols = st.columns(6)
-for i, (label, val) in enumerate(metrics_data.items()):
-    cols[i].metric(label=label, value=val)
+        /* --- STYLING PANEL CARD --- */
+        .panel-card {
+            background: linear-gradient(180deg, rgba(20, 32, 48, 0.7) 0%, rgba(10, 15, 26, 0.8) 100%);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 12px; padding: 15px; height: 100%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .panel-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; margin-bottom: 5px; }
+        .panel-value { font-size: 28px; font-weight: 700; color: #22d3ee; margin: 2px 0; }
+        .panel-sub { font-size: 11px; color: #10b981; font-weight: 500; }
 
-# Graph: ปรับ height ให้พอดีเป๊ะ
-df = pd.DataFrame({'Date': pd.date_range(start='2026-05-01', periods=30), 'Value': np.random.randn(30).cumsum()})
-fig = px.line(df, x='Date', y='Value', template="plotly_dark", height=280)
-fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", margin=dict(t=20, b=10, l=10, r=10))
-st.plotly_chart(fig, use_container_width=True)
-
-# 4. SIDEBAR
-with st.sidebar:
-    st.markdown("### 📋 เมนูควบคุม")
-    selected = st.selectbox("สารมลพิษ:", list(metrics_data.keys()))
-    mode = st.radio("รูปแบบ:", ["รายวัน", "รายเดือน"])
-    
-    st.markdown("""
-        <div class="brand-box">
-            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="40">
-            <div style="font-weight:bold; margin-top:5px; color:white; font-size: 12px;">AE-IET [SBU]</div>
-            <div style="font-size:9px; color:#888;">Engineering Team</div>
-        </div>
-    """, unsafe_allow_html=True)
+        /* จัดแต่ง Component ของ Streamlit Dropdown ให้เข้าธีม */
+        div[data-baseweb="select"] { background-color: #0f172a !important; border
