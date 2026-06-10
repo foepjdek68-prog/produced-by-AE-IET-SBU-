@@ -4,6 +4,7 @@ import plotly.express as px
 import numpy as np
 from datetime import datetime
 import pytz
+import random
 
 # 1. SETUP: บังคับให้หน้าจอไม่แสดงแถบเลื่อน
 st.set_page_config(layout="wide", page_title="GHG Monitor Board", initial_sidebar_state="expanded")
@@ -30,24 +31,54 @@ st.markdown("""
 # ---------------------------------------------------------
 # ฟังก์ชันดึงข้อมูล: จุดนี้คือที่ที่คุณต้องนำ API หรือ Database จริงมาเชื่อม
 # ---------------------------------------------------------
-@st.cache_data(ttl=60) # Cache ข้อมูล 60 วินาทีเพื่อจำลองการดึงข้อมูลแบบ Real-time
+@st.cache_data(ttl=60)
 def get_sensor_data():
-    # สร้างเวลาจำลองย้อนหลัง 24 ชั่วโมงจากเวลาปัจจุบัน
+
     bkk_tz = pytz.timezone('Asia/Bangkok')
     now = datetime.now(bkk_tz)
-    dates = pd.date_range(end=now, periods=24, freq='h')
-    
-    # สร้างข้อมูลจำลองที่ใกล้เคียงความเป็นจริง
-    df = pd.DataFrame({
-        'Date': dates,
-        'CO₂ (ppm)': np.random.normal(415, 10, 24).round(1),
-        'CH₄ (ppb)': np.random.normal(1850, 20, 24).round(1),
-        'NO₂ (ppb)': np.random.normal(40, 5, 24).round(1),
-        'PM 2.5 (µg/m³)': np.random.normal(25, 8, 24).round(1),
-        'Temp (°C)': np.random.normal(33, 2, 24).round(1),
-        'Humid (%)': np.random.normal(60, 5, 24).round(1)
-    })
-    return df, now
+
+    if "history_df" not in st.session_state:
+
+        dates = pd.date_range(
+            end=now,
+            periods=24,
+            freq="h"
+        )
+
+        df = pd.DataFrame({
+            'Date': dates,
+            'CO₂ (ppm)': np.random.normal(415, 10, 24).round(1),
+            'CH₄ (ppb)': np.random.normal(1850, 20, 24).round(1),
+            'NO₂ (ppb)': np.random.normal(40, 5, 24).round(1),
+            'PM 2.5 (µg/m³)': np.random.normal(25, 8, 24).round(1),
+            'Temp (°C)': np.random.normal(33, 2, 24).round(1),
+            'Humid (%)': np.random.normal(60, 5, 24).round(1)
+        })
+
+        st.session_state.history_df = df
+
+    else:
+
+        df = st.session_state.history_df.copy()
+
+        new_row = {
+            'Date': now,
+            'CO₂ (ppm)': round(df['CO₂ (ppm)'].iloc[-1] + random.uniform(-2, 2), 1),
+            'CH₄ (ppb)': round(df['CH₄ (ppb)'].iloc[-1] + random.uniform(-10, 10), 1),
+            'NO₂ (ppb)': round(df['NO₂ (ppb)'].iloc[-1] + random.uniform(-1, 1), 1),
+            'PM 2.5 (µg/m³)': round(df['PM 2.5 (µg/m³)'].iloc[-1] + random.uniform(-2, 2), 1),
+            'Temp (°C)': round(df['Temp (°C)'].iloc[-1] + random.uniform(-0.5, 0.5), 1),
+            'Humid (%)': round(df['Humid (%)'].iloc[-1] + random.uniform(-1, 1), 1),
+        }
+
+        df.loc[len(df)] = new_row
+
+        if len(df) > 24:
+            df = df.tail(24).reset_index(drop=True)
+
+        st.session_state.history_df = df
+
+    return st.session_state.history_df, now
 
 # ดึงข้อมูล
 df, current_time = get_sensor_data()
@@ -63,9 +94,12 @@ with st.sidebar:
     mode = st.radio("รูปแบบข้อมูล:", ["รายชั่วโมง (24h)", "รายวัน"])
     
     # ปุ่มกด Refresh ข้อมูลด้วยตัวเอง
-    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
-        st.cache_data.clear()
-        st.rerun()
+   if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
+    if "history_df" in st.session_state:
+        del st.session_state["history_df"]
+
+    st.cache_data.clear()
+    st.rerun()
     
     st.markdown("""
         <div class="brand-box">
