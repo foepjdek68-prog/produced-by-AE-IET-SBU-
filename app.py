@@ -5,26 +5,41 @@ from datetime import datetime
 from utils.database import load_data, save_data
 from utils.api_loader import fetch_data
 
-# ------------------------
-# Page Config
-# ------------------------
+# =========================
+# PAGE
+# =========================
 
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# ------------------------
-# Sidebar
-# ------------------------
+# =========================
+# CSS
+# =========================
 
-with st.sidebar:
-    st.header("📋 เมนู")
+st.markdown("""
+<style>
 
-# ------------------------
-# Load Data
-# ------------------------
+[data-testid="stMetric"]{
+    background:#111827;
+    border:1px solid #374151;
+    padding:15px;
+    border-radius:12px;
+}
+
+.block-container{
+    padding-top:1rem;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# LOAD DATA
+# =========================
 
 df = load_data()
 
@@ -34,70 +49,88 @@ if df.empty:
 
 latest = df.iloc[-1]
 
-# ------------------------
-# Thai Date
-# ------------------------
+# =========================
+# DATE
+# =========================
 
 date_obj = datetime.fromisoformat(
-    str(latest["Date"]).replace("Z", "")
+    str(latest["Date"]).replace("Z","")
 )
 
 thai_date = (
     f"{date_obj.day:02d}/"
     f"{date_obj.month:02d}/"
-    f"{(date_obj.year + 543) % 100:02d}"
+    f"{(date_obj.year+543)%100:02d}"
 )
 
-# ------------------------
-# Header
-# ------------------------
+# =========================
+# HEADER
+# =========================
 
-st.title("Dashboard Tracking")
+st.info("""
+### 🌍 Dashboard Tracking
 
-st.subheader("Greenhouse Gases Emission")
+## Greenhouse Gases Emission
 
-st.caption(
-    "ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ"
-)
+ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ
+""")
 
-st.caption(
-    f"ข้อมูลล่าสุด : {thai_date}"
-)
+st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
-st.markdown("---")
-
-# ------------------------
+# =========================
 # KPI
-# ------------------------
+# =========================
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-c1.metric("CO₂", round(latest["CO2"], 1))
-c2.metric("CH₄", round(latest["CH4"], 1))
-c3.metric("NO₂", round(latest["NO2"], 1))
-c4.metric("PM2.5", round(latest["PM25"], 1))
-c5.metric("อุณหภูมิ", round(latest["Temp"], 1))
-c6.metric("ความชื้น", round(latest["Humidity"], 1))
+c1.metric("CO₂", round(latest["CO2"],1))
+c2.metric("CH₄", round(latest["CH4"],1))
+c3.metric("NO₂", round(latest["NO2"],1))
+c4.metric("PM2.5", round(latest["PM25"],1))
+c5.metric("Temperature", round(latest["Temp"],1))
+c6.metric("Humidity", round(latest["Humidity"],1))
 
 st.markdown("---")
 
-# ------------------------
-# Graph + Overview
-# ------------------------
+# =========================
+# FILTER
+# =========================
 
-left, right = st.columns([4, 1])
+period = st.radio(
+    "ช่วงเวลา",
+    ["24 ชั่วโมง","7 วัน","30 วัน","1 ปี"],
+    horizontal=True
+)
+
+if period == "24 ชั่วโมง":
+    df_plot = df.tail(24)
+
+elif period == "7 วัน":
+    df_plot = df.tail(24*7)
+
+elif period == "30 วัน":
+    df_plot = df.tail(24*30)
+
+else:
+    df_plot = df
+
+# =========================
+# GRAPH
+# =========================
+
+left,right = st.columns([4,1])
 
 with left:
 
     st.subheader("📈 กราฟแสดงข้อมูล")
 
     options = {
-        "CO₂ - Carbon Dioxide (ก๊าซคาร์บอนไดออกไซด์)": "CO2",
-        "CH₄ - Methane (ก๊าซมีเทน)": "CH4",
-        "NO₂ - Nitrogen Dioxide (ก๊าซไนโตรเจนไดออกไซด์)": "NO2",
-        "PM2.5 - ฝุ่นละอองขนาดเล็ก": "PM25",
-        "Temperature - อุณหภูมิ": "Temp",
-        "Humidity - ความชื้นสัมพัทธ์": "Humidity"
+        "Carbon Dioxide":"CO2",
+        "Methane":"CH4",
+        "Nitrogen Dioxide":"NO2",
+        "PM2.5":"PM25",
+        "Temperature":"Temp",
+        "Humidity":"Humidity"
     }
 
     selected_label = st.selectbox(
@@ -108,28 +141,37 @@ with left:
     selected = options[selected_label]
 
     fig = px.line(
-        df.tail(168),
+        df_plot,
         x="Date",
         y=selected,
         template="plotly_dark"
     )
 
     fig.update_layout(
-        height=520,
+        height=500,
         margin=dict(
             l=10,
             r=10,
             t=20,
             b=10
-        ),
-        xaxis_title="วันที่",
-        yaxis_title=""
+        )
     )
 
     st.plotly_chart(
         fig,
         use_container_width=True
     )
+
+    descriptions = {
+        "CO2":"Carbon dioxide from fuel combustion and industrial activities.",
+        "CH4":"Methane emissions from agriculture and waste.",
+        "NO2":"Air pollutant from transportation and industry.",
+        "PM25":"Fine particulate matter affecting health.",
+        "Temp":"Ambient air temperature.",
+        "Humidity":"Relative humidity in atmosphere."
+    }
+
+    st.info(descriptions[selected])
 
 with right:
 
@@ -142,10 +184,23 @@ with right:
 
     st.metric(
         "ค่าเฉลี่ย",
-        round(df[selected].mean(), 2)
+        round(df[selected].mean(),2)
     )
 
     st.metric(
         "ค่าสูงสุด",
-        round(df[selected].max(), 2)
+        round(df[selected].max(),2)
     )
+
+    avg_co2 = df["CO2"].mean()
+
+    if avg_co2 < 450:
+        status = "🟢 Normal"
+
+    elif avg_co2 < 500:
+        status = "🟡 Warning"
+
+    else:
+        status = "🔴 Critical"
+
+    st.info(f"Status\n\n{status}")
