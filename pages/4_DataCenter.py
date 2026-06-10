@@ -1,77 +1,41 @@
 import streamlit as st
 from utils.database import load_data
 
-st.title("🗄️ Data Center")
-
-# -------------------
-# Project Info
-# -------------------
-
-st.subheader("📌 Project Information")
-
-st.info("""
-Dashboard Tracking Greenhouse Gases Emission
-
-ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ
-
-พัฒนาเพื่อรวบรวมและเชื่อมโยงข้อมูลมลพิษ
-จากหลายแหล่งข้อมูลมาไว้ในระบบเดียว
-""")
-
-# -------------------
-# Data Sources
-# -------------------
-
-st.subheader("🔗 Data Sources")
-
-col1,col2 = st.columns(2)
-
-with col1:
-
-    st.success("Air4Thai")
-    st.success("TMD")
-
-with col2:
-
-    st.warning("OpenAQ (Planned)")
-    st.warning("Sentinel-5P (Planned)")
-
-st.markdown("---")
-
-# -------------------
-# Raw Data
-# -------------------
+st.title("📂 ศูนย์ข้อมูล")
 
 df = load_data()
 
-st.subheader("📊 Database")
+if df.empty:
 
-st.write(f"Total Records : {len(df)}")
+    st.warning("ไม่พบข้อมูล")
 
-st.dataframe(
-    df,
-    use_container_width=True
-)
+else:
 
-csv = df.to_csv(index=False)
+    st.metric(
+        "จำนวนข้อมูลทั้งหมด",
+        len(df)
+    )
 
-st.download_button(
-    "📥 Download CSV",
-    csv,
-    "ghg_data.csv",
-    "text/csv"
-)
+    st.dataframe(
+        df,
+        use_container_width=True
+    )
+
+    csv = df.to_csv(index=False)
+
+    st.download_button(
+        "📥 ดาวน์โหลดข้อมูล CSV",
+        csv,
+        "ghg_data.csv",
+        "text/csv"
+    )
 
 st.markdown("---")
 
-# -------------------
-# Team
-# -------------------
-
 st.caption("""
-Developed By
+ผู้จัดทำ
 
-Member 1
-Member 2
-Member 3
+ชื่อสมาชิก 1
+ชื่อสมาชิก 2
+ชื่อสมาชิก 3
 """)
