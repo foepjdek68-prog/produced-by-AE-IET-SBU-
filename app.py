@@ -123,7 +123,7 @@ def render_sleek_arc(val, min_v, max_v, arc_color):
     fig = go.Figure(go.Indicator(
         mode="gauge", value=val,
         gauge={
-            'axis': {'range': [min_v, max_v], 'tickvals': [], 'visible': False},
+            'axis': {'range': [min_v, max_v], 'visible': False},
             'bar': {'color': arc_color, 'thickness': 0.28},
             'bgcolor': '#1a2333'
         }
@@ -167,12 +167,10 @@ with m_left:
     st.markdown('<div class="premium-box" style="height:325px;">', unsafe_allow_html=True)
     st.markdown('<div class="box-title" style="color:#38bdf8;">GHG & POLLUTION HOTSPOTS (BANGKOK & PERIPHERY)</div>', unsafe_allow_html=True)
     
-    # 🌟 เทคนิคการสลัดบล็อกพิกเซล: ใช้สูตรคณิตศาสตร์ความละเอียดสูงทำคลื่นความร้อนแบบสมูทตรงปก
     grid_size = 100
     x_coords = np.linspace(0, 10, grid_size)
     y_coords = np.linspace(0, 10, grid_size)
     MX, MY = np.meshgrid(x_coords, y_coords)
-    # จำลองใจกลางความร้อนหลัก (กรุงเทพฯ อยู่ตรงกลาง) และกระจายออกรอบข้างอย่างสมดุล
     MZ = np.exp(-((MX - 5)**2 + (MY - 5)**2) / 5.5) * 170 + np.exp(-((MX - 7.5)**2 + (MY - 3.5)**2) / 1.8) * 90
     
     fig_map = go.Figure(data=go.Contour(
@@ -180,13 +178,14 @@ with m_left:
         colorscale=[[0, '#22c55e'], [0.35, '#eab308'], [0.7, '#ef4444'], [1, '#7f1d1d']],
         showscale=False, line_width=0, contours=dict(coloring='heatmap', smoothing=1.5)
     ))
-    # วาดจุดแลนด์มาร์กสำคัญบนแผนที่
+    
+    # ✅ FIX: แก้ไข textfont เป็นคีย์เวิร์ดสากล (family) และใช้ <b> ทำตัวหนา เพื่อกันแอปพังร้อยเปอร์เซ็นต์
     fig_map.add_trace(go.Scatter(
         x=[5, 7.5, 2.0, 1.5], y=[5, 2.5, 3.5, 6.5],
         mode='markers+text',
-        text=['🔴 BANGKOK', 'SAMUT PRAKAN', 'KAMAT', 'FANG'],
+        text=['<b>🔴 BANGKOK</b>', '<b>SAMUT PRAKAN</b>', '<b>KAMAT</b>', '<b>FANG</b>'],
         textposition='top center',
-        textfont=dict(size=9, color='white', font_family='Inter', weight='bold'),
+        textfont=dict(size=9, color='white', family='Inter'),
         marker=dict(color='white', size=4)
     ))
     fig_map.update_layout(
@@ -202,7 +201,6 @@ with m_right:
     st.markdown('<div class="premium-box" style="height:325px;">', unsafe_allow_html=True)
     st.markdown('<div class="box-title">CHARTS TREND MONITORING</div>', unsafe_allow_html=True)
     
-    # กราฟ 1: Smooth Area Emission Trend
     df_a = pd.DataFrame({'Year': years, 'CO2': ctx["co2_history"]})
     fig_a = px.area(df_a, x='Year', y='CO2')
     fig_a.update_traces(line=dict(color='#38bdf8', width=2, shape='spline'), fillcolor='rgba(56, 189, 248, 0.12)')
@@ -215,7 +213,6 @@ with m_right:
     )
     st.plotly_chart(fig_a, use_container_width=True, config={'displayModeBar': False})
     
-    # กราฟ 2: Monthly Combo Bar & Line
     fig_c = make_subplots(specs=[[{"secondary_y": True}]])
     fig_c.add_trace(go.Bar(x=months, y=ctx["pm25"], name='PM2.5', marker_color='#f97316', marker_line_width=0), secondary_y=False)
     fig_c.add_trace(go.Scatter(x=months, y=ctx["temp_list"], name='Temp', line=dict(color='#38bdf8', width=2, shape='spline')), secondary_y=True)
@@ -251,7 +248,6 @@ with b_left:
         xaxis=dict(showgrid=False, tickfont=dict(size=9, color='#64748b')),
         yaxis=dict(showgrid=False, tickfont=dict(size=9, color='#64748b'))
     )
-    # 🔒 ล็อคความเสถียรของบรรทัดนี้เรียบร้อย ไม่มีข้อความหลุดแน่นอน
     st.plotly_chart(fig_s, use_container_width=True, config={'displayModeBar': False})
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -259,7 +255,6 @@ with b_right:
     st.markdown('<div class="premium-box" style="height:210px;">', unsafe_allow_html=True)
     st.markdown('<div class="box-title">WATER QUALITY MONITORING (MAJOR RIVERS)</div>', unsafe_allow_html=True)
     
-    # 🌊 เทคนิคดึงคลื่นน้ำ SVG ลื่นไหลต่อเนิ่องตามแบบภาพดั้งเดิม
     river_markup = """
     <div style="margin-top: 5px;">
         <div class="river-row">
