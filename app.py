@@ -11,7 +11,7 @@ from datetime import datetime
 # ==========================================
 st.set_page_config(layout="wide", page_title="Intelligent Environmental & GHG Dashboard")
 
-# Injection of Custom Enterprise CSS Style
+# การฉีดสไตล์ CSS สำหรับการปรับแต่งส่วนติดต่อผู้ใช้ระดับองค์กร (Enterprise UI)
 st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;700;800&family=Sarabun:wght=400;700&display=swap');
@@ -70,3 +70,29 @@ st.markdown("""
             font-weight: 800;
             color: #ffffff;
             letter-spacing: 0.5px;
+            display: inline-block;
+            min-width: 65px;
+            text-align: center;
+        }
+        .badge-pass { background-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+        .badge-warn { background-color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 2. DATA INFRASTRUCTURE (MOCK ENGINE)
+# ==========================================
+years = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
+months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+DATA_SET = {
+    "CENTRAL (ภาคกลาง)": {
+        "co2": 421.5, "co2_sub": "+0.3% vs. last month", "co2_sub_col": "#ef4444",
+        "temp": 1.8, "temp_lbl": "+1.8°C", "aqi": 85, "aqi_lbl": "Moderate", "aqi_col": "#eab308",
+        "co2_history": [250, 390, 520, 680, 810, 1020, 1420],
+        "pm25": [12, 14, 18, 26, 32, 28, 22, 15, 12, 11, 13, 16],
+        "temp_list": [18, 19, 22, 26, 29, 28, 27, 26, 25, 23, 20, 18]
+    },
+    "NORTH (ภาคเหนือ)": {
+        "co2": 412.8, "co2_sub": "+0.1% vs. last month", "co2_sub_col": "#10b981",
+        "temp": 2.4, "temp_lbl": "+2.4°C", "aqi": 165, "aqi_lbl": "Unhealthy",
