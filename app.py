@@ -31,7 +31,6 @@ st.markdown("""
 # ---------------------------------------------------------
 # ฟังก์ชันดึงข้อมูล: จุดนี้คือที่ที่คุณต้องนำ API หรือ Database จริงมาเชื่อม
 # ---------------------------------------------------------
-@st.cache_data(ttl=60)
 def get_sensor_data():
 
     bkk_tz = pytz.timezone('Asia/Bangkok')
@@ -94,7 +93,8 @@ with st.sidebar:
     mode = st.radio("รูปแบบข้อมูล:", ["รายชั่วโมง (24h)", "รายวัน"])
     
     # ปุ่มกด Refresh ข้อมูลด้วยตัวเอง
-    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
+    # ปุ่มกด Refresh ข้อมูลด้วยตัวเอง
+if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
     if "history_df" in st.session_state:
         del st.session_state["history_df"]
 
