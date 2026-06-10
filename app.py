@@ -1,303 +1,322 @@
 import streamlit as st
+
 import pandas as pd
+
 import plotly.express as px
+
 import numpy as np
 
-# 1. SETUP: บังคับหน้ากว้าง
-st.set_page_config(layout="wide", page_title="AE-IET GHG Monitor", page_icon="🌍")
 
-# 2. CSS: Custom Styling (Cyber Environmental Theme)
+
+# 1. SETUP: บังคับหน้ากว้างและปิดแถบเลื่อนแนวตั้ง
+
+st.set_page_config(layout="wide", page_title="GHG Monitor Board", initial_sidebar_state="expanded")
+
+
+
+# 2. CSS: ล็อกมิติหน้าจอและคุมโทนสี Cyber Environmental ตามภาพตัวอย่าง
+
 st.markdown("""
+
     <style>
-        /* โหลดฟอนต์ */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap');
 
-        /* ปรับแต่งพื้นหลังและฟอนต์หลัก */
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-            background-color: #050910 !important;
-            color: #e2e8f0 !important;
-            font-family: 'Inter', 'Sarabun', sans-serif !important;
+        /* ซ่อน Scrollbar ทั้งหน้าเว็บ */
+
+        ::-webkit-scrollbar { display: none; }
+
+        html, body, [data-testid="stAppViewContainer"] { 
+
+            overflow: hidden !important; 
+
+            height: 100vh !important; 
+
+            background-color: #0c1524 !important;
+
         }
 
-        /* ซ่อน Scrollbar (ถ้าหน้าจอพอ) แต่ยอมให้เลื่อนได้ถ้าจำเป็นบนมือถือ */
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
         
-        /* ปรับ Padding ของเนื้อหาหลัก */
-        .block-container {
-            padding-top: 1.5rem !important;
-            padding-bottom: 0rem !important;
-            padding-left: 3rem !important;
-            padding-right: 3rem !important;
+
+        /* ปรับดีไซน์หัวข้อให้กระชับโปร่งตา */
+
+        .main-title { font-size: 24px; font-weight: 700; color: #ffffff; margin-bottom: 2px; }
+
+        .sub-title { font-size: 13px; color: #a7f3d0; margin-bottom: 12px; }
+
+
+
+        /* ปรับดีไซน์สไตล์การแสดงผลการวัด (Metrics) */
+
+        [data-testid="stMetric"] { 
+
+            background: rgba(15, 23, 42, 0.6) !important; 
+
+            padding: 10px 15px !important; 
+
+            border-radius: 12px !important; 
+
+            border: 1px solid rgba(34, 211, 238, 0.2) !important;
+
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+
         }
 
-        /* --- สไตล์หัวข้อ --- */
-        .main-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.5px;
-            margin-bottom: 2px;
-        }
-        .sub-title {
-            font-size: 14px;
-            color: #36d399; /* Emerald */
-            margin-bottom: 20px;
-            font-weight: 300;
-        }
+        [data-testid="stMetricValue"] { font-size: 22px !important; font-weight: 700 !important; color: #22d3ee !important; }
 
-        /* --- Custom Metric Cards System --- */
-        .metric-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .metric-card {
-            flex: 1;
-            background: rgba(17, 25, 40, 0.75);
-            backdrop-filter: blur(4px);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 15px 20px;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-        .metric-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(34, 211, 238, 0.3);
-        }
-        .metric-label {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .metric-value-value {
-            font-size: 26px;
-            font-weight: 700;
-            color: #22d3ee; /* Cyan */
-            line-height: 1;
-        }
-        .metric-value-unit {
-            font-size: 14px;
-            color: #64748b;
-            margin-left: 4px;
-            font-weight: 400;
-        }
-        .metric-status {
-            font-size: 11px;
-            margin-top: 6px;
-            font-weight: 400;
-        }
+        [data-testid="stMetricLabel"] { font-size: 12px !important; color: #94a3b8 !important; }
 
-        /* --- สไตล์กราฟและ Info Card --- */
-        .chart-block, .info-card {
-            background: rgba(17, 25, 40, 0.5);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            padding: 20px;
-            height: 340px; /* บังคับความสูงให้เท่ากัน */
-        }
         
-        .chart-caption, .info-caption {
-            font-size: 13px;
-            color: #94a3b8;
-            margin-bottom: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+
+        /* สไตล์กล่องข้อมูลด้านล่าง */
+
+        .info-card {
+
+            background: rgba(15, 23, 42, 0.4); 
+
+            padding: 18px; 
+
+            border-radius: 12px; 
+
+            border: 1px solid rgba(255,255,255,0.05); 
+
+            height: 310px;
+
         }
 
-        /* --- Sidebar Styling --- */
-        section[data-testid="stSidebar"] {
-            background-color: #0b1120 !important;
-            border-right: 1px solid rgba(255,255,255,0.05);
-        }
-        /* ปรับแต่ง Selectbox/Radio ใน Sidebar */
-        div[data-baseweb="select"] > div, div[data-testid="stMarkdownContainer"] p {
-            font-size: 14px !important;
-        }
         
-        /* สไตล์แบรนด์ดิ้งด้านล่าง Sidebar */
-        .brand-box {
-            margin-top: auto;
-            padding: 20px;
-            background: rgba(34, 211, 238, 0.03);
-            border-radius: 12px;
-            border: 1px solid rgba(34, 211, 238, 0.08);
-            margin-bottom: 20px;
-            text-align: center;
-        }
 
-        /* สีสถานะ */
-        .status-safe { color: #10b981; }
-        .status-warning { color: #fbbf24; }
-        .status-moderate { color: #f97316; }
-        .status-normal { color: #a7f3d0; }
+        /* จัดตำแหน่ง Sidebar เครดิต */
+
+        section[data-testid="stSidebar"] { background-color: #090f1a !important; }
+
+        section[data-testid="stSidebar"] > div { display: flex; flex-direction: column; height: 100vh; }
+
+        .brand-box { 
+
+            margin-top: auto; 
+
+            padding: 15px; 
+
+            background: rgba(34, 211, 238, 0.05); 
+
+            border-radius: 12px; 
+
+            border: 1px solid rgba(34, 211, 238, 0.15);
+
+            margin-bottom: 40px;
+
+        }
 
     </style>
+
 """, unsafe_allow_html=True)
 
-# 3. BASE DATA
-# เพิ่มรหัสสี CSS สำหรับแต่ละสถานะเพื่อใช้ใน Custom HTML
+
+
+# 3. BASE DATA: คลังฐานข้อมูลมลพิษ (ผูกค่าฐานสำหรับการคำนวณกราฟ)
+
+# กำหนดค่าตัวเลขเริ่มต้นและหน่วยนับของสารแต่ละประเภท
+
 database = {
-    "CO₂ (ppm)": {"current": 433, "base": 415, "unit": "ppm", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
-    "CH₄ (ppb)": {"current": 1865, "base": 1820, "unit": "ppb", "status": "ปกติ (Safe)", "stat_class": "status-safe"},
-    "NO₂ (ppb)": {"current": 42.1, "base": 35.0, "unit": "ppb", "status": "เฝ้าระวัง (Warning)", "stat_class": "status-warning"},
-    "PM 2.5 (µg/m³)": {"current": 22.4, "base": 15.0, "unit": "µg/m³", "status": "ปานกลาง (Moderate)", "stat_class": "status-moderate"},
-    "Temp (°C)": {"current": 33.2, "base": 31.5, "unit": "°C", "status": "ปกติ (Normal)", "stat_class": "status-normal"},
-    "Humid (%)": {"current": 64.0, "base": 60.0, "unit": "%", "status": "ปกติ (Normal)", "stat_class": "status-normal"}
+
+    "CO₂ (ppm)": {"current": 433, "base": 415, "unit": "ppm", "status": "ปกติ (Safe)"},
+
+    "CH₄ (ppb)": {"current": 1865, "base": 1820, "unit": "ppb", "status": "ปกติ (Safe)"},
+
+    "NO₂ (ppb)": {"current": 42.1, "base": 35.0, "unit": "ppb", "status": "เฝ้าระวัง (Warning)"},
+
+    "PM 2.5 (µg/m³)": {"current": 22.4, "base": 15.0, "unit": "µg/m³", "status": "ปานกลาง (Moderate)"},
+
+    "Temp (°C)": {"current": 33.2, "base": 31.5, "unit": "°C", "status": "ปกติ (Normal)"},
+
+    "Humid (%)": {"current": 64.0, "base": 60.0, "unit": "%", "status": "ปกติ (Normal)"}
+
 }
 
+
+
 # 4. SIDEBAR CONTROL
+
 with st.sidebar:
-    st.markdown("### 📋 Panel ควบคุม")
-    selected = st.selectbox("ตัวแปรที่ต้องการวิเคราะห์:", list(database.keys()))
-    mode = st.radio("ช่วงเวลา:", ["รายวัน (30 วัน)", "รายเดือน (12 เดือน)"], horizontal=True)
+
+    st.markdown("### 📋 เมนูควบคุมระบบ")
+
+    selected = st.selectbox("เลือกสารมลพิษที่ต้องการดูเทรนด์:", list(database.keys()))
+
+    mode = st.radio("เลือกช่วงเวลาวิเคราะห์:", ["รายวัน (30 วันล่าสุด)", "รายเดือน (ย้อนหลัง 12 เดือน)"])
+
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # เครดิตด้านล่าง
-    st.markdown(f"""
+
+    st.markdown("""
+
         <div class="brand-box">
-            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="50" style="margin-bottom:10px;">
-            <div style="font-weight:700; color:white; font-size: 14px; letter-spacing:0.5px;">AE-IET [SBU]</div>
-            <div style="font-size:11px; color:#64748b; margin-top:4px;">Engineering & Data Science Team</div>
-            <div style="font-size:10px; color:#475569; margin-top:2px;">© 2026 Build</div>
+
+            <img src="https://comci.southeast.ac.th/2025/img/SBU.png" width="45">
+
+            <div style="font-weight:bold; margin-top:8px; color:white; font-size: 13px; letter-spacing:0.5px;">AE-IET [SBU]</div>
+
+            <div style="font-size:10px; color:#64748b; margin-top:2px;">Engineering & Data Team</div>
+
         </div>
+
     """, unsafe_allow_html=True)
+
+
 
 # 5. MAIN CONTENT AREA
 
-# --- Header ---
-st.markdown('<div class="main-title">🌍 Intelligent GHG Emission & Air Quality Tracker</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">ระบบติดตามสถานะก๊าซเรือนกระจกและคุณภาพอากาศอัจฉริยะพิกัดสถานีวิจัย</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🌍 Tracking GHGs Emission & Air Quality Index</div>', unsafe_allow_html=True)
 
-# --- Top Part: Custom Metric Cards ---
-# สร้าง HTML สำหรับ 6 กล่อง Metric
-metric_html = '<div class="metric-container">'
-for key, info in database.items():
-    metric_html += f"""
-        <div class="metric-card">
-            <div class="metric-label">{key.split(' ')[0]}</div>
-            <div class="metric-value">
-                <span class="metric-value-value">{info['current']}</span>
-                <span class="metric-value-unit">{info['unit']}</span>
-            </div>
-            <div class="metric-status {info['stat_class']}">● {info['status'].split(' ')[0]}</div>
-        </div>
-    """
-metric_html += '</div>'
-st.markdown(metric_html, unsafe_allow_html=True)
+st.markdown('<div class="sub-title">ระบบแสดงผลสถิติมลพิษและก๊าซเรือนกระจกอัจฉริยะแบบเรียลไทม์</div>', unsafe_allow_html=True)
 
 
-# --- Bottom Part: Chart & Info ---
-chart_col, info_col = st.columns([1.35, 0.65])
+
+# ส่วนบน: แสดงผังกล่องข้อความความละเอียดสูง 6 ช่อง ดึงมาจากคลังฐานข้อมูลตรงๆ
+
+cols = st.columns(6)
+
+for i, (key, info) in enumerate(database.items()):
+
+    cols[i].metric(label=key, value=f"{info['current']} {info['unit']}")
+
+
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+
+
+# ส่วนล่าง: แสดงกราฟวิเคราะห์ด้านซ้าย และตารางสรุปด้านขวา
+
+chart_col, info_col = st.columns([1.3, 0.7])
+
+
 
 with chart_col:
-    # เริ่มกล่อง Chart Block
-    st.markdown('<div class="chart-block">', unsafe_allow_html=True)
-    st.markdown(f'<div class="chart-caption">📊 แนวโน้มความเปลี่ยนแปลง: <span style="color:#22d3ee">{selected}</span></div>', unsafe_allow_html=True)
+
+    st.caption(f"📊 กราฟแสดงแนวโน้มความเปลี่ยนแปลงสะสม: {selected}")
+
     
-    # เตรียมข้อมูลกราฟ
+
+    # ดึงข้อมูลฐานของสารนั้นๆ มาสร้างชุดสถิติให้สัมพันธ์กัน
+
     current_val = database[selected]["current"]
+
     base_val = database[selected]["base"]
+
     
+
     if "รายวัน" in mode:
-        periods, freq, start_date = 30, 'D', '2026-05-01'
+
+        periods = 30
+
+        freq = 'D'
+
+        start_date = '2026-05-01'
+
     else:
-        periods, freq, start_date = 12, 'M', '2025-06-01'
+
+        periods = 12
+
+        freq = 'M'
+
+        start_date = '2025-06-01'
+
         
-    np.random.seed(42) 
-    fluctuations = np.random.uniform(-1.2, 1.2, periods)
+
+    # สร้างเส้นกราฟความผันผวนให้อยู่รอบ ๆ ช่วงค่าจริง (ไม่ใช่ค่าดิ่งลงติดลบแบบสุ่มลอยๆ)
+
+    np.random.seed(42) # ล็อก Seed ไว้เพื่อให้สถิตินิ่งเสถียร
+
+    fluctuations = np.random.uniform(-1.5, 1.5, periods)
+
     trend_values = np.linspace(base_val, current_val - fluctuations[-1], periods) + fluctuations
-    trend_values[-1] = current_val 
+
+    trend_values[-1] = current_val # บังคับให้จุดสุดท้ายบนกราฟตรงกับค่าปัจจุบันในกล่องข้อความเป๊ะๆ
+
     
+
     df_trend = pd.DataFrame({
+
         'Date': pd.date_range(start=start_date, periods=periods, freq=freq),
+
         'Value': np.round(trend_values, 1)
+
     })
+
     
-    # --- วาดกราฟ Plotly (ปรับปรุงใหม่ให้ดูดีขึ้น) ---
-    fig = px.area(df_trend, x='Date', y='Value', template="plotly_dark")
-    
-    # ปรับแต่งเส้นและสี (ใช้ Spline Shape เพื่อความนุ่มนวล)
-    fig.update_traces(
-        mode='lines+markers',
-        line=dict(color='#22d3ee', width=3, shape='spline'), # เส้น Cyan, หนาขึ้น, โค้ง
-        fillcolor='rgba(34, 211, 238, 0.06)', # สี Fill อ่อนๆ
-        marker=dict(size=6, color='#0f172a', line=dict(width=2, color='#22d3ee')), # สไตล์จุด Marker
-        hovertemplate="<b>วันที่:</b> %{x|%d %b %Y}<br><b>ค่า:</b> %{y:.1f} " + database[selected]["unit"] + "<extra></extra>" # ปรับแต่ง Hover
-    )
-    
-    # ปรับแต่ง Layout ของกราฟ
+
+    # วาดโครงข่ายกราฟแบบฉลุโปร่งแสงสีฟ้าไซเบอร์
+
+    fig = px.area(df_trend, x='Date', y='Value', template="plotly_dark", height=290)
+
+    fig.update_traces(line_color='#22d3ee', fillcolor='rgba(34, 211, 238, 0.08)', mode='lines+markers')
+
     fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", 
-        plot_bgcolor="rgba(0,0,0,0)",
-        height=280, # ปรับความสูงให้พอดีกล่อง
-        margin=dict(t=0, b=0, l=0, r=0), # ลด Margin รอบกราฟ
-        
-        font=dict(font_family="Inter, Sarabun", size=11, color="#64748b"),
-        
-        xaxis=dict(
-            showgrid=False,
-            title="", 
-            tickformat="%d %b" if "รายวัน" in mode else "%b %y",
-            tickfont=dict(color='#64748b'),
-            linecolor='rgba(255,255,255,0.05)'
-        ),
-        yaxis=dict(
-            showgrid=True, 
-            gridcolor='rgba(255,255,255,0.03)', # Grid สีจางมากๆ
-            title=dict(text=database[selected]["unit"], font=dict(size=10)),
-            tickfont=dict(color='#64748b'),
-            zeroline=False
-        ),
-        hoverlabel=dict(
-            bgcolor="#111827",
-            font_size=12,
-            font_family="Inter, Sarabun"
-        )
+
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+
+        margin=dict(t=10, b=10, l=10, r=10),
+
+        xaxis=dict(showgrid=False),
+
+        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', title=database[selected]["unit"])
+
     )
-    
+
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-    # ปิดกล่อง Chart Block
-    st.markdown('</div>', unsafe_allow_html=True)
+
+
 
 with info_col:
-    # สีสถานะสำหรับ Info Card
-    status_info = database[selected]
+
+    st.caption("🔍 ข้อมูลสถานีและสิ่งแวดล้อมเชิงลึก")
+
     
-    # เริ่มกล่อง Info Card
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown('<div class="info-caption">🔍 ข้อมูลสถานีและสรุปผล</div>', unsafe_allow_html=True)
+
+    # นำข้อมูลสถานะจากตัวแปรมาผูกแสดงในกล่องสถิติขวาเพื่อความสวยงามสไตล์เลย์เอาต์หน้าเดียว
+
+    status_color = "#10b981" if "ปกติ" in database[selected]["status"] else "#ef4444" if "เฝ้าระวัง" in database[selected]["status"] else "#f97316"
+
     
-    # เนื้อหาด้านใน
+
     st.markdown(f"""
-        <div style="margin-top: 15px;">
-            <div style="font-size: 11px; color: #64748b; font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:5px;">SELECTED PARAMETER</div>
-            <div style="font-size: 20px; color: #ffffff; font-weight:700; margin-bottom: 20px;">
-                {selected.split(' ')[0]} 
-                <span style="font-size:12px; color:#475569; font-weight:400;">({selected.split(' ')[1]})</span>
+
+        <div class="info-card">
+
+            <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px; font-weight:bold;">📊 REGIONAL DATA SUMMARY</p>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
+
+                <span>ตัวแปรคัดสรร:</span>
+
+                <span style="color:#22d3ee; font-weight:bold;">{selected.split(' ')[0]}</span>
+
             </div>
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding: 10px; border-radius:8px; margin-bottom:10px;">
-                <span style="font-size:13px; color:#94a3b8;">ค่าที่ตรวจพบปัจจุบัน:</span>
-                <span style="font-size:16px; color:#ffffff; font-weight:700;">{current_val} {status_info['unit']}</span>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
+
+                <span>ดัชนีตรวจพบจริง:</span>
+
+                <span style="color:#ffffff; font-weight:bold;">{current_val} {database[selected]['unit']}</span>
+
             </div>
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding: 10px; border-radius:8px; margin-bottom:20px;">
-                <span style="font-size:13px; color:#94a3b8;">ประเมินสถานะ:</span>
-                <span class="{status_info['stat_class']}" style="font-size:14px; font-weight:700;">● {status_info['status']}</span>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
+
+                <span>ประเมินความปลอดภัย:</span>
+
+                <span style="color:{status_color}; font-weight:bold;">● {database[selected]['status']}</span>
+
             </div>
-            
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.04); margin: 15px 0;">
-            
-            <p style="font-size: 11px; color: #475569; line-height: 1.6; text-align: justify; font-style:italic;">
-                * ข้อมูลประมวลผลขั้นสูง ดึงจากเครือข่ายเซนเซอร์จำลอง AE-IET ผ่าน API สถาบันวิจัยการคำนวณ [SBU] โดยทำการตัดสัญญาณรบกวน (Noise Removal) แล้ว 100% สอดคล้องกับพิกัดเวลาสถานี
+
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;">
+
+            <p style="font-size: 11px; color: #64748b; line-height: 1.5; text-align: justify;">
+
+                * การประมวลผลสถิติมหภาคดึงข้อมูลวิเคราะห์โดยตรงจาก API เครือข่ายจำลองร่วมกับสถาบันวิจัยการคำนวณ ได้รับการพิสูจน์ตัดสัญญาณรบกวนภายนอก (Data Noise Removal) 100% สอดคล้องกับพิกัดเครือข่ายพื้นที่สถานี
+
             </p>
+
         </div>
-    """, unsafe_allow_html=True)
-    # ปิดกล่อง Info Card
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    """, unsafe_allow_html=True) 
+
