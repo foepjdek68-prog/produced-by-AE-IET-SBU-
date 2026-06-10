@@ -24,12 +24,12 @@ st.markdown("""
         ::-webkit-scrollbar { display: none; }
         .block-container { padding: 1.5rem 2.5rem !important; }
         
-        /* 📦 ตกแต่งกล่อง Container ของ Streamlit ให้พรีเมียมตามแบบฉบับ */
-        div[data-testid="stVerticalBlockBorderEffect"] {
+        /* 📦 ตกแต่งเฉพาะกล่อง Container หลัก ป้องกันปัญหากล่องซ้อนซ้ำซ้อน */
+        .stElementContainer div[data-testid="stVerticalBlockBorderEffect"] {
             background-color: #121826 !important;
             border: 1px solid #1e293b !important;
             border-radius: 12px !important;
-            padding: 18px !important;
+            padding: 20px !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
         
@@ -38,7 +38,7 @@ st.markdown("""
             font-weight: 800;
             color: #94a3b8;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             text-transform: uppercase;
         }
         
@@ -57,3 +57,35 @@ st.markdown("""
             font-weight: 700;
             text-transform: uppercase;
         }
+        
+        /* 💧 จัดการตารางสายน้ำและ Badge สถานะ */
+        .river-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .river-row { height: 45px; border-bottom: 1px solid #1e293b; }
+        .river-name { font-size: 13px; font-weight: 700; color: #38bdf8; width: 30%; }
+        .river-wave { width: 40%; text-align: center; }
+        .river-badges { width: 30%; text-align: right; display: flex; justify-content: flex-end; gap: 8px; align-items: center; height: 45px; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            min-width: 65px;
+            text-align: center;
+        }
+        .badge-pass { background-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+        .badge-warn { background-color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+    </style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 2. FIXED REGIONAL DATA ENGINE
+# ==========================================
+years = [1930, 1950, 1970, 1990, 2000, 2010, 2026]
+months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+DATA_SET = {
+    "CENTRAL (ภาคกลาง)": {
+        "co2": 421.5, "co2_sub": "+0.3% vs. last month", "
