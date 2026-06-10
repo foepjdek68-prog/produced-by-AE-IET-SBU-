@@ -1,15 +1,14 @@
 [theme]
 primaryColor = "#22d3ee"
-
-secondaryBackgroundColor = "#1f2937"
+backgroundColor = "#020617"
+secondaryBackgroundColor = "#1e293b"
 textColor = "#f8fafc"
 font = "sans serif"
 
 [server]
 headless = true
-
+enableCORS = false
 enableXsrfProtection = false
-
 [client]
 toolbarMode = "minimal"
 
