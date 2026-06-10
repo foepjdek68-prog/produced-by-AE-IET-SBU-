@@ -236,12 +236,4 @@ with bot_right:
         """
         st.markdown(html_table, unsafe_allow_html=True)
         
-        # 📥 ปุ่มกดโหลดรายงานจริง แปลงโครงสร้างข้อมูลเป็นไฟล์ดาวน์โหลดอัตโนมัติ
-        dl_df = pd.DataFrame({'Parameter': ['CO2', 'Temp Anomaly', 'AQI'], 'Current_Value': [db["co2"], db["temp"], db["aqi"]]})
-        csv_data = dl_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 DOWNLOAD REPORT (.CSV)",
-            data=csv_data,
-            file_name="environmental_sync_data.csv",
-            mime="text/csv"
-        )
+        
