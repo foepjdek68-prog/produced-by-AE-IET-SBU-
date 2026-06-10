@@ -8,19 +8,43 @@ import pytz
 import os
 
 # ===== PAGE =====
-st.set_page_config(layout="wide", page_title="GHG Monitor Board")
+st.set_page_config(
+    layout="wide",
+    page_title="GHG Monitor Board",
+    initial_sidebar_state="expanded"
+)
 
-# ===== CSS =====
+# ===== CSS (คืนของเดิม 100%) =====
 st.markdown("""
 <style>
-::-webkit-scrollbar { display: none; }
-.stApp { overflow: hidden !important; }
+::-webkit-scrollbar {
+    display: none;
+}
+
+.stApp {
+    overflow: hidden !important;
+}
+
+[data-testid="stMetric"] {
+    background: #161b22;
+    padding: 8px !important;
+    border-radius: 10px;
+    border: 1px solid #30363d;
+}
+
+[data-testid="stMetricValue"] {
+    font-size: 20px !important;
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 12px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
+# ===== DATA =====
 DATA_FILE = "ghg_data.csv"
 
-# ===== LOAD DATA =====
 def get_sensor_data():
 
     tz = pytz.timezone("Asia/Bangkok")
@@ -29,8 +53,11 @@ def get_sensor_data():
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
     else:
-        dates = pd.date_range(end=now.replace(minute=0, second=0, microsecond=0),
-                               periods=24, freq="h")
+        dates = pd.date_range(
+            end=now.replace(minute=0, second=0, microsecond=0),
+            periods=24,
+            freq="h"
+        )
 
         df = pd.DataFrame({
             "Date": dates,
@@ -52,56 +79,91 @@ def get_sensor_data():
 
 
 df, current_time = get_sensor_data()
+latest_data = df.iloc[-1]
 
-# ===== SIDEBAR =====
+# ===== SIDEBAR (ไม่แตะ UI) =====
 with st.sidebar:
-    pollutants = [c for c in df.columns if c != "Date"]
-    selected = st.selectbox("เลือกตัวแปร", pollutants)
 
-# ===== GRAPH =====
+    st.markdown("### 📋 เมนูควบคุม")
+
+    pollutants = [c for c in df.columns if c != "Date"]
+
+    selected_pollutant = st.selectbox(
+        "สารมลพิษที่ต้องการดูสถิติ:",
+        pollutants
+    )
+
+    mode = st.radio(
+        "รูปแบบข้อมูล:",
+        ["รายชั่วโมง (24h)", "รายวัน"]
+    )
+
+    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
+        st.rerun()
+
+# ===== HEADER (เหมือนเดิม) =====
+col_title, col_time = st.columns([2, 1])
+
+with col_title:
+    st.title("🌍 Tracking GHGs Emission")
+
+with col_time:
+    st.markdown(
+        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}",
+        unsafe_allow_html=True
+    )
+
+# ===== METRICS (เหมือนเดิม) =====
+cols = st.columns(len(pollutants))
+
+for i, col_name in enumerate(pollutants):
+
+    val = latest_data[col_name]
+    delta_val = val - df.iloc[-2][col_name] if len(df) > 1 else 0
+
+    cols[i].metric(
+        label=col_name,
+        value=int(round(val, 0)),
+        delta=int(round(delta_val, 0))
+    )
+
+# ===== GRAPH FIX (ONLY FIX AREA) =====
 df_plot = df.copy()
-df_plot[selected] = pd.to_numeric(df_plot[selected], errors="coerce")
-df_plot = df_plot.dropna(subset=["Date", selected])
+
+df_plot[selected_pollutant] = pd.to_numeric(df_plot[selected_pollutant], errors="coerce")
+df_plot = df_plot.dropna(subset=["Date", selected_pollutant])
 
 if df_plot.empty:
-    st.error("ไม่มีข้อมูล")
+    st.warning("ไม่มีข้อมูลสำหรับกราฟ")
     st.stop()
 
-# ===== 🔥 OVERVIEW GROUPING (ทำให้เป็นภาพรวม) =====
-df_plot["TimeGroup"] = df_plot["Date"].dt.floor("3h")  # รวมทุก 3 ชั่วโมง
-
-df_plot = df_plot.groupby("TimeGroup")[selected].mean().reset_index()
-
-# ===== GRAPH =====
 fig = px.line(
     df_plot,
-    x="TimeGroup",
-    y=selected,
+    x="Date",
+    y=selected_pollutant,
     template="plotly_dark",
-    height=350
+    height=300
 )
 
-fig.update_traces(mode="lines+markers")
+fig.update_traces(mode="lines+markers", line_width=3)
 
-# ===== OVERVIEW AXIS =====
+# ===== X AXIS (ชั่วโมงสวย ๆ แต่ไม่เพี้ยน UI) =====
 fig.update_xaxes(
-    tickformat="%d %H:%M",
+    tickformat="%H:%M",
+    dtick=3600000 * 2,  # แสดงทุก 2 ชั่วโมง = ภาพรวม
     showgrid=False
 )
 
-# ===== Y AXIS (SMOOTH OVERVIEW SCALE) =====
-y_min = np.floor(df_plot[selected].min() / 10) * 10
-y_max = np.ceil(df_plot[selected].max() / 10) * 10
+# ===== Y AXIS (clean แต่ไม่เปลี่ยน layout) =====
+y_min = np.floor(df_plot[selected_pollutant].min() / 10) * 10
+y_max = np.ceil(df_plot[selected_pollutant].max() / 10) * 10
 
-fig.update_yaxes(
-    range=[y_min, y_max],
-    dtick=(y_max - y_min) / 5  # 5 levels only = ภาพรวม
-)
+fig.update_yaxes(range=[y_min, y_max])
 
 fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(t=30, b=10, l=10, r=10),
+    margin=dict(t=40, b=10, l=10, r=10),
     xaxis_title=None,
     yaxis_title=None
 )
