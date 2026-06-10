@@ -102,13 +102,13 @@ period = st.radio(
     horizontal=True
 )
 
-if period == "24 ชั่วโมง":
+if period == "1 Day":
     df_plot = df.tail(24)
 
-elif period == "7 วัน":
+elif period == "1 Week":
     df_plot = df.tail(24*7)
 
-elif period == "30 วัน":
+elif period == "Month":
     df_plot = df.tail(24*30)
 
 else:
