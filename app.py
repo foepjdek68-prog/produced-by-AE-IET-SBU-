@@ -235,4 +235,4 @@ with chart_col:
         line=dict(color='#22d3ee', width=3, shape='spline'), # เส้น Cyan, หนาขึ้น, โค้ง
         fillcolor='rgba(34, 211, 238, 0.06)', # สี Fill อ่อนๆ
         marker=dict(size=6, color='#0f172a', line=dict(width=2, color='#22d3ee')), # สไตล์จุด Marker
-        hovertemplate="<b>วันที่:http://googleusercontent.com/image_generation_content/1
+        hovertemplate="<b>วันที่:http://googleusercontent.com/image_generation_content/2
