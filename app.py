@@ -1,18 +1,17 @@
 import streamlit as st
-
 from utils.database import load_data, save_data
 from utils.api_loader import fetch_data
+
+st.set_page_config(
+    page_title="GHG Tracking System",
+    layout="wide"
+)
 
 df = load_data()
 
 if df.empty:
     df = fetch_data()
     save_data(df)
-
-st.set_page_config(
-    page_title="GHG Tracking System",
-    layout="wide"
-)
 
 st.title("🌍 Smart GHG Tracking System")
 
@@ -32,4 +31,4 @@ st.markdown("""
 6️⃣ Users
 """)
 
-st.success("เลือกเมนูจาก Sidebar ด้านซ้าย")
+st.success("เลือกเมนูจาก Sidebar")
