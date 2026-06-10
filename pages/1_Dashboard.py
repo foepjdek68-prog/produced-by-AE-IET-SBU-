@@ -2,53 +2,101 @@ import streamlit as st
 import plotly.express as px
 from utils.database import load_data
 
+st.set_page_config(
+    page_title="Integrated Environmental Dashboard",
+    layout="wide"
+)
+
 df = load_data()
+
+if df.empty:
+    st.error("No data found")
+    st.stop()
 
 latest = df.iloc[-1]
 
+st.title("🌍 Integrated Environmental & GHG Dashboard")
+st.caption("Thailand Environmental Monitoring Platform")
+
+st.info(f"Last Update : {latest['Date']}")
+
+# KPI
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-c1.metric("CO2", round(latest["CO2"],1))
-c2.metric("CH4", round(latest["CH4"],1))
-c3.metric("NO2", round(latest["NO2"],1))
+c1.metric("CO₂", round(latest["CO2"],1))
+c2.metric("CH₄", round(latest["CH4"],1))
+c3.metric("NO₂", round(latest["NO2"],1))
 c4.metric("PM2.5", round(latest["PM25"],1))
 c5.metric("Temp", round(latest["Temp"],1))
 c6.metric("Humidity", round(latest["Humidity"],1))
 
-selected = st.selectbox("เลือกตัวแปร", ["CO2","CH4","NO2","PM25"])
+st.markdown("---")
 
-fig = px.line(df.tail(168), x="Date", y=selected)
-st.plotly_chart(fig, use_container_width=True)
+# Graph
+st.subheader("📈 Environmental Trend")
 
-def emission_score(df):
-    latest = df.iloc[-1]
-    return round(
-        latest["CO2"]*0.5 +
-        latest["CH4"]*0.3 +
-        latest["NO2"]*0.2,
-        2
-    )
+selected = st.selectbox(
+    "Select Parameter",
+    ["CO2","CH4","NO2","PM25","Temp","Humidity"]
+)
 
-st.metric("Emission Score", emission_score(df))
+fig = px.line(
+    df.tail(168),
+    x="Date",
+    y=selected,
+    template="plotly_dark"
+)
 
-st.subheader("Data Sources")
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
-st.success("Air4Thai")
-st.success("TMD")
-st.warning("OpenAQ (Planned)")
-st.warning("Sentinel-5P (Planned)")
+st.markdown("---")
 
-###########
-st.markdown("### Project Objective")
+# Sources + Status
+left,right = st.columns(2)
+
+with left:
+
+    st.subheader("🔗 Data Sources")
+
+    st.success("Air4Thai")
+    st.success("TMD")
+
+    st.warning("OpenAQ (Planned)")
+    st.warning("Sentinel-5P (Planned)")
+
+with right:
+
+    st.subheader("⚙️ System Status")
+
+    st.success("Database Online")
+    st.success("Dashboard Active")
+    st.success("Analytics Ready")
+
+st.markdown("---")
+
+# Objective
+st.subheader("📌 Project Objective")
 
 st.info("""
-รวมข้อมูลมลพิษจากหลายแหล่งมาไว้ใน Dashboard เดียว
-เพื่อช่วยการติดตามและวิเคราะห์สิ่งแวดล้อม
+พัฒนา Web Dashboard เพื่อรวบรวมและเชื่อมโยงข้อมูลมลพิษ
+จากหลายแหล่งมาไว้ในที่เดียว
+
+ช่วยให้สามารถติดตามและเฝ้าระวังสถานการณ์
+ด้านสิ่งแวดล้อมได้อย่างมีประสิทธิภาพ
 """)
 
+st.markdown("---")
+
+# Team
 st.caption("""
-Developed by:
+👨‍💻 Developed By
+
 - Member 1
 - Member 2
 - Member 3
+
+Engineering Project
 """)
