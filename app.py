@@ -12,16 +12,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ===== CSS (ไม่แตะ) =====
+# ===== CSS =====
 st.markdown("""
 <style>
-::-webkit-scrollbar {
-    display: none;
-}
+::-webkit-scrollbar { display: none; }
 
-.stApp {
-    overflow: hidden !important;
-}
+.stApp { overflow: hidden !important; }
 
 [data-testid="stMetric"] {
     background: #161b22;
@@ -30,13 +26,8 @@ st.markdown("""
     border: 1px solid #30363d;
 }
 
-[data-testid="stMetricValue"] {
-    font-size: 20px !important;
-}
-
-[data-testid="stMetricLabel"] {
-    font-size: 12px !important;
-}
+[data-testid="stMetricValue"] { font-size: 20px !important; }
+[data-testid="stMetricLabel"] { font-size: 12px !important; }
 
 section[data-testid="stSidebar"] > div {
     display: flex;
@@ -54,28 +45,20 @@ section[data-testid="stSidebar"] > div {
 """, unsafe_allow_html=True)
 
 # ===== AUTO REFRESH =====
-st.markdown(
-    "<meta http-equiv='refresh' content='60'>",
-    unsafe_allow_html=True
-)
+st.markdown("<meta http-equiv='refresh' content='60'>", unsafe_allow_html=True)
 
-# ===== DATA FILE =====
+# ===== DATA =====
 DATA_FILE = "ghg_data.csv"
 
-# ===== LOAD DATA =====
-def get_sensor_data():
-
-    bkk_tz = pytz.timezone("Asia/Bangkok")
-    now = datetime.now(bkk_tz)
-
+def load_data():
+    tz = pytz.timezone("Asia/Bangkok")
+    now = datetime.now(tz)
     current_hour = now.replace(minute=0, second=0, microsecond=0)
 
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
-
     else:
         dates = pd.date_range(end=current_hour, periods=24, freq="h")
-
         df = pd.DataFrame({
             "Date": dates,
             "CO₂ (ppm)": [415] * 24,
@@ -85,7 +68,6 @@ def get_sensor_data():
             "Temp (°C)": [33] * 24,
             "Humid (%)": [60] * 24
         })
-
         df.to_csv(DATA_FILE, index=False)
 
     # ===== FIX DATE =====
@@ -96,9 +78,9 @@ def get_sensor_data():
     return df, now, current_hour
 
 
-df, current_time, current_hour = get_sensor_data()
+df, now, current_hour = load_data()
 
-# ===== ADD NEW ROW (REAL TIME FIX) =====
+# ===== ADD NEW ROW =====
 if len(df) > 0:
     last_time = df.iloc[-1]["Date"]
 
@@ -110,94 +92,67 @@ if len(df) > 0:
 
 # ===== SIDEBAR =====
 with st.sidebar:
-
     st.markdown("### 📋 เมนูควบคุม")
 
-    pollutants = [col for col in df.columns if col != "Date"]
+    # FIX: เอาเฉพาะ numeric columns
+    pollutants = df.select_dtypes(include=["number"]).columns.tolist()
 
-    selected_pollutant = st.selectbox(
-        "สารมลพิษที่ต้องการดูสถิติ:",
-        pollutants
-    )
+    selected_pollutant = st.selectbox("สารมลพิษ:", pollutants)
 
     period = st.selectbox(
         "ช่วงเวลา",
         ["24 ชั่วโมง", "7 วัน", "30 วัน", "90 วัน", "ทั้งหมด"]
     )
 
-    if st.button("🔄 อัปเดตข้อมูลตอนนี้"):
+    if st.button("🔄 รีเฟรช"):
         st.rerun()
 
-    st.markdown("""
-    <div class="brand-box">
-        <div style="font-weight:bold;color:white;">
-            AE-IET [SBU]
-        </div>
-        <div style="font-size:10px;color:#888;">
-            Engineering Team
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ===== FILTER (FIXED) =====
+# ===== FILTER =====
 df = df.sort_values("Date")
 
-if period == "24 ชั่วโมง":
-    df_show = df.tail(24)
-elif period == "7 วัน":
-    df_show = df.tail(24)        # FIX (ของคุณยังไม่มีข้อมูลหลายวันจริง)
-elif period == "30 วัน":
-    df_show = df.tail(24)
-elif period == "90 วัน":
-    df_show = df.tail(24)
-else:
-    df_show = df
+limit_map = {
+    "24 ชั่วโมง": 24,
+    "7 วัน": 24,
+    "30 วัน": 24,
+    "90 วัน": 24,
+    "ทั้งหมด": None
+}
 
-df_show = df_show.copy()
+limit = limit_map[period]
+
+df_show = df.tail(limit) if limit else df.copy()
+
 df_show["Date"] = pd.to_datetime(df_show["Date"], errors="coerce")
 df_show = df_show.dropna(subset=["Date"])
-df_show = df_show.sort_values("Date")
 
 # ===== HEADER =====
-col_title, col_time = st.columns([2, 1])
+col1, col2 = st.columns([2, 1])
 
-with col_title:
-    st.title("🌍 Tracking GHGs Emission")
+with col1:
+    st.title("🌍 GHG Dashboard")
 
-with col_time:
+with col2:
     st.markdown(
-        f"<div style='text-align:right;margin-top:25px;color:#888;'>"
-        f"🕒 {current_time.strftime('%Y-%m-%d %H:%M:%S')}"
-        f"</div>",
+        f"<div style='text-align:right;color:#888;'>🕒 {now.strftime('%Y-%m-%d %H:%M:%S')}</div>",
         unsafe_allow_html=True
     )
 
 # ===== METRICS =====
-latest_data = df_show.iloc[-1]
-pollutants = [col for col in df.columns if col != "Date"]
+latest = df_show.iloc[-1]
+cols = st.columns(len(pollutants))
 
-cols_ui = st.columns(len(pollutants))
+for i, c in enumerate(pollutants):
+    val = latest[c]
+    delta = val - df_show.iloc[-2][c] if len(df_show) > 1 else 0
 
-for i, col_name in enumerate(pollutants):
+    cols[i].metric(c, round(val, 2), round(delta, 2))
 
-    val = latest_data[col_name]
+# ===== GRAPH FIX (สำคัญสุด) =====
+df_show[selected_pollutant] = pd.to_numeric(df_show[selected_pollutant], errors="coerce")
+df_show = df_show.dropna(subset=[selected_pollutant, "Date"])
 
-    if len(df_show) > 1:
-        delta_val = val - df_show.iloc[-2][col_name]
-    else:
-        delta_val = 0
-
-    cols_ui[i].metric(
-        label=col_name,
-        value=round(float(val), 2),
-        delta=round(float(delta_val), 2)
-    )
-
-# ===== GRAPH (FIXED) =====
-df_show = df_show.dropna(subset=[selected_pollutant])
-
-if len(df_show) == 0:
-    st.warning("ไม่มีข้อมูลสำหรับกราฟ")
+if df_show.empty:
+    st.error("ไม่มีข้อมูลสำหรับกราฟ")
     st.stop()
 
 fig = px.line(
@@ -209,19 +164,12 @@ fig = px.line(
     height=500
 )
 
-fig.update_traces(
-    mode="lines+markers",
-    line=dict(width=3)
-)
-
-fig.update_xaxes(tickformat="%d/%m %H:%M")
+fig.update_traces(mode="lines+markers")
 
 fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    margin=dict(t=40, b=10, l=10, r=10),
-    xaxis_title=None,
-    yaxis_title=None
+    hovermode="x unified"
 )
 
 st.plotly_chart(fig, use_container_width=True)
