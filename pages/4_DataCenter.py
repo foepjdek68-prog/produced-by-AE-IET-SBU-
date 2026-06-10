@@ -1,24 +1,21 @@
 import streamlit as st
 
-from utils.database import (
-    load_data,
-    save_data
-)
+from utils.database import load_data
 
-from utils.api_loader import fetch_data
+st.title("🗄️ Data Center")
 
 df = load_data()
 
-if df.empty:
+st.dataframe(
+    df,
+    use_container_width=True
+)
 
-    st.warning("Database ว่าง กำลังสร้างข้อมูล...")
+csv = df.to_csv(index=False)
 
-    df = fetch_data()
-
-    save_data(df)
-
-    st.success(f"สร้างข้อมูลแล้ว {len(df)} rows")
-
-st.write("Rows:", len(df))
-
-st.dataframe(df.head())
+st.download_button(
+    "📥 Download CSV",
+    csv,
+    "ghg_data.csv",
+    "text/csv"
+)
