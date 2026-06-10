@@ -127,34 +127,4 @@ with col_f4:
     st.selectbox("TIME RANGE:", ["1 MONTH WINDOW", "30 YEARS HISTORICAL"])
 
 st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
-ctx = DATA_SET[selected_reg]
-
-# ==========================================
-# 5. VISUALIZATION: KPI GAUGES
-# ==========================================
-st.markdown('<div style="font-size: 12px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; margin-bottom: 10px;">KEY ENVIRONMENTAL METRICS</div>', unsafe_allow_html=True)
-g1, g2, g3 = st.columns(3)
-
-def generate_clean_gauge(value, min_val, max_val, title_text, color):
-    fig = go.Figure(go.Indicator(
-        mode="gauge",
-        value=value,
-        gauge={
-            'axis': {'range': [min_val, max_val], 'visible': False},
-            'bar': {'color': color, 'thickness': 0.26},
-            'bgcolor': '#1a2333',
-            'borderwidth': 0
-        }
-    ))
-    fig.update_layout(
-        title={'text': f"<b>{title_text}</b>", 'font': {'size': 11, 'color': '#94a3b8', 'family': 'Inter'}, 'y': 0.95},
-        height=100,
-        margin=dict(t=40, b=10, l=35, r=35),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
-    return fig
-
-with g1:
-    with st.container(border=True):
-        st.plotly_chart(generate_clean_gauge(ctx["co2"], 350, 500, "1 🔵 ATMOSPHERIC
+ctx = DATA_
