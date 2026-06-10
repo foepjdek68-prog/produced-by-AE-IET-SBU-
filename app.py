@@ -12,8 +12,7 @@ from utils.api_loader import fetch_data
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="wide"
 )
 
 # =========================
