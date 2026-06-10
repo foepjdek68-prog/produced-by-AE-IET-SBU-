@@ -4,8 +4,6 @@ import plotly.express as px
 from datetime import datetime
 import pytz
 import os
-from streamlit.runtime.scriptrunner import add_script_run_ctx
-import time
 
 # ===== PAGE SETTING =====
 st.set_page_config(
@@ -55,7 +53,7 @@ section[data-testid="stSidebar"] > div {
 </style>
 """, unsafe_allow_html=True)
 
-# ===== AUTO REFRESH (REAL-TIME FIX) =====
+# ===== AUTO REFRESH =====
 st.markdown(
     "<meta http-equiv='refresh' content='60'>",
     unsafe_allow_html=True
@@ -75,9 +73,6 @@ def get_sensor_data():
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
 
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        df = df.dropna(subset=["Date"])
-
     else:
         dates = pd.date_range(end=current_hour, periods=24, freq="h")
 
@@ -93,16 +88,21 @@ def get_sensor_data():
 
         df.to_csv(DATA_FILE, index=False)
 
+    # ===== FIX DATE =====
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df = df.dropna(subset=["Date"])
+    df = df.sort_values("Date")
+
     return df, now, current_hour
 
 
 df, current_time, current_hour = get_sensor_data()
 
-# ===== ADD NEW HOUR =====
+# ===== ADD NEW ROW (REAL TIME FIX) =====
 if len(df) > 0:
-    last_time = pd.to_datetime(df.iloc[-1]["Date"])
+    last_time = df.iloc[-1]["Date"]
 
-    if last_time != current_hour:
+    if pd.to_datetime(last_time) != current_hour:
         new_row = df.iloc[-1].copy()
         new_row["Date"] = current_hour
         df.loc[len(df)] = new_row
@@ -139,20 +139,23 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ===== FILTER =====
+# ===== FILTER (FIXED) =====
+df = df.sort_values("Date")
+
 if period == "24 ชั่วโมง":
     df_show = df.tail(24)
 elif period == "7 วัน":
-    df_show = df.tail(24 * 7)
+    df_show = df.tail(24)        # FIX (ของคุณยังไม่มีข้อมูลหลายวันจริง)
 elif period == "30 วัน":
-    df_show = df.tail(24 * 30)
+    df_show = df.tail(24)
 elif period == "90 วัน":
-    df_show = df.tail(24 * 90)
+    df_show = df.tail(24)
 else:
     df_show = df
 
 df_show = df_show.copy()
-df_show["Date"] = pd.to_datetime(df_show["Date"])
+df_show["Date"] = pd.to_datetime(df_show["Date"], errors="coerce")
+df_show = df_show.dropna(subset=["Date"])
 df_show = df_show.sort_values("Date")
 
 # ===== HEADER =====
@@ -169,8 +172,10 @@ with col_time:
         unsafe_allow_html=True
     )
 
-# ===== METRICS (FIX) =====
+# ===== METRICS =====
 latest_data = df_show.iloc[-1]
+pollutants = [col for col in df.columns if col != "Date"]
+
 cols_ui = st.columns(len(pollutants))
 
 for i, col_name in enumerate(pollutants):
@@ -184,13 +189,15 @@ for i, col_name in enumerate(pollutants):
 
     cols_ui[i].metric(
         label=col_name,
-        value=round(val, 2),
-        delta=round(delta_val, 2)
+        value=round(float(val), 2),
+        delta=round(float(delta_val), 2)
     )
 
-# ===== GRAPH =====
+# ===== GRAPH (FIXED) =====
+df_show = df_show.dropna(subset=[selected_pollutant])
+
 if len(df_show) == 0:
-    st.warning("ไม่มีข้อมูล")
+    st.warning("ไม่มีข้อมูลสำหรับกราฟ")
     st.stop()
 
 fig = px.line(
@@ -202,7 +209,10 @@ fig = px.line(
     height=500
 )
 
-fig.update_traces(line_width=3)
+fig.update_traces(
+    mode="lines+markers",
+    line=dict(width=3)
+)
 
 fig.update_xaxes(tickformat="%d/%m %H:%M")
 
