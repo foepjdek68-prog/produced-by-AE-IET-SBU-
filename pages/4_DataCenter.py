@@ -1,13 +1,13 @@
 import streamlit as st
 from utils.database import load_data
 
-st.title("📁 Data Repository")
+st.title("📁 ข้อมูลและดาวน์โหลด")
 
 df = load_data()
 
 if df.empty:
 
-    st.warning("No Data Available")
+    st.warning("ไม่พบข้อมูล")
 
 else:
 
@@ -19,7 +19,7 @@ else:
     csv = df.to_csv(index=False)
 
     st.download_button(
-        "📥 Download CSV",
+        "📥 ดาวน์โหลดข้อมูล",
         csv,
         "ghg_data.csv",
         "text/csv"
@@ -28,7 +28,7 @@ else:
 st.markdown("---")
 
 st.caption("""
-Developed By
+ผู้จัดทำ
 
 1.
 
@@ -36,9 +36,10 @@ Developed By
 
 
 
-Institution :
+สถาบัน :
 
 
 
-Logo :
+
+โลโก้ :
 """)
