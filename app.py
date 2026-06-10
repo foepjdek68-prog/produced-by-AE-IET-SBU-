@@ -14,37 +14,26 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ===== CSS (ไม่แตะ UI) =====
+# ===== CSS =====
 st.markdown("""
 <style>
 ::-webkit-scrollbar { display: none; }
-
 .stApp { overflow: hidden !important; }
-
-[data-testid="stMetric"] {
-    background: #161b22;
-    padding: 8px;
-    border-radius: 10px;
-    border: 1px solid #30363d;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# ===== DATA FILE (REAL STORAGE) =====
+# ===== DATA FILE =====
 DATA_FILE = "ghg_data.csv"
 
-# ===== LOAD REAL DATA =====
+# ===== LOAD DATA =====
 def get_sensor_data():
 
     bkk_tz = pytz.timezone("Asia/Bangkok")
     now = datetime.now(bkk_tz)
 
-    # ถ้ามีไฟล์ → ใช้ของจริง
     if os.path.exists(DATA_FILE):
         df = pd.read_csv(DATA_FILE)
-
     else:
-        # ถ้าไม่มี → สร้าง baseline ครั้งแรก
         dates = pd.date_range(end=now, periods=24, freq="h")
 
         df = pd.DataFrame({
@@ -59,7 +48,6 @@ def get_sensor_data():
 
         df.to_csv(DATA_FILE, index=False)
 
-    # ===== FIX TYPE =====
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     df = df.dropna(subset=["Date"])
     df = df.sort_values("Date")
@@ -69,16 +57,6 @@ def get_sensor_data():
 
 df, current_time = get_sensor_data()
 latest_data = df.iloc[-1]
-
-# ===== ADD REAL-TIME ROW (simulate sensor update) =====
-last_time = df.iloc[-1]["Date"]
-current_hour = current_time.replace(minute=0, second=0, microsecond=0)
-
-if pd.to_datetime(last_time) != current_hour:
-    new_row = latest_data.copy()
-    new_row["Date"] = current_hour
-    df.loc[len(df)] = new_row
-    df.to_csv(DATA_FILE, index=False)
 
 # ===== SIDEBAR =====
 with st.sidebar:
@@ -119,25 +97,30 @@ for i, col_name in enumerate(pollutants):
 
     val = latest_data[col_name]
 
-    if len(df) > 1:
-        delta_val = val - df.iloc[-2][col_name]
-    else:
-        delta_val = 0
+    delta_val = val - df.iloc[-2][col_name] if len(df) > 1 else 0
 
     cols[i].metric(
         label=col_name,
-        value=f"{val}",
-        delta=f"{delta_val:.1f}"
+        value=int(round(val, 0)),
+        delta=int(round(delta_val, 0))
     )
 
-# ===== GRAPH (SAFE FIX) =====
-df_show = df.copy()
+# ===== GRAPH CLEAN =====
+df_plot = df.copy()
 
-df_show[selected_pollutant] = pd.to_numeric(df_show[selected_pollutant], errors="coerce")
-df_show = df_show.dropna(subset=[selected_pollutant, "Date"])
+df_plot["Date"] = pd.to_datetime(df_plot["Date"], errors="coerce")
+df_plot[selected_pollutant] = pd.to_numeric(df_plot[selected_pollutant], errors="coerce")
 
+df_plot = df_plot.dropna(subset=["Date", selected_pollutant])
+
+# ===== CHECK =====
+if df_plot.empty:
+    st.error("ไม่มีข้อมูลสำหรับกราฟ")
+    st.stop()
+
+# ===== GRAPH =====
 fig = px.line(
-    df_show,
+    df_plot,
     x="Date",
     y=selected_pollutant,
     title=f"แนวโน้ม {selected_pollutant}",
@@ -148,6 +131,12 @@ fig = px.line(
 fig.update_traces(
     line_color="#00ffcc",
     line_width=3
+)
+
+# ===== 🔥 FIX Y-AXIS (NO DECIMAL, NO SCIENTIFIC) =====
+fig.update_yaxes(
+    tickformat="d",   # integer only
+    separatethousands=True
 )
 
 fig.update_layout(
