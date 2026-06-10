@@ -218,4 +218,25 @@ with bot_right:
     <table style="width:100%; border-collapse: collapse; font-size:11px; color:#ffffff; margin-bottom: 8px;">
         <tr style="border-bottom: 1px solid #334155; color:#94a3b8; font-weight:bold; text-align:left;">
             <th style="padding: 2px;">River Station</th>
-            <th style="
+            <th style="text-align:center; padding: 2px;">DO STATUS</th>
+            <th style="text-align:center; padding: 2px;">COD STATUS</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+            <td style="padding: 4px; font-weight:700; color:#22d3ee;">🔵 Chao Phraya (Main)</td>
+            <td style="text-align:center;"><span class="status-dot status-pass">DO PASS</span></td>
+            <td style="text-align:center;"><span class="status-dot status-warn">COD WARN</span></td>
+        </tr>
+        <tr>
+            <td style="padding: 4px; font-weight:700; color:#22d3ee;">🔵 Tha Chin (Delta)</td>
+            <td style="text-align:center;"><span class="status-dot status-pass">DO PASS</span></td>
+            <td style="text-align:center;"><span class="status-dot status-pass">DO PASS</span></td>
+        </tr>
+    </table>
+    """
+    st.markdown(html_table, unsafe_allow_html=True)
+    
+    # 📥 ปุ่มดาวน์โหลดข้อมูล
+    dl_df = pd.DataFrame({'Parameter': ['CO2', 'Temp Anomaly', 'AQI'], 'Value': [db["co2"], db["temp"], db["aqi"]]})
+    csv_bytes = dl_df.to_csv(index=False).encode('utf-8')
+    st.download_button(label="📥 DOWNLOAD REPORT (.CSV)", data=csv_bytes, file_name="env_report.csv", mime="text/csv")
+    st.markdown('</div>', unsafe_allow_html=True)
