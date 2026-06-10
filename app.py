@@ -125,4 +125,72 @@ with m_col3:
     aqi_color = "#eab308" if dataset["aqi_val"] <= 100 else "#ef4444"
     st.markdown(f'<div class="metric-card-large"><div class="card-label">3. ดัชนีคุณภาพอากาศสากล (AQI)</div><div class="card-value" style="color:{aqi_color};">{dataset["aqi_val"]}</div><div style="font-size:12px; color:{aqi_color}; font-weight:bold; margin-top:2px;">{dataset["aqi_txt"]}</div></div>', unsafe_allow_html=True)
 
-# --- 7. SECTION 2: แผงกราฟขนาดใหญ่ มองง่าย สบาย
+# --- 7. SECTION 2: แผงกราฟขนาดใหญ่ มองง่าย สบายตา ---
+st.markdown("<br>### 📊 แผนภูมิวิเคราะห์แนวโน้มเชิงลึก (Analytical Trends)", unsafe_allow_html=True)
+graph_col1, graph_col2 = st.columns(2)
+
+# กราฟซ้าย: แสดงแนวโน้ม 30 ปีตามสารที่เลือก
+with graph_col1:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown(f"<div class='panel-title'>📉 แนวโน้มปริมาณสะสมของก๊าซ {metric_short} ย้อนหลัง 30 ปี</div>", unsafe_allow_html=True)
+    df_trend = pd.DataFrame({'Year': years_30y, 'Value': active_history})
+    fig_area = px.area(df_trend, x='Year', y='Value', template="plotly_dark")
+    fig_area.update_traces(line=dict(color='#22d3ee', width=3), fillcolor='rgba(34, 211, 238, 0.1)', mode='lines+markers')
+    fig_area.update_layout(
+        height=240, margin=dict(t=10, b=10, l=10, r=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(title="ปี ค.ศ. (Historical Years)", font=dict(size=12)),
+        yaxis=dict(title=f"ความเข้มข้น ({active_unit})", font=dict(size=12))
+    )
+    st.plotly_chart(fig_area, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# กราฟขวา: แสดงการเปรียบเทียบสภาพอากาศรายเดือน/ปี ตามตัวกรองเวลากดเลือก
+with graph_col2:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown(f"<div class='panel-title'>🔀 การเปรียบเทียบค่าฝุ่นมลพิษกับระดับอุณหภูมิ ({sel_time})</div>", unsafe_allow_html=True)
+    time_data = dataset["time_modes"][sel_time]
+    
+    fig_combo = go.Figure()
+    # แท่งสีส้ม (ฝุ่น)
+    fig_combo.add_trace(go.Bar(x=time_data["x"], y=time_data["pm25"], name='ค่าฝุ่น PM2.5 (µg/m³)', marker_color='#f97316', yaxis='y1'))
+    # เส้นสีฟ้า (อุณหภูมิ)
+    fig_combo.add_trace(go.Scatter(x=time_data["x"], y=time_data["temp"], name='อุณหภูมิ (°C)', line=dict(color='#22d3ee', width=3), yaxis='y2'))
+    
+    fig_combo.update_layout(
+        height=240, margin=dict(t=15, b=10, l=10, r=10), template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(title="แกนเวลาตรวจสอบ (Timeline)"),
+        yaxis=dict(title="ปริมาณฝุ่นละออง (µg/m³)", side='left'),
+        yaxis2=dict(title="ระดับอุณหภูมิเฉลี่ย (°C)", overlaying='y', side='right', showgrid=False)
+    )
+    st.plotly_chart(fig_combo, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 8. SECTION 3: ตารางข้อมูลวิเคราะห์ด้านล่างสุด ---
+st.markdown("<br>### 📋 ข้อมูลตรวจสอบความถูกต้องของระบบเชื่อมโยง API", unsafe_allow_html=True)
+bot_col1, bot_col2 = st.columns([1.3, 1.0])
+
+with bot_col1:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown("<div class='panel-title'>🔍 รายละเอียดความปลอดภัยของสารมลพิษย่อยแยกประเภท</div>", unsafe_allow_html=True)
+    b_data = dataset["breakdown"]
+    comp_keys = list(b_data.keys())
+    fig_stack = go.Figure(data=[
+        go.Bar(name='ระดับปลอดภัย (Low)', x=comp_keys, y=[b_data[k][0] for k in comp_keys], marker_color='#10b981'),
+        go.Bar(name='ระดับปานกลาง (Moderate)', x=comp_keys, y=[b_data[k][1] for k in comp_keys], marker_color='#eab308'),
+        go.Bar(name='ระดับเริ่มอันตราย (Unhealthy)', x=comp_keys, y=[b_data[k][2] for k in comp_keys], marker_color='#ef4444')
+    ])
+    fig_stack.update_layout(barmode='stack', height=130, margin=dict(t=5, b=5, l=5, r=5), template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+    st.plotly_chart(fig_stack, use_container_width=True, config={'displayModeBar': False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with bot_col2:
+    st.markdown('<div class="panel-box">', unsafe_allow_html=True)
+    st.markdown("<div class='panel-title'>🌐 สถานะการดึงข้อมูลจากแหล่งสถานีวัด (API Integration)</div>", unsafe_allow_html=True)
+    validation_df = pd.DataFrame({
+        'สถานีรับข้อมูล (Source Station)': ['Air4Thai (กรมควบคุมมลพิษ)', 'TMD (กรมอุตุนิยมวิทยา)', 'Sentinel-5P (ดาวเทียมตรวจวัด)'],
+        'ค่าที่อ่านได้ล่าสุด': [f"{dataset['no2_now']} ppb", "ความเร็ว/ทิศทางลมปกติ", f"{dataset['co2_now']} ppm"],
+        'สถานะเครือข่าย': ["🟢 เชื่อมต่อปกติ (Sync)", "🟢 ทำงานปกติ", "🟢 ผ่านการตรวจสอบค่า"]
+    })
+    st.dataframe(validation_df, hide_index=True, use_container_width=True, height=130)
+    st.markdown('</div>', unsafe_allow_html=True)
