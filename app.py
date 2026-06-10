@@ -35,7 +35,7 @@ def get_sensor_data():
     # สร้างเวลาจำลองย้อนหลัง 24 ชั่วโมงจากเวลาปัจจุบัน
     bkk_tz = pytz.timezone('Asia/Bangkok')
     now = datetime.now(bkk_tz)
-    dates = pd.date_range(end=now, periods=24, freq='H')
+    dates = pd.date_range(end=now, periods=24, freq='h')
     
     # สร้างข้อมูลจำลองที่ใกล้เคียงความเป็นจริง
     df = pd.DataFrame({
