@@ -16,8 +16,9 @@ def load_data():
             conn
         )
 
-    except:
-        df = pd.DataFrame()
+    except Exception as e:
+    print("Database Error:", e)
+    df = pd.DataFrame()
 
     conn.close()
 
