@@ -1,14 +1,24 @@
 import streamlit as st
 from utils.database import load_data
 
+st.title("🗄️ Data Center")
+
 df = load_data()
 
-st.title("📁 Data Center")
+if df.empty:
+    st.warning("No data")
+    st.stop()
 
-st.dataframe(df)
+st.dataframe(
+    df,
+    use_container_width=True
+)
+
+csv = df.to_csv(index=False)
 
 st.download_button(
-    "Download CSV",
-    df.to_csv(index=False),
-    "data.csv"
+    "📥 Download CSV",
+    csv,
+    "ghg_data.csv",
+    "text/csv"
 )
