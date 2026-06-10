@@ -27,12 +27,6 @@ else:
 
 st.markdown("---")
 
-st.subheader("แหล่งข้อมูล")
-
-st.success("ฐานข้อมูล GHG Dashboard")
-
-st.markdown("---")
-
 st.caption("""
 ผู้จัดทำ
 
