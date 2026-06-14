@@ -37,10 +37,10 @@ st.markdown("""
 }
 
 
-/* Sidebar Function Position */
+/* Sidebar */
 
-[data-testid="stSidebarNav"]{
-    padding-top:50px;
+[data-testid="stSidebar"]{
+    background:#111827;
 }
 
 </style>
@@ -49,15 +49,71 @@ st.markdown("""
 
 
 # =========================
-# LOAD DATA
+# MENU CONTROL
 # =========================
 
+st.sidebar.markdown("")
+
+menu = st.sidebar.radio(
+    "",
+    [
+        "📊 Dashboard",
+        "📥 Download"
+    ]
+)
+
+
+
+# =========================
+# DOWNLOAD PAGE
+# =========================
+
+if menu == "📥 Download":
+
+    st.title("📥 Download")
+
+    df = load_data()
+
+    if df.empty:
+
+        st.warning("ไม่พบข้อมูล")
+
+    else:
+
+        st.dataframe(
+            df,
+            use_container_width=True
+        )
+
+
+        csv = df.to_csv(index=False)
+
+
+        st.download_button(
+            "📥 ดาวน์โหลดข้อมูล",
+            csv,
+            "ghg_data.csv",
+            "text/csv"
+        )
+
+
+    st.stop()
+
+
+
+# =========================
+# DASHBOARD
+# =========================
+
+
 df = load_data()
+
 
 if df.empty:
 
     df = fetch_data()
     save_data(df)
+
 
 
 latest = df.iloc[-1]
@@ -71,6 +127,7 @@ latest = df.iloc[-1]
 date_obj = datetime.fromisoformat(
     str(latest["Date"]).replace("Z","")
 )
+
 
 thai_date = (
     f"{date_obj.day:02d}/"
@@ -91,6 +148,7 @@ st.info("""
 
 ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ
 """)
+
 
 st.caption(
     f"ข้อมูลล่าสุด : {thai_date}"
@@ -156,17 +214,18 @@ period = st.selectbox(
 )
 
 
+
 if period == "Daily":
 
     df_plot = df.tail(24)
 
 elif period == "Weekly":
 
-    df_plot = df.tail(24 * 7)
+    df_plot = df.tail(24*7)
 
 elif period == "Monthly":
 
-    df_plot = df.tail(24 * 30)
+    df_plot = df.tail(24*30)
 
 else:
 
@@ -189,15 +248,10 @@ with left:
     options = {
 
         "Carbon Dioxide":"CO2",
-
         "Methane":"CH4",
-
         "Nitrogen Dioxide":"NO2",
-
         "PM2.5":"PM25",
-
         "Temperature":"Temp",
-
         "Humidity":"Humidity"
 
     }
@@ -220,48 +274,9 @@ with left:
     )
 
 
-    fig.update_layout(
-        height=500,
-        margin=dict(
-            l=10,
-            r=10,
-            t=20,
-            b=10
-        )
-    )
-
-
     st.plotly_chart(
         fig,
         use_container_width=True
-    )
-
-
-    descriptions = {
-
-        "CO2":
-        "Carbon dioxide from fuel combustion and industrial activities.",
-
-        "CH4":
-        "Methane emissions from agriculture and waste.",
-
-        "NO2":
-        "Air pollutant from transportation and industry.",
-
-        "PM25":
-        "Fine particulate matter affecting health.",
-
-        "Temp":
-        "Ambient air temperature.",
-
-        "Humidity":
-        "Relative humidity in atmosphere."
-
-    }
-
-
-    st.info(
-        descriptions[selected]
     )
 
 
@@ -287,30 +302,4 @@ with right:
     st.metric(
         "ค่าสูงสุด",
         round(df[selected].max(),2)
-    )
-
-
-    avg_co2 = df["CO2"].mean()
-
-
-    if avg_co2 < 450:
-
-        status = "🟢 Normal"
-
-    elif avg_co2 < 500:
-
-        status = "🟡 Warning"
-
-    else:
-
-        status = "🔴 Critical"
-
-
-
-    st.info(
-        f"""
-สถานะระบบ
-
-{status}
-"""
     )
