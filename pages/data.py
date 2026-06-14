@@ -1,9 +1,13 @@
 import streamlit as st
+
 from Services.database import load_data
 
-st.title("📁 Data Repository")
+
+st.title("📥 Download")
+
 
 df = load_data()
+
 
 if df.empty:
 
@@ -16,30 +20,13 @@ else:
         use_container_width=True
     )
 
+
     csv = df.to_csv(index=False)
+
 
     st.download_button(
         "📥 ดาวน์โหลดข้อมูล",
         csv,
-        "GHG_Data.csv",
+        "ghg_data.csv",
         "text/csv"
     )
-
-st.markdown("---")
-
-st.caption("""
-ผู้จัดทำ
-
-1.
-
-2.
-
-
-
-สถาบัน :
-
-
-
-
-โลโก้ :
-""")
