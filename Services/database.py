@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 
-DB_PATH = "data/ghg_data.db"
+DB_PATH = "Storage/GHG_Database.db"
 
 def get_connection():
     return sqlite3.connect(DB_PATH)
