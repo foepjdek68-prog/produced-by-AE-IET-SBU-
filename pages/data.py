@@ -1,7 +1,7 @@
 import streamlit as st
-from utils.database import load_data
+from Services.database import load_data
 
-st.title("📁 ข้อมูลและดาวน์โหลด")
+st.title("📁 Data Repository")
 
 df = load_data()
 
@@ -21,7 +21,7 @@ else:
     st.download_button(
         "📥 ดาวน์โหลดข้อมูล",
         csv,
-        "ghg_data.csv",
+        "GHG_Data.csv",
         "text/csv"
     )
 
