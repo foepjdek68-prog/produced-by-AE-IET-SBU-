@@ -5,8 +5,6 @@ from datetime import datetime
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
-from DataCenter import show_datacenter
-
 
 # =========================
 # PAGE CONFIG
@@ -46,34 +44,6 @@ st.markdown("""
 
 </style>
 """, unsafe_allow_html=True)
-
-
-
-# =========================
-# MENU
-# =========================
-
-st.sidebar.markdown("")
-
-menu = st.sidebar.radio(
-    "",
-    [
-        "📊 Dashboard",
-        "📂 Data Center"
-    ]
-)
-
-
-
-# =========================
-# DATA CENTER
-# =========================
-
-if menu == "📂 Data Center":
-
-    show_datacenter()
-
-    st.stop()
 
 
 
@@ -151,6 +121,10 @@ st.markdown("---")
 
 
 
+# =========================
+# FILTER
+# =========================
+
 period = st.selectbox(
     "ช่วงการแสดงผล",
     [
@@ -179,6 +153,10 @@ else:
     df_plot = df
 
 
+
+# =========================
+# GRAPH
+# =========================
 
 left,right = st.columns([4,1])
 
