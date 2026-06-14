@@ -47,12 +47,10 @@ st.markdown("""
 
 df = load_data()
 
-
 if df.empty:
 
     df = fetch_data()
     save_data(df)
-
 
 
 latest = df.iloc[-1]
@@ -66,7 +64,6 @@ latest = df.iloc[-1]
 date_obj = datetime.fromisoformat(
     str(latest["Date"]).replace("Z","")
 )
-
 
 thai_date = (
     f"{date_obj.day:02d}/"
@@ -88,7 +85,6 @@ st.info("""
 ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ
 """)
 
-
 st.caption(
     f"ข้อมูลล่าสุด : {thai_date}"
 )
@@ -101,13 +97,12 @@ st.caption(
 
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-
-c1.metric("Carbon Dioxide", round(float(latest["CO2"]),1))
-c2.metric("Methane", round(float(latest["CH4"]),1))
-c3.metric("Nitrogen Dioxide", round(float(latest["NO2"]),1))
-c4.metric("PM2.5", round(float(latest["PM25"]),1))
-c5.metric("Temperature", round(float(latest["Temp"]),1))
-c6.metric("Humidity", round(float(latest["Humidity"]),1))
+c1.metric("CO₂", round(float(latest["CO2"]),1))
+c2.metric("CH₄", round(float(latest["CH4"]),1))
+c3.metric("NO₂", round(float(latest["NO2"]),1))
+c4.metric("PM₂.₅", round(float(latest["PM25"]),1))
+c5.metric("Temp", round(float(latest["Temp"]),1))
+c6.metric("RH", round(float(latest["Humidity"]),1))
 
 
 
@@ -128,7 +123,6 @@ period = st.selectbox(
         "Annual"
     ]
 )
-
 
 if period == "Daily":
 
@@ -154,32 +148,42 @@ else:
 
 left,right = st.columns([4,1])
 
-
 with left:
 
     st.subheader("📈 กราฟแสดงข้อมูล")
 
-
     options = {
 
-        "Carbon Dioxide":"CO2",
-        "Methane":"CH4",
-        "Nitrogen Dioxide":"NO2",
-        "PM2.5":"PM25",
-        "Temperature":"Temp",
-        "Humidity":"Humidity"
+        "CO₂":"CO2",
+        "CH₄":"CH4",
+        "NO₂":"NO2",
+        "PM₂.₅":"PM25",
+        "Temp":"Temp",
+        "RH":"Humidity"
 
     }
 
-
-    selected_label = st.selectbox(
+    selected_labels = st.multiselect(
         "เลือกข้อมูล",
-        list(options.keys())
+        list(options.keys()),
+        default=["CO₂"]
     )
 
+    selected = [
+        options[x]
+        for x in selected_labels
+    ]
 
-    selected = options[selected_label]
+    color_map = {
 
+        "CO2":"#DC2626",
+        "CH4":"#F97316",
+        "NO2":"#7C3AED",
+        "PM25":"#EAB308",
+        "Temp":"#22C55E",
+        "Humidity":"#2563EB"
+
+    }
 
     fig = px.line(
         df_plot,
@@ -188,6 +192,12 @@ with left:
         template="plotly_dark"
     )
 
+    for trace in fig.data:
+
+        if trace.name in color_map:
+
+            trace.line.color = color_map[trace.name]
+            trace.line.width = 3
 
     st.plotly_chart(
         fig,
@@ -195,33 +205,28 @@ with left:
     )
 
 
-
 with right:
 
     st.subheader("📊 สรุปข้อมูล")
-
 
     st.metric(
         "อัปเดตล่าสุด",
         thai_date
     )
 
+    for item in selected:
 
-    st.metric(
-        "ค่าเฉลี่ย",
-        round(df[selected].mean(),2)
-    )
+        st.metric(
+            f"AVG {item}",
+            round(df[item].mean(),2)
+        )
 
-
-    st.metric(
-        "ค่าสูงสุด",
-        round(df[selected].max(),2)
-    )
-
-
+        st.metric(
+            f"MAX {item}",
+            round(df[item].max(),2)
+        )
 
     avg_co2 = df["CO2"].mean()
-
 
     if avg_co2 < 450:
 
@@ -234,8 +239,6 @@ with right:
     else:
 
         status = "🔴 Critical"
-
-
 
     st.info(
         f"""
