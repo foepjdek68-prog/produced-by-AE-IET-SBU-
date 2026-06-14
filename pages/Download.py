@@ -1,37 +1,54 @@
 import streamlit as st
 
-from Services.database import load_data
+from Services.database import load_data, save_data
+from Services.api_loader import fetch_data
 
+
+# =========================
+# PAGE
+# =========================
 
 st.title("📥 Download")
 
+
+
+# =========================
+# LOAD DATA
+# =========================
 
 df = load_data()
 
 
 if df.empty:
 
-    st.warning(
-        "ไม่พบข้อมูล"
-    )
+    df = fetch_data()
+    save_data(df)
 
 
-else:
 
-    st.dataframe(
-        df,
-        use_container_width=True
-    )
+# =========================
+# DISPLAY
+# =========================
 
-
-    csv = df.to_csv(
-        index=False
-    )
+st.dataframe(
+    df,
+    use_container_width=True
+)
 
 
-    st.download_button(
-        "📥 ดาวน์โหลดข้อมูล",
-        csv,
-        "ghg_data.csv",
-        "text/csv"
-    )
+
+# =========================
+# DOWNLOAD
+# =========================
+
+csv = df.to_csv(
+    index=False
+)
+
+
+st.download_button(
+    "📥 ดาวน์โหลดข้อมูล",
+    csv,
+    "ghg_data.csv",
+    "text/csv"
+)
