@@ -40,7 +40,7 @@ st.markdown("""
 /* Sidebar Function Position */
 
 [data-testid="stSidebarNav"]{
-    padding-top:100px;
+    padding-top:50px;
 }
 
 </style>
@@ -110,30 +110,25 @@ c1.metric(
     round(float(latest["CO2"]),1)
 )
 
-
 c2.metric(
     "Methane",
     round(float(latest["CH4"]),1)
 )
-
 
 c3.metric(
     "Nitrogen Dioxide",
     round(float(latest["NO2"]),1)
 )
 
-
 c4.metric(
     "PM2.5",
     round(float(latest["PM25"]),1)
 )
 
-
 c5.metric(
     "Temperature",
     round(float(latest["Temp"]),1)
 )
-
 
 c6.metric(
     "Humidity",
@@ -165,16 +160,13 @@ if period == "Daily":
 
     df_plot = df.tail(24)
 
-
 elif period == "Weekly":
 
-    df_plot = df.tail(24*7)
-
+    df_plot = df.tail(24 * 7)
 
 elif period == "Monthly":
 
-    df_plot = df.tail(24*30)
-
+    df_plot = df.tail(24 * 30)
 
 else:
 
@@ -190,7 +182,6 @@ left,right = st.columns([4,1])
 
 
 with left:
-
 
     st.subheader("📈 กราฟแสดงข้อมูล")
 
@@ -306,11 +297,9 @@ with right:
 
         status = "🟢 Normal"
 
-
     elif avg_co2 < 500:
 
         status = "🟡 Warning"
-
 
     else:
 
