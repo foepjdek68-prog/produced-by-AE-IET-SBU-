@@ -3,7 +3,7 @@ import streamlit as st
 from Services.database import load_data
 
 
-st.title("📥 Download")
+st.title("📂 Data Center")
 
 
 df = load_data()
