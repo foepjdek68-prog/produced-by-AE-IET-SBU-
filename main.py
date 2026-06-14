@@ -2,19 +2,25 @@ import streamlit as st
 import plotly.express as px
 from datetime import datetime
 
-from utils.database import load_data, save_data
-from utils.api_loader import fetch_data
+from Services.database import load_data, save_data
+from Services.api_loader import fetch_data
 
 # =========================
-# PAGE
+# PAGE CONFIG
 # =========================
 
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
+
+# =========================
+# SIDEBAR
+# =========================
+
+st.sidebar.markdown("## 📋 เมนู")
 
 # =========================
 # CSS
@@ -44,6 +50,7 @@ st.markdown("""
 df = load_data()
 
 if df.empty:
+
     df = fetch_data()
     save_data(df)
 
@@ -83,12 +90,35 @@ st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-c1.metric("CO₂", round(latest["CO2"],1))
-c2.metric("CH₄", round(latest["CH4"],1))
-c3.metric("NO₂", round(latest["NO2"],1))
-c4.metric("PM2.5", round(latest["PM25"],1))
-c5.metric("Temperature", round(latest["Temp"],1))
-c6.metric("Humidity", round(latest["Humidity"],1))
+c1.metric(
+    "Carbon Dioxide",
+    round(float(latest["CO2"]),1)
+)
+
+c2.metric(
+    "Methane",
+    round(float(latest["CH4"]),1)
+)
+
+c3.metric(
+    "Nitrogen Dioxide",
+    round(float(latest["NO2"]),1)
+)
+
+c4.metric(
+    "PM2.5",
+    round(float(latest["PM25"]),1)
+)
+
+c5.metric(
+    "Temperature",
+    round(float(latest["Temp"]),1)
+)
+
+c6.metric(
+    "Humidity",
+    round(float(latest["Humidity"]),1)
+)
 
 st.markdown("---")
 
@@ -96,41 +126,55 @@ st.markdown("---")
 # FILTER
 # =========================
 
-period = st.radio(
-    "ช่วงเวลา",
-    ["Day","Week","Month","Year"],
-    horizontal=True
+period = st.selectbox(
+    "ช่วงการแสดงผล",
+    [
+        "Daily",
+        "Weekly",
+        "Monthly",
+        "Annual"
+    ]
 )
 
-if period == "Day":
+if period == "Daily":
+
     df_plot = df.tail(24)
 
-elif period == "Week":
-    df_plot = df.tail(24*7)
+elif period == "Weekly":
 
-elif period == "Month":
-    df_plot = df.tail(24*30)
+    df_plot = df.tail(24 * 7)
+
+elif period == "Monthly":
+
+    df_plot = df.tail(24 * 30)
 
 else:
+
     df_plot = df
 
 # =========================
 # GRAPH
 # =========================
 
-left,right = st.columns([4,1])
+left, right = st.columns([4,1])
 
 with left:
 
     st.subheader("📈 กราฟแสดงข้อมูล")
 
     options = {
-        "Carbon Dioxide":"CO2",
-        "Methane":"CH4",
-        "Nitrogen Dioxide":"NO2",
-        "PM2.5":"PM25",
-        "Temperature":"Temp",
-        "Humidity":"Humidity"
+
+        "Carbon Dioxide": "CO2",
+
+        "Methane": "CH4",
+
+        "Nitrogen Dioxide": "NO2",
+
+        "PM2.5": "PM25",
+
+        "Temperature": "Temp",
+
+        "Humidity": "Humidity"
     }
 
     selected_label = st.selectbox(
@@ -163,12 +207,24 @@ with left:
     )
 
     descriptions = {
-        "CO2":"Carbon dioxide from fuel combustion and industrial activities.",
-        "CH4":"Methane emissions from agriculture and waste.",
-        "NO2":"Air pollutant from transportation and industry.",
-        "PM25":"Fine particulate matter affecting health.",
-        "Temp":"Ambient air temperature.",
-        "Humidity":"Relative humidity in atmosphere."
+
+        "CO2":
+        "Carbon dioxide from fuel combustion and industrial activities.",
+
+        "CH4":
+        "Methane emissions from agriculture and waste.",
+
+        "NO2":
+        "Air pollutant from transportation and industry.",
+
+        "PM25":
+        "Fine particulate matter affecting health.",
+
+        "Temp":
+        "Ambient air temperature.",
+
+        "Humidity":
+        "Relative humidity in atmosphere."
     }
 
     st.info(descriptions[selected])
@@ -195,12 +251,21 @@ with right:
     avg_co2 = df["CO2"].mean()
 
     if avg_co2 < 450:
+
         status = "🟢 Normal"
 
     elif avg_co2 < 500:
+
         status = "🟡 Warning"
 
     else:
+
         status = "🔴 Critical"
 
-    st.info(f"Status\n\n{status}")
+    st.info(
+        f"""
+สถานะระบบ
+
+{status}
+"""
+    )
