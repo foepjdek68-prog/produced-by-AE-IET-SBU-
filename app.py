@@ -5,6 +5,8 @@ from datetime import datetime
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
+from DataCenter import show_datacenter
+
 
 # =========================
 # PAGE CONFIG
@@ -32,12 +34,11 @@ st.markdown("""
     border-radius:12px;
 }
 
+
 .block-container{
     padding-top:1rem;
 }
 
-
-/* Sidebar */
 
 [data-testid="stSidebar"]{
     background:#111827;
@@ -49,7 +50,7 @@ st.markdown("""
 
 
 # =========================
-# MENU CONTROL
+# MENU
 # =========================
 
 st.sidebar.markdown("")
@@ -58,53 +59,27 @@ menu = st.sidebar.radio(
     "",
     [
         "📊 Dashboard",
-        "📥 Download"
+        "📂 Data Center"
     ]
 )
 
 
 
 # =========================
-# DOWNLOAD PAGE
+# DATA CENTER
 # =========================
 
-if menu == "📥 Download":
+if menu == "📂 Data Center":
 
-    st.title("📥 Download")
-
-    df = load_data()
-
-    if df.empty:
-
-        st.warning("ไม่พบข้อมูล")
-
-    else:
-
-        st.dataframe(
-            df,
-            use_container_width=True
-        )
-
-
-        csv = df.to_csv(index=False)
-
-
-        st.download_button(
-            "📥 ดาวน์โหลดข้อมูล",
-            csv,
-            "ghg_data.csv",
-            "text/csv"
-        )
-
+    show_datacenter()
 
     st.stop()
 
 
 
 # =========================
-# DASHBOARD
+# LOAD DATA
 # =========================
-
 
 df = load_data()
 
@@ -163,45 +138,18 @@ st.caption(
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
 
-c1.metric(
-    "Carbon Dioxide",
-    round(float(latest["CO2"]),1)
-)
-
-c2.metric(
-    "Methane",
-    round(float(latest["CH4"]),1)
-)
-
-c3.metric(
-    "Nitrogen Dioxide",
-    round(float(latest["NO2"]),1)
-)
-
-c4.metric(
-    "PM2.5",
-    round(float(latest["PM25"]),1)
-)
-
-c5.metric(
-    "Temperature",
-    round(float(latest["Temp"]),1)
-)
-
-c6.metric(
-    "Humidity",
-    round(float(latest["Humidity"]),1)
-)
+c1.metric("Carbon Dioxide", round(float(latest["CO2"]),1))
+c2.metric("Methane", round(float(latest["CH4"]),1))
+c3.metric("Nitrogen Dioxide", round(float(latest["NO2"]),1))
+c4.metric("PM2.5", round(float(latest["PM25"]),1))
+c5.metric("Temperature", round(float(latest["Temp"]),1))
+c6.metric("Humidity", round(float(latest["Humidity"]),1))
 
 
 
 st.markdown("---")
 
 
-
-# =========================
-# FILTER
-# =========================
 
 period = st.selectbox(
     "ช่วงการแสดงผล",
@@ -212,7 +160,6 @@ period = st.selectbox(
         "Annual"
     ]
 )
-
 
 
 if period == "Daily":
@@ -232,10 +179,6 @@ else:
     df_plot = df
 
 
-
-# =========================
-# GRAPH
-# =========================
 
 left,right = st.columns([4,1])
 
@@ -282,7 +225,6 @@ with left:
 
 
 with right:
-
 
     st.subheader("📊 สรุปข้อมูล")
 
