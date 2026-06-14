@@ -3,13 +3,10 @@ import streamlit as st
 from Services.database import load_data
 
 
-
 st.title("📥 Download")
 
 
-
 df = load_data()
-
 
 
 if df.empty:
