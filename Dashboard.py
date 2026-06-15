@@ -52,9 +52,20 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
+# ---------------- SAFE KPI FUNCTION ----------------
 def kpi(col, symbol, name=None):
-    now = float(latest[col])
-    old = float(prev[col])
+    now_raw = latest.get(col, 0)
+    old_raw = prev.get(col, 0)
+
+    try:
+        now = float(now_raw) if pd.notna(now_raw) else 0
+    except:
+        now = 0
+
+    try:
+        old = float(old_raw) if pd.notna(old_raw) else 0
+    except:
+        old = 0
 
     diff = now - old
 
@@ -69,6 +80,8 @@ def kpi(col, symbol, name=None):
 
     return now, f"{arrow} {diff:.2f}", label
 
+
+# ---------------- KPI UI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
@@ -83,7 +96,7 @@ c3.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temperature", "Temp")
+v, d, label = kpi("Temp", "Temp")
 c5.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Humidity", "RH")
@@ -91,6 +104,7 @@ c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
 
+# ---------------- PERIOD ----------------
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -105,8 +119,10 @@ elif period == "Monthly":
 else:
     df_plot = df
 
+# ---------------- LAYOUT ----------------
 left, center, right = st.columns([1.2, 3, 1])
 
+# ---------------- SUMMARY ----------------
 with left:
     st.subheader("📊 Summary")
 
@@ -122,6 +138,9 @@ with left:
     }
 
     for col in selected_cols:
+        if col not in df.columns:
+            continue
+
         avg = df[col].mean()
         mx = df[col].max()
 
@@ -137,9 +156,10 @@ with left:
         )
 
         st.caption(
-            f"→ {name_thai[col]} | trend: {'↑' if trend > 0 else '↓'}"
+            f"→ {name_thai.get(col,col)} | trend: {'↑' if trend > 0 else '↓'}"
         )
 
+# ---------------- GRAPH ----------------
 with center:
     st.subheader("📈 Graph")
 
@@ -168,7 +188,8 @@ with center:
         }
 
         for col in selected:
-            plot_df[col] = (plot_df[col] / scale[col]) * 100
+            if col in plot_df.columns:
+                plot_df[col] = (plot_df[col] / scale[col]) * 100
 
     fig = px.line(
         plot_df,
@@ -209,6 +230,7 @@ with center:
 
     st.plotly_chart(fig, use_container_width=True)
 
+# ---------------- STATUS ----------------
 with right:
     st.subheader("📌 Status")
 
