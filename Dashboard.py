@@ -100,9 +100,9 @@ c1,c2,c3,c4,c5,c6 = st.columns(6)
 c1.metric("CO₂", round(float(latest["CO2"]),1))
 c2.metric("CH₄", round(float(latest["CH4"]),1))
 c3.metric("NO₂", round(float(latest["NO2"]),1))
-c4.metric("PM₂.₅", round(float(latest["PM25"]),1))
+c4.metric("PM 2.5", round(float(latest["PM25"]),1))
 c5.metric("Temp", round(float(latest["Temp"]),1))
-c6.metric("RH", round(float(latest["Humidity"]),1))
+c6.metric("Humidity", round(float(latest["Humidity"]),1))
 
 
 
@@ -139,9 +139,6 @@ elif period == "Monthly":
 else:
 
     df_plot = df
-
-
-
 # =========================
 # GRAPH
 # =========================
@@ -154,25 +151,34 @@ with left:
 
     options = {
 
-        "CO₂":"CO2",
-        "CH₄":"CH4",
-        "NO₂":"NO2",
-        "PM₂.₅":"PM25",
-        "Temp":"Temp",
-        "RH":"Humidity"
+        "CO₂ (Carbon Dioxide)":"CO2",
+        "CH₄ (Methane)":"CH4",
+        "NO₂ (Nitrogen Dioxide)":"NO2",
+        "PM 2.5 (Particulate Matter)":"PM25",
+        "Temp (Temperature)":"Temp",
+        "Humidity (Relative Humidity)":"Humidity"
 
     }
 
     selected_labels = st.multiselect(
         "เลือกข้อมูล",
         list(options.keys()),
-        default=["CO₂"]
+        default=["CO₂ (Carbon Dioxide)"]
     )
 
     selected = [
         options[x]
         for x in selected_labels
     ]
+
+    if not selected:
+
+        st.warning(
+            "Please select at least one parameter."
+        )
+
+        st.stop()
+
 
     color_map = {
 
@@ -185,19 +191,79 @@ with left:
 
     }
 
+
+    plot_df = df_plot.copy()
+
+
+    for col in selected:
+
+        min_val = plot_df[col].min()
+        max_val = plot_df[col].max()
+
+        if max_val != min_val:
+
+            plot_df[col] = (
+                (
+                    plot_df[col] - min_val
+                )
+                /
+                (
+                    max_val - min_val
+                )
+            ) * 100
+
+
     fig = px.line(
-        df_plot,
+        plot_df,
         x="Date",
         y=selected,
         template="plotly_dark"
     )
 
-    for trace in fig.data:
 
-        if trace.name in color_map:
+for trace in fig.data:
 
-            trace.line.color = color_map[trace.name]
-            trace.line.width = 3
+    if trace.name in color_map:
+
+        trace.line.color = color_map[trace.name]
+        trace.line.width = 3
+
+    display_names = {
+
+        "CO2":"CO₂",
+        "CH4":"CH₄",
+        "NO2":"NO₂",
+        "PM25":"PM 2.5",
+        "Temp":"Temp",
+        "Humidity":"Humidity"
+
+    }
+
+    trace.name = display_names.get(
+        trace.name,
+        trace.name
+    )
+    fig.update_layout(
+
+        yaxis_title="Relative Change (%)",
+        yaxis=dict(
+        range=[0,100]
+    ),
+
+        legend=dict(
+            orientation="h",
+            y=1.05,
+            x=0
+        ),
+
+        hovermode="x unified",
+
+        xaxis=dict(
+            automargin=True
+        )
+
+    )
+
 
     st.plotly_chart(
         fig,
@@ -214,6 +280,7 @@ with right:
         thai_date
     )
 
+
     for item in selected:
 
         st.metric(
@@ -226,7 +293,9 @@ with right:
             round(df[item].max(),2)
         )
 
+
     avg_co2 = df["CO2"].mean()
+
 
     if avg_co2 < 450:
 
@@ -239,6 +308,7 @@ with right:
     else:
 
         status = "🔴 Critical"
+
 
     st.info(
         f"""
