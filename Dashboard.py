@@ -1,95 +1,3 @@
-import streamlit as st
-import plotly.express as px
-import pandas as pd
-import pytz
-from datetime import datetime
-
-from Services.database import load_data, save_data
-from Services.api_loader import fetch_data
-
-st.set_page_config(
-    page_title="Dashboard Tracking Greenhouse Gases Emission",
-    page_icon="🌍",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-st.markdown("""
-<style>
-
-[data-testid="stMetric"]{
-    background:#111827;
-    border:1px solid #374151;
-    padding:15px;
-    border-radius:12px;
-}
-
-.block-container{
-    padding-top:1rem;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ---------------- LOAD DATA ----------------
-df = load_data()
-
-if df.empty:
-    df = fetch_data()
-    save_data(df)
-
-latest = df.iloc[-1]
-
-date_obj = pd.to_datetime(latest["Date"], utc=True)
-date_obj = date_obj.tz_convert("Asia/Bangkok")
-
-thai_date = (
-    f"{date_obj.day:02d}/"
-    f"{date_obj.month:02d}/"
-    f"{(date_obj.year+543)%100:02d}"
-)
-
-st.info("""
-### 🌍 Dashboard Tracking
-
-## Greenhouse Gases Emission
-
-ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ
-""")
-
-st.caption(f"ข้อมูลล่าสุด : {thai_date}")
-
-# ---------------- KPI ----------------
-c1, c2, c3, c4, c5, c6 = st.columns(6)
-
-c1.metric("CO₂ (Carbon Dioxide)", round(float(latest["CO2"]), 1))
-c2.metric("CH₄ (Methane)", round(float(latest["CH4"]), 1))
-c3.metric("NO₂ (Nitrogen Dioxide)", round(float(latest["NO2"]), 1))
-c4.metric("PM 2.5 (Particulate Matter)", round(float(latest["PM25"]), 1))
-c5.metric("Temp (Temperature)", round(float(latest["Temp"]), 1))
-c6.metric("Humidity (Relative Humidity)", round(float(latest["Humidity"]), 1))
-
-st.markdown("---")
-
-# ---------------- PERIOD ----------------
-period = st.selectbox(
-    "ช่วงการแสดงผล",
-    ["Daily", "Weekly", "Monthly", "Annual"]
-)
-
-if period == "Daily":
-    df_plot = df.tail(24)
-elif period == "Weekly":
-    df_plot = df.tail(24 * 7)
-elif period == "Monthly":
-    df_plot = df.tail(24 * 30)
-else:
-    df_plot = df
-
-# ---------------- LAYOUT ----------------
-left, right = st.columns([4, 1])
-
-# ---------------- GRAPH ----------------
 with left:
 
     st.subheader("📈 กราฟแสดงข้อมูล")
@@ -100,16 +8,24 @@ with left:
         horizontal=True
     )
 
+    # ---------------- LABEL OPTIONS (เหมือนโค้ดเก่า แต่ clean) ----------------
     options = {
-        "CO₂ (Carbon Dioxide)": "CO2",
-        "CH₄ (Methane)": "CH4",
-        "NO₂ (Nitrogen Dioxide)": "NO2",
-        "PM 2.5 (Particulate Matter)": "PM25",
-        "Temp (Temperature)": "Temp",
-        "Humidity (Relative Humidity)": "Humidity"
+        "CO2": "CO2",
+        "CH4": "CH4",
+        "NO2": "NO2",
+        "PM25": "PM25",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
     }
 
-    display_names = {v: k for k, v in options.items()}
+    display_names = {
+        "CO2": "CO₂ (Carbon Dioxide)",
+        "CH4": "CH₄ (Methane)",
+        "NO2": "NO₂ (Nitrogen Dioxide)",
+        "PM25": "PM 2.5",
+        "Temp": "Temperature",
+        "Humidity": "Relative Humidity"
+    }
 
     color_map = {
         "CO2": "#DC2626",
@@ -120,33 +36,21 @@ with left:
         "Humidity": "#2563EB"
     }
 
-    # ---------------- SELECT ----------------
-    if graph_mode == "Actual Values":
+    plot_df = df_plot.copy()
 
-        selected_actual = st.selectbox(
-            "เลือกข้อมูล",
-            list(options.keys())
-        )
+    # ---------------- MULTI SELECT (แก้ให้เหมือน "โค้ดเก่า" ที่ใช้ได้จริง) ----------------
+    selected = st.multiselect(
+        "เลือกข้อมูล",
+        list(options.keys()),
+        default=["CO2"]
+    )
 
-        selected = [options[selected_actual]]
+    if not selected:
+        st.warning("Please select at least one parameter.")
+        st.stop()
 
-        plot_df = df_plot.copy()
-
-    else:
-
-        selected_labels = st.multiselect(
-            "เลือกข้อมูล",
-            list(options.keys()),
-            default=["CO₂ (Carbon Dioxide)"]
-        )
-
-        selected = [options[x] for x in selected_labels]
-
-        if not selected:
-            st.warning("Please select at least one parameter.")
-            st.stop()
-
-        plot_df = df_plot.copy()
+    # ---------------- SCALE (เฉพาะ comparison mode) ----------------
+    if graph_mode == "Comparison Mode":
 
         reference_scale = {
             "CO2": 1000,
@@ -162,10 +66,7 @@ with left:
             plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
 
     # ---------------- TIME FIX ----------------
-    plot_df["Date"] = pd.to_datetime(plot_df["Date"], utc=True)
-    plot_df["Date"] = plot_df["Date"].dt.tz_convert("Asia/Bangkok")
-    plot_df["Date"] = plot_df["Date"].dt.tz_localize(None)
-    plot_df["Date"] = plot_df["Date"].dt.floor("H")
+    plot_df["Date"] = pd.to_datetime(plot_df["Date"], errors="coerce")
     plot_df = plot_df.sort_values("Date")
 
     # ---------------- PLOT ----------------
@@ -178,7 +79,6 @@ with left:
     )
 
     for trace in fig.data:
-
         col_key = trace.name
 
         trace.line.color = color_map.get(col_key, "#ffffff")
@@ -186,21 +86,12 @@ with left:
 
         trace.name = display_names.get(col_key, col_key)
 
-        trace.hovertemplate = (
-            "%{y:.2f}<br>"
-            "%{x|%d/%m/%Y %H:%M}<extra></extra>"
-        )
-
-    fig.for_each_trace(lambda t: t.update(connectgaps=True))
+        trace.hovertemplate = "%{y:.2f}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>"
 
     fig.update_layout(
-        legend=dict(
-            orientation="h",
-            y=-0.25,
-            x=0
-        ),
+        legend=dict(orientation="h"),
         hovermode="x unified",
-        xaxis=dict(automargin=True, type="date")
+        xaxis=dict(type="date")
     )
 
     if graph_mode == "Actual Values":
@@ -209,44 +100,3 @@ with left:
         fig.update_yaxes(title_text="Relative Scale (%)", range=[0, 100])
 
     st.plotly_chart(fig, use_container_width=True)
-
-# ---------------- RIGHT PANEL ----------------
-with right:
-
-    st.subheader("📊 สรุปข้อมูล")
-
-    st.metric("อัปเดตล่าสุด", thai_date)
-
-    name_map = {
-        "CO2": "CO₂",
-        "CH4": "CH₄",
-        "NO2": "NO₂",
-        "PM25": "PM 2.5",
-        "Temp": "Temperature",
-        "Humidity": "Humidity"
-    }
-
-    selected_cols = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
-
-    for item in selected_cols:
-
-        st.metric(
-            f"AVG {name_map[item]}",
-            round(df[item].mean(), 2)
-        )
-
-        st.metric(
-            f"MAX {name_map[item]}",
-            round(df[item].max(), 2)
-        )
-
-    avg_co2 = df["CO2"].mean()
-
-    if avg_co2 < 450:
-        status = "🟢 Normal"
-    elif avg_co2 < 500:
-        status = "🟡 Warning"
-    else:
-        status = "🔴 Critical"
-
-    st.info(f"สถานะระบบ\n\n{status}")
