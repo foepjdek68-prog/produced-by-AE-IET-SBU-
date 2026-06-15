@@ -200,12 +200,12 @@ with left:
 
         }
 
-    for col in selected:
+for col in selected:
         
-        plot_df[col] = (
-            plot_df[col]
-            /
-            reference_scale[col]
+    plot_df[col] = (
+        plot_df[col]
+        /
+        reference_scale[col]
         ) * 100
 
     fig = px.line(
