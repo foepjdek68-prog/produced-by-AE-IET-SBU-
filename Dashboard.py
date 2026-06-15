@@ -33,6 +33,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+# ---------------- DATA LOAD ----------------
 df = load_data()
 
 if df.empty:
@@ -40,13 +41,15 @@ if df.empty:
     save_data(df)
 
 df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-df = df.dropna(subset=["Date"])
+df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
 
 latest = df.iloc[-1]
+prev = df.iloc[-2] if len(df) > 1 else latest
 
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
 
+# ---------------- HEADER ----------------
 st.info("""
 ### 🌍 Dashboard Tracking
 
@@ -56,43 +59,48 @@ st.info("""
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
 
-prev = df.iloc[-2] if len(df) > 1 else latest
-
-
+# ---------------- KPI FUNCTION ----------------
 def kpi(col, symbol, name):
-
     now = float(latest[col])
     old = float(prev[col])
 
     diff = now - old
-    arrow = "↑" if diff > 0 else "↓"
 
-    return now, f"{arrow} {diff:.1f}", f"{symbol} ({name})"
+    if diff > 0:
+        arrow = "↑"
+    elif diff < 0:
+        arrow = "↓"
+    else:
+        arrow = "→"
+
+    return now, f"{arrow} {diff:.2f}", f"{symbol} ({name})"
 
 
+# ---------------- KPI UI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
-c1.metric(label, f"{v:.1f}", d)
+c1.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("CH4", "CH₄", "Methane")
-c2.metric(label, f"{v:.1f}", d)
+c2.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
-c3.metric(label, f"{v:.1f}", d)
+c3.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("PM25", "PM2.5")
-c4.metric(label, f"{v:.1f}", d)
+v, d, label = kpi("PM25", "PM2.5", "Particulate Matter")
+c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temp",  "Temperature")
-c5.metric(label, f"{v:.1f}", d)
+v, d, label = kpi("Temp", "°C", "Temperature")
+c5.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Humidity", "Humidity")
-c6.metric(label, f"{v:.1f}", d)
+v, d, label = kpi("Humidity", "%", "Humidity")
+c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
 
 
+# ---------------- PERIOD SELECT ----------------
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -108,10 +116,11 @@ else:
     df_plot = df
 
 
+# ---------------- LAYOUT ----------------
 left, center, right = st.columns([1.2, 3, 1])
 
+# ---------------- SUMMARY ----------------
 with left:
-
     st.subheader("📊 Summary")
 
     selected_cols = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
@@ -126,22 +135,27 @@ with left:
     }
 
     for col in selected_cols:
-
         avg = df[col].mean()
         mx = df[col].max()
-        trend = df[col].iloc[-1] - df[col].iloc[-5]
+
+        if len(df[col]) > 5:
+            trend = df[col].iloc[-1] - df[col].iloc[-5]
+        else:
+            trend = df[col].iloc[-1] - df[col].iloc[0]
 
         st.metric(
-            col,
-            round(avg, 2),
-            f"max {round(mx,2)}"
+            label=col,
+            value=round(avg, 2),
+            delta=f"max {round(mx,2)}"
         )
 
-        st.caption(f"→ {name_thai[col]} | trend: {'↑' if trend > 0 else '↓'}")
+        st.caption(
+            f"→ {name_thai[col]} | trend: {'↑' if trend > 0 else '↓'}"
+        )
 
 
+# ---------------- GRAPH ----------------
 with center:
-
     st.subheader("📈 Graph")
 
     graph_mode = st.radio(
@@ -150,25 +164,15 @@ with center:
         horizontal=True
     )
 
-    options = {
-        "CO2": "CO2",
-        "CH4": "CH4",
-        "NO2": "NO2",
-        "PM25": "PM25",
-        "Temp": "Temp",
-        "Humidity": "Humidity"
-    }
-
     selected = st.multiselect(
         "Select data",
-        list(options.keys()),
+        ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"],
         default=["CO2"]
     )
 
     plot_df = df_plot.copy()
 
     if graph_mode == "Compare":
-
         scale = {
             "CO2": 1000,
             "CH4": 100,
@@ -190,10 +194,10 @@ with center:
         template="plotly_dark"
     )
 
-    label_map = {
-        "CO2": "CH4 (มีเทน)",
-        "CH4": "CH4 (มีเทน)",
-        "NO2": "NO2 (ไนโตรเจนไดออกไซด์)",
+    name_thai = {
+        "CO2": "CO₂",
+        "CH4": "CH₄",
+        "NO2": "NO₂",
         "PM25": "PM2.5",
         "Temp": "Temp",
         "Humidity": "Humidity"
@@ -209,13 +213,10 @@ with center:
     }
 
     for t in fig.data:
-
         k = t.name
-
         t.line.color = color_map.get(k, "#ffffff")
         t.line.width = 3
-
-        t.name = k + f" ({name_thai.get(k,'')})"
+        t.name = f"{k} ({name_thai.get(k,'')})"
 
     fig.update_layout(
         hovermode="x unified",
@@ -225,8 +226,8 @@ with center:
     st.plotly_chart(fig, use_container_width=True)
 
 
+# ---------------- STATUS ----------------
 with right:
-
     st.subheader("📌 Status")
 
     avg_co2 = df["CO2"].mean()
