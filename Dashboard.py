@@ -44,6 +44,7 @@ df = df.dropna(subset=["Date"])
 
 latest = df.iloc[-1]
 
+
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
 
@@ -190,8 +191,46 @@ with left:
     st.plotly_chart(fig, use_container_width=True)
 
 
+    st.markdown("---")
+    st.subheader("📌 รายการข้อมูล")
+
+    cols = st.columns(len(selected))
+
+    for i, item in enumerate(selected):
+
+        with cols[i]:
+
+            st.markdown(f"**{display_names[item]}**")
+            st.markdown(f"AVG: {round(df[item].mean(), 2)}")
+            st.markdown(f"MAX: {round(df[item].max(), 2)}")
+
+
 with right:
-    st.subheader("📊 สถานะระบบ")
+
+    st.subheader("📊 สรุปข้อมูล")
+
+    st.metric("อัปเดตล่าสุด", thai_date)
+
+    name_map = {
+        "CO2": "CO₂",
+        "CH4": "CH₄",
+        "NO2": "NO₂",
+        "PM25": "PM 2.5",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
+    }
+
+    for item in selected:
+
+        st.metric(
+            f"AVG {name_map[item]}",
+            round(df[item].mean(), 2)
+        )
+
+        st.metric(
+            f"MAX {name_map[item]}",
+            round(df[item].max(), 2)
+        )
 
     avg_co2 = df["CO2"].mean()
 
@@ -202,4 +241,4 @@ with right:
     else:
         status = "🔴 Critical"
 
-    st.info(status)
+    st.info(f"สถานะระบบ\n\n{status}")
