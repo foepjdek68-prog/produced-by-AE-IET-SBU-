@@ -1,7 +1,6 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-import pytz
 from datetime import datetime
 
 from Services.database import load_data, save_data
@@ -40,17 +39,13 @@ if df.empty:
     df = fetch_data()
     save_data(df)
 
+df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+df = df.dropna(subset=["Date"])
+
 latest = df.iloc[-1]
 
 
-date_obj = pd.to_datetime(latest["Date"], utc=True)
-date_obj = date_obj.tz_convert("Asia/Bangkok")
-
-thai_date = (
-    f"{date_obj.day:02d}/"
-    f"{date_obj.month:02d}/"
-    f"{(date_obj.year+543)%100:02d}"
-)
+thai_date = latest["Date"].strftime("%d/%m/%y")
 
 
 st.info("""
@@ -159,18 +154,8 @@ with left:
         }
 
         for col in selected:
-            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce")
-            plot_df[col] = plot_df[col].fillna(0)
+            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
             plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
-
-
-    plot_df["Date"] = pd.to_datetime(plot_df["Date"], utc=True)
-    plot_df["Date"] = plot_df["Date"].dt.tz_convert("Asia/Bangkok")
-    plot_df["Date"] = plot_df["Date"].dt.tz_localize(None)
-
-    plot_df["Date"] = plot_df["Date"].dt.floor("H")
-
-    plot_df = plot_df.sort_values("Date")
 
 
     fig = px.line(
@@ -183,20 +168,15 @@ with left:
 
     for trace in fig.data:
 
-        col_key = trace.name
+        key = trace.name
 
-        if col_key in color_map:
-            trace.line.color = color_map[col_key]
+        if key in color_map:
+            trace.line.color = color_map[key]
             trace.line.width = 3
 
-        trace.name = display_names.get(col_key, col_key)
+        trace.name = display_names.get(key, key)
 
-        trace.hovertemplate = (
-            "%{y:.2f}<br>"
-            "%{x|%d/%m/%Y %H:%M}<extra></extra>"
-        )
-
-    fig.for_each_trace(lambda t: t.update(connectgaps=True))
+        trace.hovertemplate = "%{y:.2f}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>"
 
     fig.update_layout(
         legend=dict(
@@ -205,32 +185,22 @@ with left:
             x=0
         ),
         hovermode="x unified",
-        xaxis=dict(automargin=True, type="date")
+        xaxis=dict(type="date", automargin=True)
     )
-
-    if graph_mode == "Actual Values":
-        fig.update_yaxes(title_text="Actual Value")
-    else:
-        fig.update_yaxes(
-            title_text="Relative Scale (%)",
-            range=[0, 100]
-        )
 
     st.plotly_chart(fig, use_container_width=True)
 
 
     st.markdown("---")
-
-    st.subheader("📌 รายการข้อมูลที่แสดง")
+    st.subheader("📌 รายการข้อมูล")
 
     cols = st.columns(len(selected))
 
     for i, item in enumerate(selected):
 
-        label = display_names.get(item, item)
-
         with cols[i]:
-            st.markdown(f"**{label}**")
+
+            st.markdown(f"**{display_names[item]}**")
             st.markdown(f"AVG: {round(df[item].mean(), 2)}")
             st.markdown(f"MAX: {round(df[item].max(), 2)}")
 
@@ -243,7 +213,7 @@ with right:
 
     name_map = {
         "CO2": "CO₂",
-        "CH4": "CO₄",
+        "CH4": "CH₄",
         "NO2": "NO₂",
         "PM25": "PM 2.5",
         "Temp": "Temp",
