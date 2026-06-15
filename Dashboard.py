@@ -81,22 +81,14 @@ c2.metric(label, f"{v:.1f}", d)
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
 c3.metric(label, f"{v:.1f}", d)
 
-v, d, label = kpi("PM25", "PM2.5", "Particulate Matter")
+v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.1f}", d)
 
-v, d, label = kpi("Temp", "Temp", "Temperature")
+v, d, label = kpi("Temp",  "Temperature")
 c5.metric(label, f"{v:.1f}", d)
 
-v, d, label = kpi("Humidity", "Hum", "Relative Humidity")
+v, d, label = kpi("Humidity", "Humidity")
 c6.metric(label, f"{v:.1f}", d)
-
-c1.metric("CO2", round(float(latest["CO2"]), 1))
-c2.metric("CH4", round(float(latest["CH4"]), 1))
-c3.metric("NO2", round(float(latest["NO2"]), 1))
-c4.metric("PM25", round(float(latest["PM25"]), 1))
-c5.metric("Temp", round(float(latest["Temp"]), 1))
-c6.metric("Humidity", round(float(latest["Humidity"]), 1))
-
 
 st.markdown("---")
 
