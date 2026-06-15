@@ -7,9 +7,10 @@ from Services.api_loader import fetch_data
 
 
 st.set_page_config(
-    page_title="GHG Dashboard",
+    page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 
@@ -24,7 +25,7 @@ st.markdown("""
 }
 
 .block-container{
-    padding-top:0.8rem;
+    padding-top:1rem;
 }
 
 </style>
@@ -47,29 +48,18 @@ st.title("🌍 GHG Dashboard")
 
 
 # =========================
-# HEADER
+# KPI SECTION (ORIGINAL STYLE)
 # =========================
-st.markdown("## 📊 Summary Overview")
-
-prev = df.iloc[-6] if len(df) > 6 else df.iloc[0]
+st.markdown("## 📊 Summary")
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-def metric(col):
-    now = latest[col]
-    old = prev[col]
-    trend = now - old
-    arrow = "↑" if trend > 0 else "↓"
-
-    return f"{round(now,2)} {arrow}{round(trend,2)}"
-
-
-c1.metric("CO2", metric("CO2"))
-c2.metric("CH4", metric("CH4"))
-c3.metric("NO2", metric("NO2"))
-c4.metric("PM25", metric("PM25"))
-c5.metric("Temp", metric("Temp"))
-c6.metric("Humidity", metric("Humidity"))
+c1.metric("CO2", round(float(latest["CO2"]), 2))
+c2.metric("CH4", round(float(latest["CH4"]), 2))
+c3.metric("NO2", round(float(latest["NO2"]), 2))
+c4.metric("PM25", round(float(latest["PM25"]), 2))
+c5.metric("Temp", round(float(latest["Temp"]), 2))
+c6.metric("Humidity", round(float(latest["Humidity"]), 2))
 
 st.markdown("---")
 
@@ -77,7 +67,10 @@ st.markdown("---")
 # =========================
 # FILTER
 # =========================
-period = st.selectbox("ช่วงเวลา", ["Daily", "Weekly", "Monthly", "Annual"])
+period = st.selectbox(
+    "ช่วงเวลา",
+    ["Daily", "Weekly", "Monthly", "Annual"]
+)
 
 if period == "Daily":
     df_plot = df.tail(24)
@@ -90,9 +83,9 @@ else:
 
 
 # =========================
-# GRAPH AREA (BIG + CLEAN)
+# GRAPH (ORIGINAL STRUCTURE)
 # =========================
-st.markdown("## 📈 Graph View")
+st.markdown("## 📈 Graph")
 
 graph_mode = st.radio(
     "Mode",
@@ -110,7 +103,7 @@ options = {
 }
 
 selected = st.multiselect(
-    "Select parameters",
+    "Select data",
     list(options.keys()),
     default=["CO2"]
 )
@@ -154,17 +147,15 @@ for t in fig.data:
     t.line.width = 3
 
 fig.update_layout(
-    height=600,
     hovermode="x unified",
     legend=dict(orientation="h"),
-    margin=dict(l=10, r=10, t=20, b=10)
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
 
 # =========================
-# STATUS (KEEP SIMPLE)
+# STATUS (ORIGINAL POSITION)
 # =========================
 avg_co2 = df["CO2"].mean()
 
