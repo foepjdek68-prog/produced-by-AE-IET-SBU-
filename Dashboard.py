@@ -6,12 +6,14 @@ from datetime import datetime
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
+
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 
 st.markdown("""
 <style>
@@ -30,6 +32,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
+# ---------------- DATA LOAD ----------------
 df = load_data()
 
 if df.empty:
@@ -44,6 +48,8 @@ prev = df.iloc[-2] if len(df) > 1 else latest
 
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
+
+# ---------------- HEADER ----------------
 st.info("""
 ### 🌍 Dashboard Tracking
 
@@ -52,31 +58,25 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
-# ---------------- SAFE KPI ----------------
-def kpi(col, symbol, name=None):
-    now_raw = latest.get(col, 0)
-    old_raw = prev.get(col, 0)
 
-    try:
-        now = float(now_raw) if pd.notna(now_raw) else 0
-    except:
-        now = 0
-
-    try:
-        old = float(old_raw) if pd.notna(old_raw) else 0
-    except:
-        old = 0
+# ---------------- KPI FUNCTION ----------------
+def kpi(col, symbol, name):
+    now = float(latest[col])
+    old = float(prev[col])
 
     diff = now - old
 
-    arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
+    if diff > 0:
+        arrow = "↑"
+    elif diff < 0:
+        arrow = "↓"
+    else:
+        arrow = "→"
 
-    label = f"{symbol} ({name})" if name else symbol
-
-    return now, f"{arrow} {diff:.2f}", label
+    return now, f"{arrow} {diff:.2f}", f"{symbol} ({name})"
 
 
-# ---------------- KPI ----------------
+# ---------------- KPI UI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
@@ -88,18 +88,19 @@ c2.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
 c3.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("PM25", "PM2.5")
+v, d, label = kpi("PM25", "PM2.5", "Particulate Matter")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temp", "Temperature")
+v, d, label = kpi("Temp", "°C", "Temperature")
 c5.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Humidity", "Humidity")
+v, d, label = kpi("Humidity", "%", "Humidity")
 c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
 
-# ---------------- PERIOD ----------------
+
+# ---------------- PERIOD SELECT ----------------
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -114,8 +115,44 @@ elif period == "Monthly":
 else:
     df_plot = df
 
-# ---------------- LAYOUT (NO LEFT SUMMARY) ----------------
-center, right = st.columns([4, 1.2])
+
+# ---------------- LAYOUT ----------------
+left, center, right = st.columns([1.2, 3, 1])
+
+# ---------------- SUMMARY ----------------
+with left:
+    st.subheader("📊 Summary")
+
+    selected_cols = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
+
+    name_thai = {
+        "CO2": "คาร์บอนไดออกไซด์",
+        "CH4": "มีเทน",
+        "NO2": "ไนโตรเจนไดออกไซด์",
+        "PM25": "ฝุ่น PM2.5",
+        "Temp": "อุณหภูมิ",
+        "Humidity": "ความชื้น"
+    }
+
+    for col in selected_cols:
+        avg = df[col].mean()
+        mx = df[col].max()
+
+        if len(df[col]) > 5:
+            trend = df[col].iloc[-1] - df[col].iloc[-5]
+        else:
+            trend = df[col].iloc[-1] - df[col].iloc[0]
+
+        st.metric(
+            label=col,
+            value=round(avg, 2),
+            delta=f"max {round(mx,2)}"
+        )
+
+        st.caption(
+            f"→ {name_thai[col]} | trend: {'↑' if trend > 0 else '↓'}"
+        )
+
 
 # ---------------- GRAPH ----------------
 with center:
@@ -129,20 +166,9 @@ with center:
 
     selected = st.multiselect(
         "Select data",
-        ["CO2", "CH4", "NO2", "PM25", "Temperature", "Humidity"],
+        ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"],
         default=["CO2"]
     )
-
-    column_map = {
-        "CO2": "CO2",
-        "CH4": "CH4",
-        "NO2": "NO2",
-        "PM25": "PM25",
-        "Temperature": "Temp",
-        "Humidity": "Humidity"
-    }
-
-    real_selected = [column_map[c] for c in selected if c in column_map]
 
     plot_df = df_plot.copy()
 
@@ -156,17 +182,26 @@ with center:
             "Humidity": 100
         }
 
-        for col in real_selected:
-            if col in plot_df.columns:
-                plot_df[col] = (plot_df[col] / scale[col]) * 100
+        for col in selected:
+            plot_df[col] = (plot_df[col] / scale[col]) * 100
+
 
     fig = px.line(
         plot_df,
         x="Date",
-        y=real_selected,
+        y=selected,
         markers=True,
         template="plotly_dark"
     )
+
+    name_thai = {
+        "CO2": "CO₂",
+        "CH4": "CH₄",
+        "NO2": "NO₂",
+        "PM25": "PM2.5",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
+    }
 
     color_map = {
         "CO2": "#DC2626",
@@ -181,42 +216,19 @@ with center:
         k = t.name
         t.line.color = color_map.get(k, "#ffffff")
         t.line.width = 3
+        t.name = f"{k} ({name_thai.get(k,'')})"
+
+    fig.update_layout(
+        hovermode="x unified",
+        legend=dict(orientation="h")
+    )
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- RIGHT INSIGHT ----------------
+
+# ---------------- STATUS ----------------
 with right:
-    st.subheader("📌 Insight")
-
-    reverse_map = {
-        "CO2": "CO2",
-        "CH4": "CH4",
-        "NO2": "NO2",
-        "PM25": "PM25",
-        "Temp": "Temp",
-        "Humidity": "Humidity"
-    }
-
-    for col in real_selected:
-        if col not in df.columns:
-            continue
-
-        avg = df[col].mean()
-        mx = df[col].max()
-        mn = df[col].min()
-        last = df[col].iloc[-1]
-
-        st.metric(
-            label=col,
-            value=f"{last:.2f}",
-            delta=f"Avg {avg:.2f}"
-        )
-
-        st.caption(f"Max: {mx:.2f}")
-        st.caption(f"Min: {mn:.2f}")
-        st.markdown("---")
-
-    st.subheader("📊 CO2 Status")
+    st.subheader("📌 Status")
 
     avg_co2 = df["CO2"].mean()
 
