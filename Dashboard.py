@@ -91,10 +91,10 @@ c3.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("PM25", "PM2.5", "Particulate Matter")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temp", "°C", "Temperature")
+v, d, label = kpi("Temp", "Temp", "Temperature")
 c5.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Humidity", "%", "Humidity")
+v, d, label = kpi("Humidity", "ฑ็", "Humidity")
 c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
