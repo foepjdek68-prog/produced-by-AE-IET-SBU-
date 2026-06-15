@@ -88,13 +88,13 @@ c2.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
 c3.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("PM25", "PM2.5", "Particulate Matter")
+v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temp", "Temp", "Temperature")
+v, d, label = kpi("Temp", "Temp",)
 c5.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Humidity", "ฑ็", "Humidity")
+v, d, label = kpi("Humidity", "RH",)
 c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
