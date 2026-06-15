@@ -82,13 +82,13 @@ c1, c2, c3, c4, c5, c6 = st.columns(6)
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
 c1.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("CH4", "CH₄", "Methane")
+v, d, label = kpi("CH4", "CO₄", "Methane")
 c2.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
 c3.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("PM25", "PM2.5")
+v, d, label = kpi("PM25", "PM 2.5")
 c4.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Temp", "Temperature")
@@ -118,7 +118,7 @@ else:
 center, right = st.columns([4, 1.2])
 
 # =====================================================
-# 📈 GRAPH
+# 📈 GRAPH (FINAL FIX)
 # =====================================================
 with center:
 
@@ -139,6 +139,24 @@ with center:
         "Humidity (Relative Humidity)": "Humidity"
     }
 
+    short_name = {
+        "CO2": "CO2",
+        "CH4": "CH4",
+        "NO2": "NO2",
+        "PM25": "PM25",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
+    }
+
+    full_name = {
+        "CO2": "Carbon Dioxide",
+        "CH4": "Methane",
+        "NO2": "Nitrogen Dioxide",
+        "PM25": "PM2.5",
+        "Temp": "Temperature",
+        "Humidity": "Relative Humidity"
+    }
+
     if graph_mode == "Actual Values":
 
         selected_ui = st.selectbox(
@@ -147,6 +165,8 @@ with center:
         )
 
         selected = [options[selected_ui]]
+        plot_df = df_plot.copy()
+        legend_map = full_name  # ✔ ใช้ชื่อเต็ม
 
     else:
 
@@ -162,9 +182,7 @@ with center:
             st.warning("กรุณาเลือกอย่างน้อย 1 ตัวแปร")
             st.stop()
 
-    plot_df = df_plot.copy()
-
-    if graph_mode == "Comparison Mode":
+        plot_df = df_plot.copy()
 
         scale = {
             "CO2": 1000,
@@ -178,6 +196,8 @@ with center:
         for col in selected:
             plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
             plot_df[col] = (plot_df[col] / scale[col]) * 100
+
+        legend_map = short_name  # ✔ ใช้ชื่อสั้น
 
     fig = px.line(
         plot_df,
@@ -197,8 +217,10 @@ with center:
     }
 
     for t in fig.data:
-        t.line.color = color_map.get(t.name, "#ffffff")
+        key = t.name
+        t.line.color = color_map.get(key, "#ffffff")
         t.line.width = 3
+        t.name = legend_map.get(key, key)
 
     st.plotly_chart(fig, use_container_width=True)
 
