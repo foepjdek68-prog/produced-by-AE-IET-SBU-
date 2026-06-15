@@ -52,7 +52,6 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
-# ---------------- SAFE KPI FUNCTION ----------------
 def kpi(col, symbol, name=None):
     now_raw = latest.get(col, 0)
     old_raw = prev.get(col, 0)
@@ -81,7 +80,6 @@ def kpi(col, symbol, name=None):
     return now, f"{arrow} {diff:.2f}", label
 
 
-# ---------------- KPI UI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
@@ -96,15 +94,14 @@ c3.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temp", "Temp")
+v, d, label = kpi("Temp", "Temperature")
 c5.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Humidity", "RH")
+v, d, label = kpi("Humidity", "Humidity")
 c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
 
-# ---------------- PERIOD ----------------
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -119,10 +116,8 @@ elif period == "Monthly":
 else:
     df_plot = df
 
-# ---------------- LAYOUT ----------------
 left, center, right = st.columns([1.2, 3, 1])
 
-# ---------------- SUMMARY ----------------
 with left:
     st.subheader("📊 Summary")
 
@@ -159,7 +154,6 @@ with left:
             f"→ {name_thai.get(col,col)} | trend: {'↑' if trend > 0 else '↓'}"
         )
 
-# ---------------- GRAPH ----------------
 with center:
     st.subheader("📈 Graph")
 
@@ -204,7 +198,7 @@ with center:
         "CH4": "CH₄",
         "NO2": "NO₂",
         "PM25": "PM2.5",
-        "Temp": "Temp",
+        "Temp": "Temperature",
         "Humidity": "Humidity"
     }
 
@@ -230,7 +224,6 @@ with center:
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- STATUS ----------------
 with right:
     st.subheader("📌 Status")
 
