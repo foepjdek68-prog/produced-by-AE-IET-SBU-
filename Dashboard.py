@@ -204,11 +204,11 @@ with left:
     list(options.keys())
 )
 
-selected = [
-    options[selected_actual]
-]
-
-        plot_df = df_plot.copy()
+    selected = [
+        options[selected_actual]
+    ]
+    
+            plot_df = df_plot.copy()
 
     else:
 
