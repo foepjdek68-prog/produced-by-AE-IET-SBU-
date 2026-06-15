@@ -30,6 +30,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ---------------- DATA ----------------
 df = load_data()
 
 if df.empty:
@@ -114,11 +115,12 @@ elif period == "Monthly":
 else:
     df_plot = df
 
-# ---------------- LAYOUT (NO LEFT SUMMARY) ----------------
+# ---------------- LAYOUT ----------------
 center, right = st.columns([4, 1.2])
 
-# ---------------- GRAPH ----------------
+# ===================== GRAPH FIXED =====================
 with center:
+
     st.subheader("📈 Graph")
 
     graph_mode = st.radio(
@@ -127,26 +129,18 @@ with center:
         horizontal=True
     )
 
+    # ✔ ใช้ชื่อจริงตรง dataframe (สำคัญมาก)
     selected = st.multiselect(
         "Select data",
-        ["CO2", "CH4", "NO2", "PM25", "Temperature", "Humidity"],
+        ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"],
         default=["CO2"]
     )
 
-    column_map = {
-        "CO2": "CO2",
-        "CH4": "CH4",
-        "NO2": "NO2",
-        "PM25": "PM25",
-        "Temperature": "Temp",
-        "Humidity": "Humidity"
-    }
-
-    real_selected = [column_map[c] for c in selected if c in column_map]
-
     plot_df = df_plot.copy()
 
+    # ---------------- COMPARE MODE ----------------
     if graph_mode == "Compare":
+
         scale = {
             "CO2": 1000,
             "CH4": 100,
@@ -156,14 +150,19 @@ with center:
             "Humidity": 100
         }
 
-        for col in real_selected:
-            if col in plot_df.columns:
-                plot_df[col] = (plot_df[col] / scale[col]) * 100
+        for col in selected:
+            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
+            plot_df[col] = (plot_df[col] / scale[col]) * 100
 
+    # ---------------- TIME ----------------
+    plot_df["Date"] = pd.to_datetime(plot_df["Date"], errors="coerce")
+    plot_df = plot_df.sort_values("Date")
+
+    # ---------------- PLOT ----------------
     fig = px.line(
         plot_df,
         x="Date",
-        y=real_selected,
+        y=selected,
         markers=True,
         template="plotly_dark"
     )
@@ -184,20 +183,15 @@ with center:
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- RIGHT INSIGHT ----------------
+# ---------------- RIGHT INSIGHT (UNCHANGED) ----------------
 with right:
+
     st.subheader("📌 Insight")
 
-    reverse_map = {
-        "CO2": "CO2",
-        "CH4": "CH4",
-        "NO2": "NO2",
-        "PM25": "PM25",
-        "Temp": "Temp",
-        "Humidity": "Humidity"
-    }
+    selected_cols = selected if selected else ["CO2"]
 
-    for col in real_selected:
+    for col in selected_cols:
+
         if col not in df.columns:
             continue
 
