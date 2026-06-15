@@ -7,14 +7,12 @@ from datetime import datetime
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
-
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
 
 st.markdown("""
 <style>
@@ -33,7 +31,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
+# ---------------- LOAD DATA ----------------
 df = load_data()
 
 if df.empty:
@@ -41,7 +39,6 @@ if df.empty:
     save_data(df)
 
 latest = df.iloc[-1]
-
 
 date_obj = pd.to_datetime(latest["Date"], utc=True)
 date_obj = date_obj.tz_convert("Asia/Bangkok")
@@ -51,7 +48,6 @@ thai_date = (
     f"{date_obj.month:02d}/"
     f"{(date_obj.year+543)%100:02d}"
 )
-
 
 st.info("""
 ### 🌍 Dashboard Tracking
@@ -63,7 +59,7 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
-
+# ---------------- KPI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 c1.metric("CO₂ (Carbon Dioxide)", round(float(latest["CO2"]), 1))
@@ -75,7 +71,7 @@ c6.metric("Humidity (Relative Humidity)", round(float(latest["Humidity"]), 1))
 
 st.markdown("---")
 
-
+# ---------------- PERIOD ----------------
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -90,9 +86,10 @@ elif period == "Monthly":
 else:
     df_plot = df
 
-
+# ---------------- LAYOUT ----------------
 left, right = st.columns([4, 1])
 
+# ---------------- GRAPH ----------------
 with left:
 
     st.subheader("📈 กราฟแสดงข้อมูล")
@@ -123,6 +120,7 @@ with left:
         "Humidity": "#2563EB"
     }
 
+    # ---------------- SELECT ----------------
     if graph_mode == "Actual Values":
 
         selected_actual = st.selectbox(
@@ -131,6 +129,7 @@ with left:
         )
 
         selected = [options[selected_actual]]
+
         plot_df = df_plot.copy()
 
     else:
@@ -159,20 +158,17 @@ with left:
         }
 
         for col in selected:
-            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce")
-            plot_df[col] = plot_df[col].fillna(0)
+            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
             plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
 
-
+    # ---------------- TIME FIX ----------------
     plot_df["Date"] = pd.to_datetime(plot_df["Date"], utc=True)
     plot_df["Date"] = plot_df["Date"].dt.tz_convert("Asia/Bangkok")
     plot_df["Date"] = plot_df["Date"].dt.tz_localize(None)
-
     plot_df["Date"] = plot_df["Date"].dt.floor("H")
-
     plot_df = plot_df.sort_values("Date")
 
-
+    # ---------------- PLOT ----------------
     fig = px.line(
         plot_df,
         x="Date",
@@ -185,9 +181,8 @@ with left:
 
         col_key = trace.name
 
-        if col_key in color_map:
-            trace.line.color = color_map[col_key]
-            trace.line.width = 3
+        trace.line.color = color_map.get(col_key, "#ffffff")
+        trace.line.width = 3
 
         trace.name = display_names.get(col_key, col_key)
 
@@ -211,30 +206,11 @@ with left:
     if graph_mode == "Actual Values":
         fig.update_yaxes(title_text="Actual Value")
     else:
-        fig.update_yaxes(
-            title_text="Relative Scale (%)",
-            range=[0, 100]
-        )
+        fig.update_yaxes(title_text="Relative Scale (%)", range=[0, 100])
 
     st.plotly_chart(fig, use_container_width=True)
 
-
-    st.markdown("---")
-
-    st.subheader("📌 รายการข้อมูลที่แสดง")
-
-    cols = st.columns(len(selected))
-
-    for i, item in enumerate(selected):
-
-        label = display_names.get(item, item)
-
-        with cols[i]:
-            st.markdown(f"**{label}**")
-            st.markdown(f"AVG: {round(df[item].mean(), 2)}")
-            st.markdown(f"MAX: {round(df[item].max(), 2)}")
-
-
+# ---------------- RIGHT PANEL ----------------
 with right:
 
     st.subheader("📊 สรุปข้อมูล")
@@ -243,14 +219,16 @@ with right:
 
     name_map = {
         "CO2": "CO₂",
-        "CH4": "CO₄",
+        "CH4": "CH₄",
         "NO2": "NO₂",
         "PM25": "PM 2.5",
-        "Temp": "Temp",
+        "Temp": "Temperature",
         "Humidity": "Humidity"
     }
 
-    for item in selected:
+    selected_cols = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
+
+    for item in selected_cols:
 
         st.metric(
             f"AVG {name_map[item]}",
