@@ -6,9 +6,6 @@ from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
 
-# =========================
-# PAGE CONFIG
-# =========================
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
@@ -17,9 +14,6 @@ st.set_page_config(
 )
 
 
-# =========================
-# CSS
-# =========================
 st.markdown("""
 <style>
 
@@ -38,9 +32,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# =========================
-# LOAD DATA
-# =========================
 df = load_data()
 
 if df.empty:
@@ -50,9 +41,6 @@ if df.empty:
 latest = df.iloc[-1]
 
 
-# =========================
-# DATE FORMAT
-# =========================
 date_obj = datetime.fromisoformat(
     str(latest["Date"]).replace("Z", "")
 )
@@ -64,9 +52,6 @@ thai_date = (
 )
 
 
-# =========================
-# HEADER
-# =========================
 st.info("""
 ### 🌍 Dashboard Tracking
 
@@ -78,9 +63,6 @@ st.info("""
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
 
-# =========================
-# KPI SECTION
-# =========================
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 c1.metric("CO₂ (Carbon Dioxide)", round(float(latest["CO2"]), 1))
@@ -93,9 +75,6 @@ c6.metric("Humidity (Relative Humidity)", round(float(latest["Humidity"]), 1))
 st.markdown("---")
 
 
-# =========================
-# FILTER SECTION
-# =========================
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -111,9 +90,6 @@ else:
     df_plot = df
 
 
-# =========================
-# GRAPH SECTION
-# =========================
 left, right = st.columns([4, 1])
 
 with left:
@@ -135,7 +111,6 @@ with left:
         "Humidity (Relative Humidity)": "Humidity"
     }
 
-    # reverse mapping (แก้ error เดิม)
     display_names = {v: k for k, v in options.items()}
 
     color_map = {
@@ -147,9 +122,6 @@ with left:
         "Humidity": "#2563EB"
     }
 
-    # =========================
-    # SELECT DATA MODE
-    # =========================
     if graph_mode == "Actual Values":
 
         selected_actual = st.selectbox(
@@ -189,9 +161,6 @@ with left:
             plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
 
 
-    # =========================
-    # PLOTLY GRAPH
-    # =========================
     fig = px.line(
         plot_df,
         x="Date",
@@ -200,13 +169,15 @@ with left:
         markers=True
     )
 
-for trace in fig.data:
+    for trace in fig.data:
 
-    col_key = trace.name  
-    if col_key in color_map:
-        trace.line.color = color_map[col_key]
-        trace.line.width = 3
-    trace.name = display_names.get(col_key, col_key)
+        col_key = trace.name
+
+        if col_key in color_map:
+            trace.line.color = color_map[col_key]
+            trace.line.width = 3
+
+        trace.name = display_names.get(col_key, col_key)
 
     fig.update_layout(
         legend=dict(
@@ -229,9 +200,6 @@ for trace in fig.data:
     st.plotly_chart(fig, use_container_width=True)
 
 
-# =========================
-# SUMMARY PANEL
-# =========================
 with right:
 
     st.subheader("📊 สรุปข้อมูล")
