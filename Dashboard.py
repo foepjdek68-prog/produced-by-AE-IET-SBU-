@@ -1,6 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+import pytz
 from datetime import datetime
 
 from Services.database import load_data, save_data
@@ -30,20 +31,24 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- DATA ----------------
+# ---------------- LOAD DATA ----------------
 df = load_data()
 
 if df.empty:
     df = fetch_data()
     save_data(df)
 
-df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
-
 latest = df.iloc[-1]
-prev = df.iloc[-2] if len(df) > 1 else latest
 
-thai_date = latest["Date"].strftime("%d/%m/%y")
+# ---------------- DATE ----------------
+date_obj = pd.to_datetime(latest["Date"], utc=True)
+date_obj = date_obj.tz_convert("Asia/Bangkok")
+
+thai_date = (
+    f"{date_obj.day:02d}/"
+    f"{date_obj.month:02d}/"
+    f"{(date_obj.year+543)%100:02d}"
+)
 
 st.info("""
 ### 🌍 Dashboard Tracking
@@ -53,50 +58,15 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
-# ---------------- SAFE KPI ----------------
-def kpi(col, symbol, name=None):
-    now_raw = latest.get(col, 0)
-    old_raw = prev.get(col, 0)
-
-    try:
-        now = float(now_raw) if pd.notna(now_raw) else 0
-    except:
-        now = 0
-
-    try:
-        old = float(old_raw) if pd.notna(old_raw) else 0
-    except:
-        old = 0
-
-    diff = now - old
-
-    arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
-
-    label = f"{symbol} ({name})" if name else symbol
-
-    return now, f"{arrow} {diff:.2f}", label
-
-
 # ---------------- KPI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
-c1.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("CH4", "CH₄", "Methane")
-c2.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
-c3.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("PM25", "PM2.5")
-c4.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("Temp", "Temperature")
-c5.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("Humidity", "Humidity")
-c6.metric(label, f"{v:.2f}", d)
+c1.metric("CO₂ (Carbon Dioxide)", round(float(latest["CO2"]), 1))
+c2.metric("CH₄ (Methane)", round(float(latest["CH4"]), 1))
+c3.metric("NO₂ (Nitrogen Dioxide)", round(float(latest["NO2"]), 1))
+c4.metric("PM 2.5 (Particulate Matter)", round(float(latest["PM25"]), 1))
+c5.metric("Temp (Temperature)", round(float(latest["Temp"]), 1))
+c6.metric("Humidity (Relative Humidity)", round(float(latest["Humidity"]), 1))
 
 st.markdown("---")
 
@@ -116,56 +86,37 @@ else:
     df_plot = df
 
 # ---------------- LAYOUT ----------------
-center, right = st.columns([4, 1.2])
+left, right = st.columns([4, 1])
 
-# ===================== GRAPH FIXED =====================
-with center:
+# ===================== GRAPH (MERGED + FIXED) =====================
+with left:
 
-    st.subheader("📈 Graph")
+    st.subheader("📈 กราฟแสดงข้อมูล")
 
     graph_mode = st.radio(
-        "Mode",
-        ["Actual", "Compare"],
+        "โหมดการแสดงผล",
+        ["Actual Values", "Comparison Mode"],
         horizontal=True
     )
 
-    # ✔ ใช้ชื่อจริงตรง dataframe (สำคัญมาก)
-    selected = st.multiselect(
-        "Select data",
-        ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"],
-        default=["CO2"]
-    )
+    # ใช้แบบโค้ดคุณ (clean + stable)
+    options = {
+        "CO2": "CO2",
+        "CH4": "CH4",
+        "NO2": "NO2",
+        "PM25": "PM25",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
+    }
 
-    plot_df = df_plot.copy()
-
-    # ---------------- COMPARE MODE ----------------
-    if graph_mode == "Compare":
-
-        scale = {
-            "CO2": 1000,
-            "CH4": 100,
-            "NO2": 100,
-            "PM25": 100,
-            "Temp": 50,
-            "Humidity": 100
-        }
-
-        for col in selected:
-            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
-            plot_df[col] = (plot_df[col] / scale[col]) * 100
-
-    # ---------------- TIME ----------------
-    plot_df["Date"] = pd.to_datetime(plot_df["Date"], errors="coerce")
-    plot_df = plot_df.sort_values("Date")
-
-    # ---------------- PLOT ----------------
-    fig = px.line(
-        plot_df,
-        x="Date",
-        y=selected,
-        markers=True,
-        template="plotly_dark"
-    )
+    display_names = {
+        "CO2": "CO₂ (Carbon Dioxide)",
+        "CH4": "CH₄ (Methane)",
+        "NO2": "NO₂ (Nitrogen Dioxide)",
+        "PM25": "PM 2.5",
+        "Temp": "Temperature",
+        "Humidity": "Relative Humidity"
+    }
 
     color_map = {
         "CO2": "#DC2626",
@@ -176,47 +127,103 @@ with center:
         "Humidity": "#2563EB"
     }
 
-    for t in fig.data:
-        k = t.name
-        t.line.color = color_map.get(k, "#ffffff")
-        t.line.width = 3
+    plot_df = df_plot.copy()
+
+    # ---------------- MULTI SELECT FIX ----------------
+    selected = st.multiselect(
+        "เลือกข้อมูล",
+        list(options.keys()),
+        default=["CO2"]
+    )
+
+    if not selected:
+        st.warning("Please select at least one parameter.")
+        st.stop()
+
+    # ---------------- SCALE MODE ----------------
+    if graph_mode == "Comparison Mode":
+
+        reference_scale = {
+            "CO2": 1000,
+            "CH4": 100,
+            "NO2": 100,
+            "PM25": 100,
+            "Temp": 50,
+            "Humidity": 100
+        }
+
+        for col in selected:
+            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
+            plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
+
+    # ---------------- TIME CLEAN ----------------
+    plot_df["Date"] = pd.to_datetime(plot_df["Date"], errors="coerce")
+    plot_df = plot_df.sort_values("Date")
+
+    # ---------------- PLOT ----------------
+    fig = px.line(
+        plot_df,
+        x="Date",
+        y=selected,
+        template="plotly_dark",
+        markers=True
+    )
+
+    for trace in fig.data:
+
+        col_key = trace.name
+
+        trace.line.color = color_map.get(col_key, "#ffffff")
+        trace.line.width = 3
+
+        trace.name = display_names.get(col_key, col_key)
+
+        trace.hovertemplate = "%{y:.2f}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>"
+
+    fig.update_layout(
+        legend=dict(orientation="h"),
+        hovermode="x unified",
+        xaxis=dict(type="date")
+    )
+
+    if graph_mode == "Actual Values":
+        fig.update_yaxes(title_text="Actual Value")
+    else:
+        fig.update_yaxes(title_text="Relative Scale (%)", range=[0, 100])
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- RIGHT INSIGHT (UNCHANGED) ----------------
+# ===================== RIGHT PANEL =====================
 with right:
 
-    st.subheader("📌 Insight")
+    st.subheader("📊 สรุปข้อมูล")
 
-    selected_cols = selected if selected else ["CO2"]
+    name_map = {
+        "CO2": "CO₂",
+        "CH4": "CH₄",
+        "NO2": "NO₂",
+        "PM25": "PM 2.5",
+        "Temp": "Temperature",
+        "Humidity": "Humidity"
+    }
 
-    for col in selected_cols:
-
-        if col not in df.columns:
-            continue
-
-        avg = df[col].mean()
-        mx = df[col].max()
-        mn = df[col].min()
-        last = df[col].iloc[-1]
+    for col in ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]:
 
         st.metric(
-            label=col,
-            value=f"{last:.2f}",
-            delta=f"Avg {avg:.2f}"
+            f"AVG {name_map[col]}",
+            round(df[col].mean(), 2)
         )
 
-        st.caption(f"Max: {mx:.2f}")
-        st.caption(f"Min: {mn:.2f}")
-        st.markdown("---")
-
-    st.subheader("📊 CO2 Status")
+        st.metric(
+            f"MAX {name_map[col]}",
+            round(df[col].max(), 2)
+        )
 
     avg_co2 = df["CO2"].mean()
 
     if avg_co2 < 450:
-        st.success("Normal")
+        st.success("🟢 Normal")
     elif avg_co2 < 500:
-        st.warning("Warning")
+        st.warning("🟡 Warning")
     else:
-        st.error("Critical")
+        st.error("🔴 Critical")
