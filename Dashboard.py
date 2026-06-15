@@ -82,13 +82,13 @@ c1, c2, c3, c4, c5, c6 = st.columns(6)
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
 c1.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("CH4", "CO₄", "Methane")
+v, d, label = kpi("CH4", "CH₄", "Methane")
 c2.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
 c3.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("PM25", "PM 2.5")
+v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Temp", "Temperature")
@@ -118,11 +118,11 @@ else:
 center, right = st.columns([4, 1.2])
 
 # =====================================================
-# 📈 GRAPH (SAME STRUCTURE)
+# 📈 GRAPH
 # =====================================================
 with center:
 
-    st.subheader("📈 Graph")
+    st.subheader("📈 กราฟแสดงข้อมูล")
 
     graph_mode = st.radio(
         "โหมดการแสดงผล",
@@ -139,13 +139,11 @@ with center:
         "Humidity (Relative Humidity)": "Humidity"
     }
 
-    selected_labels = list(options.keys())
-
     if graph_mode == "Actual Values":
 
         selected_ui = st.selectbox(
             "เลือกข้อมูล",
-            selected_labels
+            list(options.keys())
         )
 
         selected = [options[selected_ui]]
@@ -154,19 +152,20 @@ with center:
 
         selected_ui = st.multiselect(
             "เลือกข้อมูล",
-            selected_labels,
-            default=[selected_labels[0]]
+            list(options.keys()),
+            default=[list(options.keys())[0]]
         )
 
         selected = [options[x] for x in selected_ui]
 
         if not selected:
-            st.warning("Please select at least one parameter.")
+            st.warning("กรุณาเลือกอย่างน้อย 1 ตัวแปร")
             st.stop()
 
     plot_df = df_plot.copy()
 
     if graph_mode == "Comparison Mode":
+
         scale = {
             "CO2": 1000,
             "CH4": 100,
@@ -204,61 +203,55 @@ with center:
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
-# 🔎 RIGHT PANEL (SMART DETAIL + SUMMARY)
+# 🔎 RIGHT PANEL (SYSTEM STATUS)
 # =====================================================
 with right:
 
-    st.subheader("📊 Insight Panel")
+    st.subheader("📊 สถานะระบบ")
 
     reverse_map = {
-        "CO2": "Carbon Dioxide",
-        "CH4": "Methane",
-        "NO2": "Nitrogen Dioxide",
-        "PM25": "PM2.5",
-        "Temp": "Temperature",
-        "Humidity": "Humidity"
+        "CO2": "คาร์บอนไดออกไซด์ (CO₂)",
+        "CH4": "มีเทน (CH₄)",
+        "NO2": "ไนโตรเจนไดออกไซด์ (NO₂)",
+        "PM25": "ฝุ่น PM2.5",
+        "Temp": "อุณหภูมิ",
+        "Humidity": "ความชื้นสัมพัทธ์"
     }
 
+    st.markdown("### ⚙️ สถานะการทำงาน")
+
     if len(selected) == 1:
-        # ---------------- DETAIL MODE ----------------
+
         col = selected[0]
         series = pd.to_numeric(df[col], errors="coerce").dropna()
 
+        st.info(f"🔎 กำลังวิเคราะห์: **{reverse_map.get(col, col)}**")
+
         if len(series) > 0:
 
-            st.markdown(f"### 🔎 {reverse_map.get(col, col)}")
-
-            st.metric("Latest", f"{series.iloc[-1]:.2f}")
-            st.metric("Average", f"{series.mean():.2f}")
-            st.metric("Max", f"{series.max():.2f}")
-            st.metric("Min", f"{series.min():.2f}")
+            last = series.iloc[-1]
+            avg = series.mean()
+            mx = series.max()
+            mn = series.min()
 
             trend = series.iloc[-1] - series.iloc[-5] if len(series) >= 5 else 0
-            st.metric("Trend", f"{trend:.2f}")
+
+            st.success("📈 โหมด: รายละเอียดเชิงลึก")
+
+            st.metric("ค่าล่าสุด", f"{last:.2f}")
+            st.metric("ค่าเฉลี่ย", f"{avg:.2f}")
+            st.metric("ค่าสูงสุด", f"{mx:.2f}")
+            st.metric("ค่าต่ำสุด", f"{mn:.2f}")
+            st.metric("แนวโน้ม", f"{trend:.2f}")
 
     else:
-        # ---------------- SUMMARY MODE (NO CLUTTER) ----------------
-        st.markdown("### 📊 Summary View")
 
-        for col in selected:
+        st.warning("📊 โหมด: ภาพรวมหลายตัวแปร")
 
-            series = pd.to_numeric(df[col], errors="coerce").dropna()
-            if len(series) == 0:
-                continue
+        st.write("• กำลังแสดงผลแบบเปรียบเทียบหลายตัวแปร")
+        st.write("• ไม่มีการวิเคราะห์เชิงลึกของแต่ละตัว")
+        st.write("• เหมาะสำหรับดูแนวโน้มโดยรวม")
 
-            avg = series.mean()
+        st.markdown("---")
 
-            if col == "CO2":
-                status = "🟢" if avg < 450 else "🟡" if avg < 500 else "🔴"
-            elif col == "PM25":
-                status = "🟢" if avg < 25 else "🟡" if avg < 50 else "🔴"
-            else:
-                status = "🟢"
-
-            st.markdown(
-                f"""
-                **{status} {reverse_map.get(col, col)}**  
-                Avg: `{avg:.2f}`
-                ---
-                """
-            )
+        st.info("ℹ️ หากต้องการรายละเอียดเชิงลึก กรุณาเลือกเพียง 1 ตัวแปร")
