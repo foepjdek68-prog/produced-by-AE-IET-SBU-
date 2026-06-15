@@ -6,14 +6,12 @@ from datetime import datetime
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
-
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
 
 st.markdown("""
 <style>
@@ -32,8 +30,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-# ---------------- DATA LOAD ----------------
 df = load_data()
 
 if df.empty:
@@ -48,8 +44,6 @@ prev = df.iloc[-2] if len(df) > 1 else latest
 
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
-
-# ---------------- HEADER ----------------
 st.info("""
 ### 🌍 Dashboard Tracking
 
@@ -58,9 +52,7 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
-
-# ---------------- KPI FUNCTION ----------------
-def kpi(col, symbol, name):
+def kpi(col, symbol, name=None):
     now = float(latest[col])
     old = float(prev[col])
 
@@ -73,10 +65,10 @@ def kpi(col, symbol, name):
     else:
         arrow = "→"
 
-    return now, f"{arrow} {diff:.2f}", f"{symbol} ({name})"
+    label = f"{symbol} ({name})" if name else symbol
 
+    return now, f"{arrow} {diff:.2f}", label
 
-# ---------------- KPI UI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
@@ -99,7 +91,6 @@ c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
 
-# ---------------- PERIOD SELECT ----------------
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -114,11 +105,8 @@ elif period == "Monthly":
 else:
     df_plot = df
 
-
-# ---------------- LAYOUT ----------------
 left, center, right = st.columns([1.2, 3, 1])
 
-# ---------------- SUMMARY ----------------
 with left:
     st.subheader("📊 Summary")
 
@@ -152,8 +140,6 @@ with left:
             f"→ {name_thai[col]} | trend: {'↑' if trend > 0 else '↓'}"
         )
 
-
-# ---------------- GRAPH ----------------
 with center:
     st.subheader("📈 Graph")
 
@@ -183,7 +169,6 @@ with center:
 
         for col in selected:
             plot_df[col] = (plot_df[col] / scale[col]) * 100
-
 
     fig = px.line(
         plot_df,
@@ -224,8 +209,6 @@ with center:
 
     st.plotly_chart(fig, use_container_width=True)
 
-
-# ---------------- STATUS ----------------
 with right:
     st.subheader("📌 Status")
 
