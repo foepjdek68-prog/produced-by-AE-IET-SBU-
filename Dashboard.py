@@ -82,13 +82,13 @@ c1, c2, c3, c4, c5, c6 = st.columns(6)
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
 c1.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("CH4", "CH₄", "Methane")
+v, d, label = kpi("CH4", "CO₄", "Methane")
 c2.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
 c3.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("PM25", "PM2.5")
+v, d, label = kpi("PM25", "PM 2.5")
 c4.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Temp", "Temperature")
@@ -118,7 +118,7 @@ else:
 center, right = st.columns([4, 1.2])
 
 # =====================================================
-# 📈 GRAPH (OLD STYLE FIXED)
+# 📈 GRAPH (SAME STRUCTURE)
 # =====================================================
 with center:
 
@@ -132,42 +132,42 @@ with center:
 
     options = {
         "CO₂ (Carbon Dioxide)": "CO2",
-        "CO₂ (Methane)": "CH4",
+        "CH₄ (Methane)": "CH4",
         "NO₂ (Nitrogen Dioxide)": "NO2",
         "PM 2.5 (Particulate Matter)": "PM25",
         "Temp (Temperature)": "Temp",
         "Humidity (Relative Humidity)": "Humidity"
     }
 
-    selected = []
+    selected_labels = list(options.keys())
 
     if graph_mode == "Actual Values":
 
-        selected_actual = st.selectbox(
+        selected_ui = st.selectbox(
             "เลือกข้อมูล",
-            list(options.keys())
+            selected_labels
         )
 
-        selected = [options[selected_actual]]
-        plot_df = df_plot.copy()
+        selected = [options[selected_ui]]
 
     else:
 
-        selected_labels = st.multiselect(
+        selected_ui = st.multiselect(
             "เลือกข้อมูล",
-            list(options.keys()),
-            default=list(options.keys())[:1]
+            selected_labels,
+            default=[selected_labels[0]]
         )
 
-        selected = [options[x] for x in selected_labels]
+        selected = [options[x] for x in selected_ui]
 
         if not selected:
             st.warning("Please select at least one parameter.")
             st.stop()
 
-        plot_df = df_plot.copy()
+    plot_df = df_plot.copy()
 
-        reference_scale = {
+    if graph_mode == "Comparison Mode":
+        scale = {
             "CO2": 1000,
             "CH4": 100,
             "NO2": 100,
@@ -178,10 +178,7 @@ with center:
 
         for col in selected:
             plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
-            plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
-
-    plot_df["Date"] = pd.to_datetime(plot_df["Date"], errors="coerce")
-    plot_df = plot_df.sort_values("Date")
+            plot_df[col] = (plot_df[col] / scale[col]) * 100
 
     fig = px.line(
         plot_df,
@@ -207,65 +204,61 @@ with center:
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
-# 🔎 DETAIL PANEL (INDEPENDENT - FIXED)
+# 🔎 RIGHT PANEL (SMART DETAIL + SUMMARY)
 # =====================================================
 with right:
 
-    st.subheader("📊 Detail Panel")
+    st.subheader("📊 Insight Panel")
 
-    detail_col = st.selectbox(
-        "เลือกดูรายละเอียด",
-        ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
-    )
+    reverse_map = {
+        "CO2": "Carbon Dioxide",
+        "CH4": "Methane",
+        "NO2": "Nitrogen Dioxide",
+        "PM25": "PM2.5",
+        "Temp": "Temperature",
+        "Humidity": "Humidity"
+    }
 
-    series = pd.to_numeric(df[detail_col], errors="coerce").dropna()
+    if len(selected) == 1:
+        # ---------------- DETAIL MODE ----------------
+        col = selected[0]
+        series = pd.to_numeric(df[col], errors="coerce").dropna()
 
-    if len(series) > 0:
+        if len(series) > 0:
 
-        last = series.iloc[-1]
-        avg = series.mean()
-        mx = series.max()
-        mn = series.min()
+            st.markdown(f"### 🔎 {reverse_map.get(col, col)}")
 
-        trend = series.iloc[-1] - series.iloc[-min(5, len(series))]
+            st.metric("Latest", f"{series.iloc[-1]:.2f}")
+            st.metric("Average", f"{series.mean():.2f}")
+            st.metric("Max", f"{series.max():.2f}")
+            st.metric("Min", f"{series.min():.2f}")
 
-        st.markdown(f"### 🔎 {detail_col}")
+            trend = series.iloc[-1] - series.iloc[-5] if len(series) >= 5 else 0
+            st.metric("Trend", f"{trend:.2f}")
 
-        st.metric("Latest", f"{last:.2f}")
-        st.metric("Average", f"{avg:.2f}")
-        st.metric("Max", f"{mx:.2f}")
-        st.metric("Min", f"{mn:.2f}")
-        st.metric("Trend", f"{trend:.2f}")
+    else:
+        # ---------------- SUMMARY MODE (NO CLUTTER) ----------------
+        st.markdown("### 📊 Summary View")
 
-        st.markdown("---")
+        for col in selected:
 
-        if detail_col == "CO2":
-            if avg < 450:
-                st.success("🟢 Normal")
-            elif avg < 500:
-                st.warning("🟡 Warning")
+            series = pd.to_numeric(df[col], errors="coerce").dropna()
+            if len(series) == 0:
+                continue
+
+            avg = series.mean()
+
+            if col == "CO2":
+                status = "🟢" if avg < 450 else "🟡" if avg < 500 else "🔴"
+            elif col == "PM25":
+                status = "🟢" if avg < 25 else "🟡" if avg < 50 else "🔴"
             else:
-                st.error("🔴 Critical")
+                status = "🟢"
 
-        elif detail_col == "PM25":
-            if avg < 25:
-                st.success("🟢 Good Air Quality")
-            elif avg < 50:
-                st.warning("🟡 Moderate")
-            else:
-                st.error("🔴 Unhealthy")
-
-        elif detail_col == "Temp":
-            if 20 <= avg <= 35:
-                st.success("🟢 Normal Temperature")
-            else:
-                st.warning("🟡 Out of range")
-
-        elif detail_col == "Humidity":
-            if 40 <= avg <= 70:
-                st.success("🟢 Normal Humidity")
-            else:
-                st.warning("🟡 Out of range")
-
-        else:
-            st.info("🟢 Monitoring")
+            st.markdown(
+                f"""
+                **{status} {reverse_map.get(col, col)}**  
+                Avg: `{avg:.2f}`
+                ---
+                """
+            )
