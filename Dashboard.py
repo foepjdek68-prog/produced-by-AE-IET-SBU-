@@ -60,12 +60,12 @@ st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-c1.metric("CO₂", f"{round(float(latest['CO2']),1)} (คาร์บอนไดออกไซด์)")
-c2.metric("CH₄", f"{round(float(latest['CH4']),1)} (มีเทน)")
-c3.metric("NO₂", f"{round(float(latest['NO2']),1)} (ไนโตรเจนไดออกไซด์)")
-c4.metric("PM 2.5", round(float(latest["PM25"]), 1))
-c5.metric("Temp", round(float(latest["Temp"]), 1))
-c6.metric("Humidity", round(float(latest["Humidity"]), 1))
+c1.metric("CO₂ (Carbon Dioxide)", round(float(latest["CO2"]), 1))
+c2.metric("CH₄ (Methane)", round(float(latest["CH4"]), 1))
+c3.metric("NO₂ (Nitrogen Dioxide)", round(float(latest["NO2"]), 1))
+c4.metric("PM 2.5 (Particulate Matter)", round(float(latest["PM25"]), 1))
+c5.metric("Temp (Temperature)", round(float(latest["Temp"]), 1))
+c6.metric("Humidity (Relative Humidity)", round(float(latest["Humidity"]), 1))
 
 st.markdown("---")
 
@@ -191,8 +191,7 @@ with left:
 
 
 with right:
-
-    st.subheader("📊 สรุประบบ")
+    st.subheader("📊 สถานะระบบ")
 
     avg_co2 = df["CO2"].mean()
 
