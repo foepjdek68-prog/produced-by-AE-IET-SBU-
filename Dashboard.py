@@ -293,7 +293,7 @@ with left:
         fig,
         use_container_width=True
     )
-    with right:
+with right:
 
     st.subheader("📊 สรุปข้อมูล")
 
