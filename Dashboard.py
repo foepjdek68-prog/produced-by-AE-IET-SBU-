@@ -208,4 +208,80 @@ with center:
         trace.line.color = color_map.get(col_key, "#ffffff")
         trace.line.width = 3
 
-        trace.name = display_names.get(col_key, col
+        trace.name = display_names.get(col_key, col_key)
+
+        trace.hovertemplate = "%{y:.2f}<br>%{x|%d/%m/%Y %H:%M}<extra></extra>"
+
+    fig.update_layout(
+        legend=dict(orientation="h", y=-0.25, x=0),
+        hovermode="x unified",
+        xaxis=dict(type="date")
+    )
+
+    if graph_mode == "Actual Values":
+        fig.update_yaxes(title_text="Actual Value")
+    else:
+        fig.update_yaxes(title_text="Relative Scale (%)", range=[0, 100])
+
+    st.plotly_chart(fig, use_container_width=True)
+
+# ===================== RIGHT PANEL (FIXED) =====================
+with right:
+
+    st.subheader("📊 Insight Panel")
+
+    cols_all = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
+
+    st.markdown("### 📍 Latest Overview")
+
+    for col in cols_all:
+
+        if col not in df.columns:
+            continue
+
+        series = pd.to_numeric(df[col], errors="coerce").dropna()
+
+        if len(series) == 0:
+            continue
+
+        last = series.iloc[-1]
+        avg = series.mean()
+        mx = series.max()
+
+        if col == "CO2":
+            status = "🟢" if avg < 450 else "🟡" if avg < 500 else "🔴"
+        elif col == "PM25":
+            status = "🟢" if avg < 25 else "🟡" if avg < 50 else "🔴"
+        elif col == "Temp":
+            status = "🟢" if 20 <= avg <= 35 else "🟡"
+        elif col == "Humidity":
+            status = "🟢" if 40 <= avg <= 70 else "🟡"
+        else:
+            status = "🟢" if avg < mx * 0.8 else "🟡"
+
+        st.markdown(
+            f"""
+**{status} {col}**
+
+Latest: `{last:.2f}`  
+Avg: `{avg:.2f}`  
+Max: `{mx:.2f}`  
+
+---
+"""
+        )
+
+    st.subheader("🌍 CO₂ Status")
+
+    co2_series = pd.to_numeric(df["CO2"], errors="coerce").dropna()
+
+    if len(co2_series) > 0:
+
+        avg_co2 = co2_series.mean()
+
+        if avg_co2 < 450:
+            st.success("Normal 🟢 Safe emission level")
+        elif avg_co2 < 500:
+            st.warning("Warning 🟡 Moderate emission level")
+        else:
+            st.error("Critical 🔴 High emission level")
