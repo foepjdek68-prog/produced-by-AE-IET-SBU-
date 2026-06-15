@@ -1,5 +1,7 @@
 import streamlit as st
 import plotly.express as px
+import pandas as pd
+import pytz
 from datetime import datetime
 
 from Services.database import load_data, save_data
@@ -41,9 +43,8 @@ if df.empty:
 latest = df.iloc[-1]
 
 
-date_obj = datetime.fromisoformat(
-    str(latest["Date"]).replace("Z", "")
-)
+date_obj = pd.to_datetime(latest["Date"], utc=True)
+date_obj = date_obj.tz_convert("Asia/Bangkok")
 
 thai_date = (
     f"{date_obj.day:02d}/"
@@ -161,6 +162,13 @@ with left:
             plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
 
 
+    plot_df["Date"] = pd.to_datetime(plot_df["Date"], utc=True)
+    plot_df["Date"] = plot_df["Date"].dt.tz_convert("Asia/Bangkok")
+    plot_df["Date"] = plot_df["Date"].dt.tz_localize(None)
+
+    plot_df = plot_df.sort_values("Date")
+
+
     fig = px.line(
         plot_df,
         x="Date",
@@ -179,14 +187,19 @@ with left:
 
         trace.name = display_names.get(col_key, col_key)
 
+        trace.hovertemplate = (
+            "%{y:.2f}<br>"
+            "%{x|%d/%m/%Y %H:%M}<extra></extra>"
+        )
+
     fig.update_layout(
         legend=dict(
             orientation="h",
-            y=1.05,
+            y=-0.25,
             x=0
         ),
         hovermode="x unified",
-        xaxis=dict(automargin=True)
+        xaxis=dict(automargin=True, type="date")
     )
 
     if graph_mode == "Actual Values":
@@ -198,6 +211,22 @@ with left:
         )
 
     st.plotly_chart(fig, use_container_width=True)
+
+
+    st.markdown("---")
+
+    st.subheader("📌 รายการข้อมูลที่แสดง")
+
+    cols = st.columns(len(selected))
+
+    for i, item in enumerate(selected):
+
+        label = display_names.get(item, item)
+
+        with cols[i]:
+            st.markdown(f"**{label}**")
+            st.markdown(f"AVG: {round(df[item].mean(), 2)}")
+            st.markdown(f"MAX: {round(df[item].max(), 2)}")
 
 
 with right:
