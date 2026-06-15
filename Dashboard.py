@@ -40,7 +40,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-
 # =========================
 # LOAD DATA
 # =========================
@@ -52,9 +51,7 @@ if df.empty:
     df = fetch_data()
     save_data(df)
 
-
 latest = df.iloc[-1]
-
 
 
 # =========================
@@ -70,7 +67,6 @@ thai_date = (
     f"{date_obj.month:02d}/"
     f"{(date_obj.year+543)%100:02d}"
 )
-
 
 
 # =========================
@@ -90,7 +86,6 @@ st.caption(
 )
 
 
-
 # =========================
 # KPI
 # =========================
@@ -105,9 +100,7 @@ c5.metric("Temp", round(float(latest["Temp"]),1))
 c6.metric("Humidity", round(float(latest["Humidity"]),1))
 
 
-
 st.markdown("---")
-
 
 
 # =========================
@@ -130,20 +123,22 @@ if period == "Daily":
 
 elif period == "Weekly":
 
-    df_plot = df.tail(24*7)
+    df_plot = df.tail(24 * 7)
 
 elif period == "Monthly":
 
-    df_plot = df.tail(24*30)
+    df_plot = df.tail(24 * 30)
 
 else:
 
     df_plot = df
+
+
 # =========================
 # GRAPH
 # =========================
 
-left,right = st.columns([4,1])
+left, right = st.columns([4,1])
 
 with left:
 
@@ -151,12 +146,12 @@ with left:
 
     options = {
 
-        "CO₂ (Carbon Dioxide)":"CO2",
-        "CH₄ (Methane)":"CH4",
-        "NO₂ (Nitrogen Dioxide)":"NO2",
-        "PM 2.5 (Particulate Matter)":"PM25",
-        "Temp (Temperature)":"Temp",
-        "Humidity (Relative Humidity)":"Humidity"
+        "CO₂ (Carbon Dioxide)": "CO2",
+        "CH₄ (Methane)": "CH4",
+        "NO₂ (Nitrogen Dioxide)": "NO2",
+        "PM 2.5 (Particulate Matter)": "PM25",
+        "Temp (Temperature)": "Temp",
+        "Humidity (Relative Humidity)": "Humidity"
 
     }
 
@@ -179,76 +174,72 @@ with left:
 
         st.stop()
 
-
     color_map = {
 
-        "CO2":"#DC2626",
-        "CH4":"#F97316",
-        "NO2":"#7C3AED",
-        "PM25":"#EAB308",
-        "Temp":"#22C55E",
-        "Humidity":"#2563EB"
+        "CO2": "#DC2626",
+        "CH4": "#F97316",
+        "NO2": "#7C3AED",
+        "PM25": "#EAB308",
+        "Temp": "#22C55E",
+        "Humidity": "#2563EB"
 
     }
 
-
     plot_df = df_plot.copy()
 
+    if len(selected) > 1:
 
-    for col in selected:
+        reference_scale = {
 
-        min_val = plot_df[col].min()
-        max_val = plot_df[col].max()
+            "CO2": 1000,
+            "CH4": 100,
+            "NO2": 100,
+            "PM25": 100,
+            "Temp": 50,
+            "Humidity": 100
 
-        if max_val != min_val:
+        }
+
+        for col in selected:
 
             plot_df[col] = (
-                (
-                    plot_df[col] - min_val
-                )
+                plot_df[col]
                 /
-                (
-                    max_val - min_val
-                )
+                reference_scale[col]
             ) * 100
-
 
     fig = px.line(
         plot_df,
         x="Date",
         y=selected,
-        template="plotly_dark"
+        template="plotly_dark",
+        markers=True
     )
 
+    for trace in fig.data:
 
-for trace in fig.data:
+        if trace.name in color_map:
 
-    if trace.name in color_map:
+            trace.line.color = color_map[trace.name]
+            trace.line.width = 3
 
-        trace.line.color = color_map[trace.name]
-        trace.line.width = 3
+        display_names = {
 
-    display_names = {
+            "CO2": "CO₂",
+            "CH4": "CH₄",
+            "NO2": "NO₂",
+            "PM25": "PM 2.5",
+            "Temp": "Temp",
+            "Humidity": "Humidity"
 
-        "CO2":"CO₂",
-        "CH4":"CH₄",
-        "NO2":"NO₂",
-        "PM25":"PM 2.5",
-        "Temp":"Temp",
-        "Humidity":"Humidity"
+        }
 
-    }
+        trace.name = display_names.get(
+            trace.name,
+            trace.name
+        )
 
-    trace.name = display_names.get(
-        trace.name,
-        trace.name
-    )
     fig.update_layout(
-
-        yaxis_title="Relative Change (%)",
-        yaxis=dict(
-        range=[0,100]
-    ),
 
         legend=dict(
             orientation="h",
@@ -264,14 +255,24 @@ for trace in fig.data:
 
     )
 
+    if len(selected) == 1:
+
+        fig.update_yaxes(
+            title_text="Actual Value"
+        )
+
+    else:
+
+        fig.update_yaxes(
+            title_text="Relative Scale (%)",
+            range=[0,100]
+        )
 
     st.plotly_chart(
         fig,
         use_container_width=True
     )
-
-
-with right:
+    with right:
 
     st.subheader("📊 สรุปข้อมูล")
 
@@ -280,22 +281,30 @@ with right:
         thai_date
     )
 
+    name_map = {
+
+        "CO2": "CO₂",
+        "CH4": "CH₄",
+        "NO2": "NO₂",
+        "PM25": "PM 2.5",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
+
+    }
 
     for item in selected:
 
         st.metric(
-            f"AVG {item}",
-            round(df[item].mean(),2)
+            f"AVG {name_map[item]}",
+            round(df[item].mean(), 2)
         )
 
         st.metric(
-            f"MAX {item}",
-            round(df[item].max(),2)
+            f"MAX {name_map[item]}",
+            round(df[item].max(), 2)
         )
 
-
     avg_co2 = df["CO2"].mean()
-
 
     if avg_co2 < 450:
 
@@ -308,7 +317,6 @@ with right:
     else:
 
         status = "🔴 Critical"
-
 
     st.info(
         f"""
