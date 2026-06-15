@@ -91,14 +91,13 @@ c3.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temp", "Temp",)
+v, d, label = kpi("Temperature", "Temp")
 c5.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Humidity", "RH",)
+v, d, label = kpi("Humidity", "RH")
 c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
-
 
 # ---------------- PERIOD SELECT ----------------
 period = st.selectbox(
