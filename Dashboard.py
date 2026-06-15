@@ -44,6 +44,7 @@ df = df.dropna(subset=["Date"])
 
 latest = df.iloc[-1]
 
+
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
 
@@ -60,12 +61,12 @@ st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-c1.metric("CO₂", round(float(latest["CO2"]), 1))
-c2.metric("CH₄", round(float(latest["CH4"]), 1))
-c3.metric("NO₂", round(float(latest["NO2"]), 1))
-c4.metric("PM 2.5", round(float(latest["PM25"]), 1))
-c5.metric("Temp", round(float(latest["Temp"]), 1))
-c6.metric("Humidity", round(float(latest["Humidity"]), 1))
+c1.metric("CO₂ (Carbon Dioxide)", round(float(latest["CO2"]), 1))
+c2.metric("CH₄ (Methane)", round(float(latest["CH4"]), 1))
+c3.metric("NO₂ (Nitrogen Dioxide)", round(float(latest["NO2"]), 1))
+c4.metric("PM 2.5 (Particulate Matter)", round(float(latest["PM25"]), 1))
+c5.metric("Temp (Temperature)", round(float(latest["Temp"]), 1))
+c6.metric("Humidity (Relative Humidity)", round(float(latest["Humidity"]), 1))
 
 st.markdown("---")
 
@@ -98,12 +99,12 @@ with left:
     )
 
     options = {
-        "CO₂": "CO2",
-        "CH₄": "CH4",
-        "NO₂": "NO2",
-        "PM 2.5": "PM25",
-        "Temp": "Temp",
-        "Humidity": "Humidity"
+        "CO₂ (Carbon Dioxide)": "CO2",
+        "CH₄ (Methane)": "CH4",
+        "NO₂ (Nitrogen Dioxide)": "NO2",
+        "PM 2.5 (Particulate Matter)": "PM25",
+        "Temp (Temperature)": "Temp",
+        "Humidity (Relative Humidity)": "Humidity"
     }
 
     display_names = {v: k for k, v in options.items()}
@@ -132,7 +133,7 @@ with left:
         selected_labels = st.multiselect(
             "เลือกข้อมูล",
             list(options.keys()),
-            default=["CO₂"]
+            default=["CO₂ (Carbon Dioxide)"]
         )
 
         selected = [options[x] for x in selected_labels]
@@ -190,9 +191,46 @@ with left:
     st.plotly_chart(fig, use_container_width=True)
 
 
+    st.markdown("---")
+    st.subheader("📌 รายการข้อมูล")
+
+    cols = st.columns(len(selected))
+
+    for i, item in enumerate(selected):
+
+        with cols[i]:
+
+            st.markdown(f"**{display_names[item]}**")
+            st.markdown(f"AVG: {round(df[item].mean(), 2)}")
+            st.markdown(f"MAX: {round(df[item].max(), 2)}")
+
+
 with right:
 
-    st.subheader("📊 สถานะระบบ")
+    st.subheader("📊 สรุปข้อมูล")
+
+    st.metric("อัปเดตล่าสุด", thai_date)
+
+    name_map = {
+        "CO2": "CO₂",
+        "CH4": "CH₄",
+        "NO2": "NO₂",
+        "PM25": "PM 2.5",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
+    }
+
+    for item in selected:
+
+        st.metric(
+            f"AVG {name_map[item]}",
+            round(df[item].mean(), 2)
+        )
+
+        st.metric(
+            f"MAX {name_map[item]}",
+            round(df[item].max(), 2)
+        )
 
     avg_co2 = df["CO2"].mean()
 
@@ -203,4 +241,4 @@ with right:
     else:
         status = "🔴 Critical"
 
-    st.info(status)
+    st.info(f"สถานะระบบ\n\n{status}")
