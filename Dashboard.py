@@ -31,7 +31,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- LOAD DATA ----------------
+# ---------------- DATA ----------------
 df = load_data()
 
 if df.empty:
@@ -40,7 +40,6 @@ if df.empty:
 
 latest = df.iloc[-1]
 
-# ---------------- DATE ----------------
 date_obj = pd.to_datetime(latest["Date"], utc=True)
 date_obj = date_obj.tz_convert("Asia/Bangkok")
 
@@ -54,6 +53,8 @@ st.info("""
 ### 🌍 Dashboard Tracking
 
 ## Greenhouse Gases Emission
+
+ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ
 """)
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
@@ -88,7 +89,9 @@ else:
 # ---------------- LAYOUT ----------------
 left, right = st.columns([4, 1])
 
-# ===================== GRAPH (MERGED + FIXED) =====================
+# =========================================================
+# 🔥 GRAPH (NEW SYSTEM INSERTED INTO OLD CODE)
+# =========================================================
 with left:
 
     st.subheader("📈 กราฟแสดงข้อมูล")
@@ -99,7 +102,7 @@ with left:
         horizontal=True
     )
 
-    # ใช้แบบโค้ดคุณ (clean + stable)
+    # ใช้แบบ “โค้ดใหม่” แต่รองรับระบบเก่า
     options = {
         "CO2": "CO2",
         "CH4": "CH4",
@@ -129,7 +132,7 @@ with left:
 
     plot_df = df_plot.copy()
 
-    # ---------------- MULTI SELECT FIX ----------------
+    # ---------------- MULTI SELECT (FIXED) ----------------
     selected = st.multiselect(
         "เลือกข้อมูล",
         list(options.keys()),
@@ -193,7 +196,7 @@ with left:
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ===================== RIGHT PANEL =====================
+# ---------------- RIGHT PANEL (OLD 그대로) ----------------
 with right:
 
     st.subheader("📊 สรุปข้อมูล")
