@@ -33,9 +33,9 @@ rename_columns = {
     "CO2": "CO₂",
     "CH4": "CH₄",
     "NO2": "NO₂",
-    "PM25": "PM₂.₅",
+    "PM25": "PM 2.5",
     "Temp": "Temp",
-    "Humidity": "RH"
+    "Humidity": "Humidity"
 
 }
 
@@ -52,14 +52,14 @@ def color_columns(col):
 
     colors = {
 
-        "CO₂": "border:2px solid #DC2626;",
-        "CH₄": "border:2px solid #F97316;",
-        "NO₂": "border:2px solid #7C3AED;",
-        "PM₂.₅": "border:2px solid #EAB308;",
-        "Temp": "border:2px solid #22C55E;",
-        "RH": "border:2px solid #2563EB;"
+    "CO₂": "border:2px solid #DC2626;",
+    "CH₄": "border:2px solid #F97316;",
+    "NO₂": "border:2px solid #7C3AED;",
+    "PM 2.5": "border:2px solid #EAB308;",
+    "Temp": "border:2px solid #22C55E;",
+    "Humidity": "border:2px solid #2563EB;"
 
-    }
+}
 
     return [colors.get(col.name, "")] * len(col)
 
@@ -89,6 +89,6 @@ csv = display_df.to_csv(
 st.download_button(
     "📥 ดาวน์โหลดข้อมูล",
     csv,
-    "ghg_data.csv",
+    ""GHG_Dashboard_Data.csv"",
     "text/csv"
 )
