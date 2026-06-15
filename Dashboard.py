@@ -69,12 +69,7 @@ def kpi(col, symbol, name=None):
 
     diff = now - old
 
-    if diff > 0:
-        arrow = "↑"
-    elif diff < 0:
-        arrow = "↓"
-    else:
-        arrow = "→"
+    arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
 
     label = f"{symbol} ({name})" if name else symbol
 
@@ -96,7 +91,7 @@ c3.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temperature", "Temperature")
+v, d, label = kpi("Temp", "Temperature")
 c5.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Humidity", "Humidity")
@@ -138,6 +133,17 @@ with center:
         default=["CO2"]
     )
 
+    column_map = {
+        "CO2": "CO2",
+        "CH4": "CH4",
+        "NO2": "NO2",
+        "PM25": "PM25",
+        "Temperature": "Temp",
+        "Humidity": "Humidity"
+    }
+
+    real_selected = [column_map[c] for c in selected if c in column_map]
+
     plot_df = df_plot.copy()
 
     if graph_mode == "Compare":
@@ -146,18 +152,18 @@ with center:
             "CH4": 100,
             "NO2": 100,
             "PM25": 100,
-            "Temperature": 50,
+            "Temp": 50,
             "Humidity": 100
         }
 
-        for col in selected:
+        for col in real_selected:
             if col in plot_df.columns:
                 plot_df[col] = (plot_df[col] / scale[col]) * 100
 
     fig = px.line(
         plot_df,
         x="Date",
-        y=selected,
+        y=real_selected,
         markers=True,
         template="plotly_dark"
     )
@@ -167,7 +173,7 @@ with center:
         "CH4": "#F97316",
         "NO2": "#7C3AED",
         "PM25": "#EAB308",
-        "Temperature": "#22C55E",
+        "Temp": "#22C55E",
         "Humidity": "#2563EB"
     }
 
@@ -182,7 +188,16 @@ with center:
 with right:
     st.subheader("📌 Insight")
 
-    for col in selected:
+    reverse_map = {
+        "CO2": "CO2",
+        "CH4": "CH4",
+        "NO2": "NO2",
+        "PM25": "PM25",
+        "Temp": "Temp",
+        "Humidity": "Humidity"
+    }
+
+    for col in real_selected:
         if col not in df.columns:
             continue
 
