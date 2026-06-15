@@ -92,12 +92,35 @@ st.caption(
 
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-c1.metric("CO₂", round(float(latest["CO2"]),1))
-c2.metric("CH₄", round(float(latest["CH4"]),1))
-c3.metric("NO₂", round(float(latest["NO2"]),1))
-c4.metric("PM 2.5", round(float(latest["PM25"]),1))
-c5.metric("Temp", round(float(latest["Temp"]),1))
-c6.metric("Humidity", round(float(latest["Humidity"]),1))
+c1.metric(
+    "CO₂ (Carbon Dioxide)",
+    round(float(latest["CO2"]),1)
+)
+
+c2.metric(
+    "CH₄ (Methane)",
+    round(float(latest["CH4"]),1)
+)
+
+c3.metric(
+    "NO₂ (Nitrogen Dioxide)",
+    round(float(latest["NO2"]),1)
+)
+
+c4.metric(
+    "PM 2.5 (Particulate Matter)",
+    round(float(latest["PM25"]),1)
+)
+
+c5.metric(
+    "Temp (Temperature)",
+    round(float(latest["Temp"]),1)
+)
+
+c6.metric(
+    "Humidity (Relative Humidity)",
+    round(float(latest["Humidity"]),1)
+)
 
 st.markdown("---")
 
@@ -176,14 +199,14 @@ with left:
 
     if graph_mode == "Actual Values":
 
-        selected = [
-            "CO2",
-            "CH4",
-            "NO2",
-            "PM25",
-            "Temp",
-            "Humidity"
-        ]
+        selected_actual = st.selectbox(
+    "เลือกข้อมูล",
+    list(options.keys())
+)
+
+selected = [
+    options[selected_actual]
+]
 
         plot_df = df_plot.copy()
 
@@ -239,26 +262,17 @@ with left:
 
     for trace in fig.data:
 
-        if trace.name in color_map:
+    original_name = trace.name
 
-            trace.line.color = color_map[trace.name]
-            trace.line.width = 3
+    if original_name in color_map:
 
-        display_names = {
+        trace.line.color = color_map[original_name]
+        trace.line.width = 3
 
-            "CO2": "CO₂",
-            "CH4": "CH₄",
-            "NO2": "NO₂",
-            "PM25": "PM 2.5",
-            "Temp": "Temp",
-            "Humidity": "Humidity"
-
-        }
-
-        trace.name = display_names.get(
-            trace.name,
-            trace.name
-        )
+    trace.name = display_names.get(
+        original_name,
+        original_name
+    )
 
     fig.update_layout(
 
