@@ -7,19 +7,15 @@ from Services.api_loader import fetch_data
 # =========================
 # PAGE
 # =========================
-
-st.title("📥 Download")
+st.title("📥 Download Data")
 
 
 # =========================
 # LOAD DATA
 # =========================
-
 df = load_data()
 
-
 if df.empty:
-
     df = fetch_data()
     save_data(df)
 
@@ -27,47 +23,21 @@ if df.empty:
 # =========================
 # RENAME COLUMNS
 # =========================
-
 rename_columns = {
-
     "CO2": "CO₂",
-    "CH4": "CH₄",
+    "CH4": "CO₄",
     "NO2": "NO₂",
     "PM25": "PM 2.5",
-    "Temp": "Temp",
+    "Temp": "Temperature",
     "Humidity": "Humidity"
-
 }
 
-display_df = df.rename(
-    columns=rename_columns
-)
+display_df = df.rename(columns=rename_columns)
 
 
 # =========================
-# TABLE STYLE
+# DISPLAY TABLE
 # =========================
-
-def color_columns(col):
-
-    colors = {
-
-    "CO₂": "border:2px solid #DC2626;",
-    "CH₄": "border:2px solid #F97316;",
-    "NO₂": "border:2px solid #7C3AED;",
-    "PM 2.5": "border:2px solid #EAB308;",
-    "Temp": "border:2px solid #22C55E;",
-    "Humidity": "border:2px solid #2563EB;"
-
-}
-
-    return [colors.get(col.name, "")] * len(col)
-
-
-# =========================
-# DISPLAY
-# =========================
-
 st.dataframe(
     display_df,
     use_container_width=True
@@ -75,17 +45,13 @@ st.dataframe(
 
 
 # =========================
-# DOWNLOAD
+# DOWNLOAD CSV
 # =========================
-
-csv = display_df.to_csv(
-    index=False
-)
-
+csv = display_df.to_csv(index=False)
 
 st.download_button(
-    "📥 ดาวน์โหลดข้อมูล",
-    csv,
-    ""GHG_Dashboard_Data.csv"",
-    "text/csv"
+    label="📥 ดาวน์โหลดข้อมูล",
+    data=csv,
+    file_name="GHG_Dashboard_Data.csv",
+    mime="text/csv"
 )
