@@ -201,13 +201,12 @@ with left:
     )
 
     for trace in fig.data:
-        original_name = trace.name
 
-        if original_name in color_map:
-            trace.line.color = color_map[original_name]
-            trace.line.width = 3
-
-        trace.name = display_names.get(original_name, original_name)
+    col_key = trace.name  
+    if col_key in color_map:
+        trace.line.color = color_map[col_key]
+        trace.line.width = 3
+    trace.name = display_names.get(col_key, col_key)
 
     fig.update_layout(
         legend=dict(
