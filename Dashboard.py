@@ -200,7 +200,7 @@ with left:
         markers=True
     )
 
-    for trace in fig.data:
+for trace in fig.data:
 
     col_key = trace.name  
     if col_key in color_map:
