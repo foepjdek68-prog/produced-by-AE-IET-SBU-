@@ -99,7 +99,6 @@ c4.metric("PM 2.5", round(float(latest["PM25"]),1))
 c5.metric("Temp", round(float(latest["Temp"]),1))
 c6.metric("Humidity", round(float(latest["Humidity"]),1))
 
-
 st.markdown("---")
 
 
@@ -144,6 +143,15 @@ with left:
 
     st.subheader("📈 กราฟแสดงข้อมูล")
 
+    graph_mode = st.radio(
+        "โหมดการแสดงผล",
+        [
+            "Actual Values",
+            "Comparison Mode"
+        ],
+        horizontal=True
+    )
+
     options = {
 
         "CO₂ (Carbon Dioxide)": "CO2",
@@ -154,25 +162,6 @@ with left:
         "Humidity (Relative Humidity)": "Humidity"
 
     }
-
-    selected_labels = st.multiselect(
-        "เลือกข้อมูล",
-        list(options.keys()),
-        default=["CO₂ (Carbon Dioxide)"]
-    )
-
-    selected = [
-        options[x]
-        for x in selected_labels
-    ]
-
-    if not selected:
-
-        st.warning(
-            "Please select at least one parameter."
-        )
-
-        st.stop()
 
     color_map = {
 
@@ -185,9 +174,41 @@ with left:
 
     }
 
-    plot_df = df_plot.copy()
+    if graph_mode == "Actual Values":
 
-    if len(selected) > 1:
+        selected = [
+            "CO2",
+            "CH4",
+            "NO2",
+            "PM25",
+            "Temp",
+            "Humidity"
+        ]
+
+        plot_df = df_plot.copy()
+
+    else:
+
+        selected_labels = st.multiselect(
+            "เลือกข้อมูล",
+            list(options.keys()),
+            default=["CO₂ (Carbon Dioxide)"]
+        )
+
+        selected = [
+            options[x]
+            for x in selected_labels
+        ]
+
+        if not selected:
+
+            st.warning(
+                "Please select at least one parameter."
+            )
+
+            st.stop()
+
+        plot_df = df_plot.copy()
 
         reference_scale = {
 
@@ -255,7 +276,7 @@ with left:
 
     )
 
-    if len(selected) == 1:
+    if graph_mode == "Actual Values":
 
         fig.update_yaxes(
             title_text="Actual Value"
@@ -268,17 +289,17 @@ with left:
             range=[0,100]
         )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
     with right:
 
-        st.subheader("📊 สรุปข้อมูล")
+    st.subheader("📊 สรุปข้อมูล")
 
-        st.metric(
-            "อัปเดตล่าสุด",
-            thai_date
+    st.metric(
+        "อัปเดตล่าสุด",
+        thai_date
     )
 
     name_map = {
