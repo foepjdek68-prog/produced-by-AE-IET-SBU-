@@ -52,6 +52,7 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
+# ---------------- SAFE KPI ----------------
 def kpi(col, symbol, name=None):
     now_raw = latest.get(col, 0)
     old_raw = prev.get(col, 0)
@@ -80,6 +81,7 @@ def kpi(col, symbol, name=None):
     return now, f"{arrow} {diff:.2f}", label
 
 
+# ---------------- KPI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
@@ -94,7 +96,7 @@ c3.metric(label, f"{v:.2f}", d)
 v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("Temp", "Temperature")
+v, d, label = kpi("Temperature", "Temperature")
 c5.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Humidity", "Humidity")
@@ -102,6 +104,7 @@ c6.metric(label, f"{v:.2f}", d)
 
 st.markdown("---")
 
+# ---------------- PERIOD ----------------
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -116,44 +119,10 @@ elif period == "Monthly":
 else:
     df_plot = df
 
-left, center, right = st.columns([1.2, 3, 1])
+# ---------------- LAYOUT (NO LEFT SUMMARY) ----------------
+center, right = st.columns([4, 1.2])
 
-with left:
-    st.subheader("📊 Summary")
-
-    selected_cols = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
-
-    name_thai = {
-        "CO2": "คาร์บอนไดออกไซด์",
-        "CH4": "มีเทน",
-        "NO2": "ไนโตรเจนไดออกไซด์",
-        "PM25": "ฝุ่น PM2.5",
-        "Temp": "อุณหภูมิ",
-        "Humidity": "ความชื้น"
-    }
-
-    for col in selected_cols:
-        if col not in df.columns:
-            continue
-
-        avg = df[col].mean()
-        mx = df[col].max()
-
-        if len(df[col]) > 5:
-            trend = df[col].iloc[-1] - df[col].iloc[-5]
-        else:
-            trend = df[col].iloc[-1] - df[col].iloc[0]
-
-        st.metric(
-            label=col,
-            value=round(avg, 2),
-            delta=f"max {round(mx,2)}"
-        )
-
-        st.caption(
-            f"→ {name_thai.get(col,col)} | trend: {'↑' if trend > 0 else '↓'}"
-        )
-
+# ---------------- GRAPH ----------------
 with center:
     st.subheader("📈 Graph")
 
@@ -165,7 +134,7 @@ with center:
 
     selected = st.multiselect(
         "Select data",
-        ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"],
+        ["CO2", "CH4", "NO2", "PM25", "Temperature", "Humidity"],
         default=["CO2"]
     )
 
@@ -177,7 +146,7 @@ with center:
             "CH4": 100,
             "NO2": 100,
             "PM25": 100,
-            "Temp": 50,
+            "Temperature": 50,
             "Humidity": 100
         }
 
@@ -193,21 +162,12 @@ with center:
         template="plotly_dark"
     )
 
-    name_thai = {
-        "CO2": "CO₂",
-        "CH4": "CH₄",
-        "NO2": "NO₂",
-        "PM25": "PM2.5",
-        "Temp": "Temperature",
-        "Humidity": "Humidity"
-    }
-
     color_map = {
         "CO2": "#DC2626",
         "CH4": "#F97316",
         "NO2": "#7C3AED",
         "PM25": "#EAB308",
-        "Temp": "#22C55E",
+        "Temperature": "#22C55E",
         "Humidity": "#2563EB"
     }
 
@@ -215,17 +175,33 @@ with center:
         k = t.name
         t.line.color = color_map.get(k, "#ffffff")
         t.line.width = 3
-        t.name = f"{k} ({name_thai.get(k,'')})"
-
-    fig.update_layout(
-        hovermode="x unified",
-        legend=dict(orientation="h")
-    )
 
     st.plotly_chart(fig, use_container_width=True)
 
+# ---------------- RIGHT INSIGHT ----------------
 with right:
-    st.subheader("📌 Status")
+    st.subheader("📌 Insight")
+
+    for col in selected:
+        if col not in df.columns:
+            continue
+
+        avg = df[col].mean()
+        mx = df[col].max()
+        mn = df[col].min()
+        last = df[col].iloc[-1]
+
+        st.metric(
+            label=col,
+            value=f"{last:.2f}",
+            delta=f"Avg {avg:.2f}"
+        )
+
+        st.caption(f"Max: {mx:.2f}")
+        st.caption(f"Min: {mn:.2f}")
+        st.markdown("---")
+
+    st.subheader("📊 CO2 Status")
 
     avg_co2 = df["CO2"].mean()
 
