@@ -159,12 +159,16 @@ with left:
         }
 
         for col in selected:
+            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce")
+            plot_df[col] = plot_df[col].fillna(0)
             plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
 
 
     plot_df["Date"] = pd.to_datetime(plot_df["Date"], utc=True)
     plot_df["Date"] = plot_df["Date"].dt.tz_convert("Asia/Bangkok")
     plot_df["Date"] = plot_df["Date"].dt.tz_localize(None)
+
+    plot_df["Date"] = plot_df["Date"].dt.floor("H")
 
     plot_df = plot_df.sort_values("Date")
 
@@ -191,6 +195,8 @@ with left:
             "%{y:.2f}<br>"
             "%{x|%d/%m/%Y %H:%M}<extra></extra>"
         )
+
+    fig.for_each_trace(lambda t: t.update(connectgaps=True))
 
     fig.update_layout(
         legend=dict(
@@ -237,7 +243,7 @@ with right:
 
     name_map = {
         "CO2": "CO₂",
-        "CH4": "CH₄",
+        "CH4": "CO₄",
         "NO2": "NO₂",
         "PM25": "PM 2.5",
         "Temp": "Temp",
