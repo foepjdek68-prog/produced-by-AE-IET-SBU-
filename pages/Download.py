@@ -69,10 +69,7 @@ def color_columns(col):
 # =========================
 
 st.dataframe(
-    display_df.style.apply(
-        color_columns,
-        axis=0
-    ),
+    display_df,
     use_container_width=True
 )
 
