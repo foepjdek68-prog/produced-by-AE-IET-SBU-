@@ -24,7 +24,7 @@ st.markdown("""
 }
 
 .block-container{
-    padding-top:0.5rem;
+    padding-top:0.8rem;
 }
 
 </style>
@@ -47,16 +47,15 @@ st.title("🌍 GHG Dashboard")
 
 
 # =========================
-# SUMMARY (TOP ONLY)
+# HEADER
 # =========================
-st.markdown("## 📊 Summary")
+st.markdown("## 📊 Summary Overview")
 
 prev = df.iloc[-6] if len(df) > 6 else df.iloc[0]
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
-def show(col, label):
-
+def metric(col):
     now = latest[col]
     old = prev[col]
     trend = now - old
@@ -65,13 +64,12 @@ def show(col, label):
     return f"{round(now,2)} {arrow}{round(trend,2)}"
 
 
-c1.metric("CO2", show("CO2","CO2"))
-c2.metric("CH4", show("CH4","CH4"))
-c3.metric("NO2", show("NO2","NO2"))
-c4.metric("PM25", show("PM25","PM25"))
-c5.metric("Temp", show("Temp","Temp"))
-c6.metric("Humidity", show("Humidity","Humidity"))
-
+c1.metric("CO2", metric("CO2"))
+c2.metric("CH4", metric("CH4"))
+c3.metric("NO2", metric("NO2"))
+c4.metric("PM25", metric("PM25"))
+c5.metric("Temp", metric("Temp"))
+c6.metric("Humidity", metric("Humidity"))
 
 st.markdown("---")
 
@@ -92,13 +90,13 @@ else:
 
 
 # =========================
-# GRAPH (FULL WIDTH ONLY)
+# GRAPH AREA (BIG + CLEAN)
 # =========================
-st.markdown("## 📈 Graph")
+st.markdown("## 📈 Graph View")
 
 graph_mode = st.radio(
     "Mode",
-    ["Actual", "Compare"],
+    ["Actual Values", "Comparison Mode"],
     horizontal=True
 )
 
@@ -112,14 +110,14 @@ options = {
 }
 
 selected = st.multiselect(
-    "Select data",
+    "Select parameters",
     list(options.keys()),
     default=["CO2"]
 )
 
 plot_df = df_plot.copy()
 
-if graph_mode == "Compare":
+if graph_mode == "Comparison Mode":
 
     scale = {
         "CO2": 1000,
@@ -156,10 +154,26 @@ for t in fig.data:
     t.line.width = 3
 
 fig.update_layout(
-    height=650,
+    height=600,
     hovermode="x unified",
     legend=dict(orientation="h"),
-    margin=dict(l=10, r=10, t=30, b=10)
+    margin=dict(l=10, r=10, t=20, b=10)
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
+
+# =========================
+# STATUS (KEEP SIMPLE)
+# =========================
+avg_co2 = df["CO2"].mean()
+
+st.markdown("---")
+st.subheader("📌 Status")
+
+if avg_co2 < 450:
+    st.success("Normal")
+elif avg_co2 < 500:
+    st.warning("Warning")
+else:
+    st.error("Critical")
