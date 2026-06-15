@@ -118,19 +118,70 @@ else:
 center, right = st.columns([4, 1.2])
 
 # =====================================================
-# 📈 GRAPH (MULTI SELECT)
+# 📈 GRAPH (OLD STYLE FIXED)
 # =====================================================
 with center:
 
     st.subheader("📈 Graph")
 
-    selected = st.multiselect(
-        "Select data",
-        ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"],
-        default=["CO2"]
+    graph_mode = st.radio(
+        "โหมดการแสดงผล",
+        ["Actual Values", "Comparison Mode"],
+        horizontal=True
     )
 
-    plot_df = df_plot.copy()
+    options = {
+        "CO₂ (Carbon Dioxide)": "CO2",
+        "CO₂ (Methane)": "CH4",
+        "NO₂ (Nitrogen Dioxide)": "NO2",
+        "PM 2.5 (Particulate Matter)": "PM25",
+        "Temp (Temperature)": "Temp",
+        "Humidity (Relative Humidity)": "Humidity"
+    }
+
+    selected = []
+
+    if graph_mode == "Actual Values":
+
+        selected_actual = st.selectbox(
+            "เลือกข้อมูล",
+            list(options.keys())
+        )
+
+        selected = [options[selected_actual]]
+        plot_df = df_plot.copy()
+
+    else:
+
+        selected_labels = st.multiselect(
+            "เลือกข้อมูล",
+            list(options.keys()),
+            default=list(options.keys())[:1]
+        )
+
+        selected = [options[x] for x in selected_labels]
+
+        if not selected:
+            st.warning("Please select at least one parameter.")
+            st.stop()
+
+        plot_df = df_plot.copy()
+
+        reference_scale = {
+            "CO2": 1000,
+            "CH4": 100,
+            "NO2": 100,
+            "PM25": 100,
+            "Temp": 50,
+            "Humidity": 100
+        }
+
+        for col in selected:
+            plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
+            plot_df[col] = (plot_df[col] / reference_scale[col]) * 100
+
+    plot_df["Date"] = pd.to_datetime(plot_df["Date"], errors="coerce")
+    plot_df = plot_df.sort_values("Date")
 
     fig = px.line(
         plot_df,
@@ -156,7 +207,7 @@ with center:
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
-# 🔎 DETAIL PANEL (HYBRID FIX)
+# 🔎 DETAIL PANEL (INDEPENDENT - FIXED)
 # =====================================================
 with right:
 
@@ -176,10 +227,7 @@ with right:
         mx = series.max()
         mn = series.min()
 
-        if len(series) >= 5:
-            trend = series.iloc[-1] - series.iloc[-5]
-        else:
-            trend = 0
+        trend = series.iloc[-1] - series.iloc[-min(5, len(series))]
 
         st.markdown(f"### 🔎 {detail_col}")
 
@@ -191,7 +239,6 @@ with right:
 
         st.markdown("---")
 
-        # ---------------- STATUS ----------------
         if detail_col == "CO2":
             if avg < 450:
                 st.success("🟢 Normal")
@@ -221,4 +268,4 @@ with right:
                 st.warning("🟡 Out of range")
 
         else:
-            st.info("🟢 Normal Monitoring")
+            st.info("🟢 Monitoring")
