@@ -200,13 +200,13 @@ with left:
 
         }
 
-        for col in selected:
-
-            plot_df[col] = (
-                plot_df[col]
-                /
-                reference_scale[col]
-            ) * 100
+    for col in selected:
+        
+        plot_df[col] = (
+            plot_df[col]
+            /
+            reference_scale[col]
+        ) * 100
 
     fig = px.line(
         plot_df,
@@ -268,10 +268,10 @@ with left:
             range=[0,100]
         )
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
     with right:
 
     st.subheader("📊 สรุปข้อมูล")
