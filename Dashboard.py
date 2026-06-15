@@ -56,7 +56,39 @@ st.info("""
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
 
+prev = df.iloc[-2] if len(df) > 1 else latest
+
+
+def kpi(col, symbol, name):
+
+    now = float(latest[col])
+    old = float(prev[col])
+
+    diff = now - old
+    arrow = "↑" if diff > 0 else "↓"
+
+    return now, f"{arrow} {diff:.1f}", f"{symbol} ({name})"
+
+
 c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
+c1.metric(label, f"{v:.1f}", d)
+
+v, d, label = kpi("CH4", "CH₄", "Methane")
+c2.metric(label, f"{v:.1f}", d)
+
+v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
+c3.metric(label, f"{v:.1f}", d)
+
+v, d, label = kpi("PM25", "PM2.5", "Particulate Matter")
+c4.metric(label, f"{v:.1f}", d)
+
+v, d, label = kpi("Temp", "Temp", "Temperature")
+c5.metric(label, f"{v:.1f}", d)
+
+v, d, label = kpi("Humidity", "Hum", "Relative Humidity")
+c6.metric(label, f"{v:.1f}", d)
 
 c1.metric("CO2", round(float(latest["CO2"]), 1))
 c2.metric("CH4", round(float(latest["CH4"]), 1))
