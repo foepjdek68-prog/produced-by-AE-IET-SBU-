@@ -21,12 +21,12 @@ st.markdown("""
 [data-testid="stMetric"]{
     background:#111827;
     border:1px solid #374151;
-    padding:15px;
+    padding:12px;
     border-radius:12px;
 }
 
 .block-container{
-    padding-top:1rem;
+    padding-top:0.8rem;
 }
 
 </style>
@@ -49,26 +49,51 @@ thai_date = latest["Date"].strftime("%d/%m/%y")
 
 st.info("""
 ### 🌍 Dashboard Tracking
-
 ## Greenhouse Gases Emission
 """)
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+# =========================
+# TOP SUMMARY (MOVING FROM LEFT)
+# =========================
+st.subheader("📊 Summary Overview")
 
-c1.metric("CO2", round(float(latest["CO2"]), 1))
-c2.metric("CH4", round(float(latest["CH4"]), 1))
-c3.metric("NO2", round(float(latest["NO2"]), 1))
-c4.metric("PM25", round(float(latest["PM25"]), 1))
-c5.metric("Temp", round(float(latest["Temp"]), 1))
-c6.metric("Humidity", round(float(latest["Humidity"]), 1))
+cols = st.columns(6)
+
+metrics = {
+    "CO2": ("CO₂", "คาร์บอนไดออกไซด์"),
+    "CH4": ("CH₄", "มีเทน"),
+    "NO2": ("NO₂", "ไนโตรเจนไดออกไซด์"),
+    "PM25": ("PM2.5", "ฝุ่นละเอียด"),
+    "Temp": ("Temp", "อุณหภูมิ"),
+    "Humidity": ("Hum", "ความชื้น")
+}
+
+for i, key in enumerate(metrics.keys()):
+
+    label, _ = metrics[key]
+
+    prev = df[key].iloc[-6] if len(df) > 6 else df[key].iloc[0]
+    now = df[key].iloc[-1]
+
+    trend = now - prev
+    arrow = "↑" if trend > 0 else "↓"
+
+    cols[i].metric(
+        label,
+        round(now, 2),
+        f"{arrow} {round(trend, 2)}"
+    )
 
 
 st.markdown("---")
 
 
+# =========================
+# PERIOD
+# =========================
 period = st.selectbox(
     "ช่วงการแสดงผล",
     ["Daily", "Weekly", "Monthly", "Annual"]
@@ -84,45 +109,18 @@ else:
     df_plot = df
 
 
-left, center, right = st.columns([1.2, 3, 1])
+# =========================
+# LAYOUT (GRAPH BIG)
+# =========================
+left, right = st.columns([5, 1])
 
 with left:
-
-    st.subheader("📊 Summary")
-
-    selected_cols = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
-
-    name_thai = {
-        "CO2": "คาร์บอนไดออกไซด์",
-        "CH4": "มีเทน",
-        "NO2": "ไนโตรเจนไดออกไซด์",
-        "PM25": "ฝุ่น PM2.5",
-        "Temp": "อุณหภูมิ",
-        "Humidity": "ความชื้น"
-    }
-
-    for col in selected_cols:
-
-        avg = df[col].mean()
-        mx = df[col].max()
-        trend = df[col].iloc[-1] - df[col].iloc[-5]
-
-        st.metric(
-            col,
-            round(avg, 2),
-            f"max {round(mx,2)}"
-        )
-
-        st.caption(f"→ {name_thai[col]} | trend: {'↑' if trend > 0 else '↓'}")
-
-
-with center:
 
     st.subheader("📈 Graph")
 
     graph_mode = st.radio(
         "Mode",
-        ["Actual", "Compare"],
+        ["Actual Values", "Comparison"],
         horizontal=True
     )
 
@@ -136,14 +134,14 @@ with center:
     }
 
     selected = st.multiselect(
-        "Select data",
+        "เลือกข้อมูล",
         list(options.keys()),
         default=["CO2"]
     )
 
     plot_df = df_plot.copy()
 
-    if graph_mode == "Compare":
+    if graph_mode == "Comparison":
 
         scale = {
             "CO2": 1000,
@@ -162,18 +160,9 @@ with center:
         plot_df,
         x="Date",
         y=selected,
-        markers=True,
-        template="plotly_dark"
+        template="plotly_dark",
+        markers=True
     )
-
-    label_map = {
-        "CO2": "CH4 (มีเทน)",
-        "CH4": "CH4 (มีเทน)",
-        "NO2": "NO2 (ไนโตรเจนไดออกไซด์)",
-        "PM25": "PM2.5",
-        "Temp": "Temp",
-        "Humidity": "Humidity"
-    }
 
     color_map = {
         "CO2": "#DC2626",
@@ -185,17 +174,14 @@ with center:
     }
 
     for t in fig.data:
-
         k = t.name
-
         t.line.color = color_map.get(k, "#ffffff")
         t.line.width = 3
 
-        t.name = k + f" ({name_thai.get(k,'')})"
-
     fig.update_layout(
         hovermode="x unified",
-        legend=dict(orientation="h")
+        legend=dict(orientation="h"),
+        height=550
     )
 
     st.plotly_chart(fig, use_container_width=True)
