@@ -1,7 +1,6 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from datetime import datetime
 
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
@@ -53,20 +52,13 @@ st.info("""
 
 st.caption(f"ข้อมูลล่าสุด : {thai_date}")
 
-# ---------------- SAFE KPI ----------------
+# ---------------- KPI ----------------
 def kpi(col, symbol, name=None):
-    now_raw = latest.get(col, 0)
-    old_raw = prev.get(col, 0)
+    now = pd.to_numeric(latest.get(col, 0), errors="coerce")
+    old = pd.to_numeric(prev.get(col, 0), errors="coerce")
 
-    try:
-        now = float(now_raw) if pd.notna(now_raw) else 0
-    except:
-        now = 0
-
-    try:
-        old = float(old_raw) if pd.notna(old_raw) else 0
-    except:
-        old = 0
+    now = 0 if pd.isna(now) else float(now)
+    old = 0 if pd.isna(old) else float(old)
 
     diff = now - old
     arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
@@ -76,19 +68,19 @@ def kpi(col, symbol, name=None):
     return now, f"{arrow} {diff:.2f}", label
 
 
-# ---------------- KPI ----------------
+# ---------------- KPI UI ----------------
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
 c1.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("CH4", "CO₄", "Methane")
+v, d, label = kpi("CH4", "CH₄", "Methane")
 c2.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
 c3.metric(label, f"{v:.2f}", d)
 
-v, d, label = kpi("PM25", "PM 2.5")
+v, d, label = kpi("PM25", "PM2.5")
 c4.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Temp", "Temperature")
@@ -118,7 +110,7 @@ else:
 center, right = st.columns([4, 1.2])
 
 # =====================================================
-# 📈 GRAPH (FINAL FIX)
+# 📈 GRAPH (CENTER)
 # =====================================================
 with center:
 
@@ -165,8 +157,7 @@ with center:
         )
 
         selected = [options[selected_ui]]
-        plot_df = df_plot.copy()
-        legend_map = full_name  # ✔ ใช้ชื่อเต็ม
+        legend_map = full_name
 
     else:
 
@@ -182,7 +173,11 @@ with center:
             st.warning("กรุณาเลือกอย่างน้อย 1 ตัวแปร")
             st.stop()
 
-        plot_df = df_plot.copy()
+        legend_map = short_name
+
+    plot_df = df_plot.copy()
+
+    if graph_mode == "Comparison Mode":
 
         scale = {
             "CO2": 1000,
@@ -196,8 +191,6 @@ with center:
         for col in selected:
             plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
             plot_df[col] = (plot_df[col] / scale[col]) * 100
-
-        legend_map = short_name  # ✔ ใช้ชื่อสั้น
 
     fig = px.line(
         plot_df,
@@ -225,55 +218,25 @@ with center:
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
-# 🔎 RIGHT PANEL (SYSTEM STATUS)
+# 🔵 STATUS PANEL (RIGHT SIDE)
 # =====================================================
 with right:
 
     st.subheader("📊 สถานะระบบ")
 
-    reverse_map = {
-        "CO2": "คาร์บอนไดออกไซด์ (CO₂)",
-        "CH4": "มีเทน (CH₄)",
-        "NO2": "ไนโตรเจนไดออกไซด์ (NO₂)",
-        "PM25": "ฝุ่น PM2.5",
-        "Temp": "อุณหภูมิ",
-        "Humidity": "ความชื้นสัมพัทธ์"
-    }
+    required_cols = ["CO2", "CH4", "NO2", "PM25", "Temp", "Humidity"]
 
-    st.markdown("### ⚙️ สถานะการทำงาน")
+    missing = [c for c in required_cols if c not in df.columns or df[c].isna().all()]
 
-    if len(selected) == 1:
-
-        col = selected[0]
-        series = pd.to_numeric(df[col], errors="coerce").dropna()
-
-        st.info(f"🔎 กำลังวิเคราะห์: **{reverse_map.get(col, col)}**")
-
-        if len(series) > 0:
-
-            last = series.iloc[-1]
-            avg = series.mean()
-            mx = series.max()
-            mn = series.min()
-
-            trend = series.iloc[-1] - series.iloc[-5] if len(series) >= 5 else 0
-
-            st.success("📈 โหมด: รายละเอียดเชิงลึก")
-
-            st.metric("ค่าล่าสุด", f"{last:.2f}")
-            st.metric("ค่าเฉลี่ย", f"{avg:.2f}")
-            st.metric("ค่าสูงสุด", f"{mx:.2f}")
-            st.metric("ค่าต่ำสุด", f"{mn:.2f}")
-            st.metric("แนวโน้ม", f"{trend:.2f}")
-
+    if df.empty:
+        st.error("🔴 ระบบผิดปกติ: ไม่มีข้อมูล")
+    elif len(df) < 2:
+        st.error("🔴 ระบบผิดปกติ: ข้อมูลไม่เพียงพอ")
+    elif missing:
+        st.error(f"🔴 ข้อมูลขาดหาย: {', '.join(missing)}")
     else:
+        st.success("🟢 ระบบทำงานปกติ")
 
-        st.warning("📊 โหมด: ภาพรวมหลายตัวแปร")
-
-        st.write("• กำลังแสดงผลแบบเปรียบเทียบหลายตัวแปร")
-        st.write("• ไม่มีการวิเคราะห์เชิงลึกของแต่ละตัว")
-        st.write("• เหมาะสำหรับดูแนวโน้มโดยรวม")
-
-        st.markdown("---")
-
-        st.info("ℹ️ หากต้องการรายละเอียดเชิงลึก กรุณาเลือกเพียง 1 ตัวแปร")
+        st.write("✔ ระบบรับข้อมูลเรียบร้อย")
+        st.write("✔ ข้อมูลอัปเดตล่าสุดแล้ว")
+        st.write(f"🕒 เวลาอัปเดต: {latest['Date']}")
