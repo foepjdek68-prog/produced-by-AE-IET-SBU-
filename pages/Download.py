@@ -1,4 +1,17 @@
+from PIL import Image
 import streamlit as st
+
+dti_logo = Image.open("Assets/dti.png")
+sbu_logo = Image.open("Assets/sbu.png")
+
+with st.sidebar:
+
+    st.markdown("---")
+
+    st.caption("Developed By")
+
+    st.image(dti_logo, use_container_width=True)
+    st.image(sbu_logo, use_container_width=True)
 
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
