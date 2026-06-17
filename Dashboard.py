@@ -13,22 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-logo = Image.open("Assets/logo.png")
-
-with st.sidebar:
-
-    st.markdown("---")
-
-    st.image(
-        logo,
-        use_container_width=True
-    )
-
-    st.caption(
-        "Science Business Unit (SBU)\n"
-        "Digital Technology and Innovation (DTI)"
-    )
-    
 st.markdown("""
 <style>
 
@@ -61,13 +45,22 @@ prev = df.iloc[-2] if len(df) > 1 else latest
 
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
-st.info("""
-### 🌍 Dashboard Tracking
+col_logo, col_title = st.columns([1.2, 5])
 
-## Greenhouse Gases Emission
-""")
+with col_logo:
+    st.image("Assets/logo.png", width=180)
 
-st.caption(f"ข้อมูลล่าสุด : {thai_date}")
+with col_title:
+    st.markdown(
+        """
+        # 🌍 Greenhouse Gases Emission Dashboard
+        ### Science Business Unit (SBU) • Digital Technology and Innovation (DTI)
+        """
+    )
+
+st.caption(f"📅 ข้อมูลล่าสุด : {thai_date}")
+
+st.markdown("---")
 
 # ---------------- KPI ----------------
 def kpi(col, symbol, name=None):
