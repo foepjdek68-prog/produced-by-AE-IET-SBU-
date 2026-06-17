@@ -13,6 +13,18 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+dti_logo = Image.open("Assets/dti.png")
+sbu_logo = Image.open("Assets/sbu.png")
+
+with st.sidebar:
+
+    st.markdown("---")
+
+    st.caption("Developed By")
+
+    st.image(dti_logo, use_container_width=True)
+    st.image(sbu_logo, use_container_width=True)
+    
 st.markdown("""
 <style>
 
