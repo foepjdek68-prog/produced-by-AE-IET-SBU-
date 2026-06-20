@@ -104,10 +104,6 @@ st.html(f"""
     </h1>
 
     <p style="color:white;">
-        Dataset Range : {date_range_text}
-    </p>
-
-    <p style="color:white;">
         Last Update : {latest_date}
     </p>
 </div>
