@@ -12,7 +12,7 @@ def fetch_data():
     dates = pd.date_range(
         end=now,
         periods=365*24,
-        freq="H"
+        freq="h"
     )
 
     df = pd.DataFrame({
