@@ -4,3 +4,4 @@ plotly
 numpy
 pytz
 openpyxl
+streamlit-autorefresh
