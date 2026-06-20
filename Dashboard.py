@@ -21,7 +21,7 @@ st.set_page_config(
 st_autorefresh(interval=60000, key="refresh")
 
 with st.sidebar:
-    st.markdown("<br><br><br><br>",
+    st.markdown("<br><br><br>",
                 unsafe_allow_html=True)
 
     st.image(
@@ -29,7 +29,7 @@ with st.sidebar:
         width=280
     )
     
-    st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br>",
+    st.markdown("<br><br><br>",
                 unsafe_allow_html=True)
     
     st.markdown("---")
