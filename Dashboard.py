@@ -24,7 +24,7 @@ with st.sidebar:
 
     st.image(
         "Assets/logo.png",
-        width=250
+        width=300
     )
     
     st.markdown("<br><br><br><br><br><br><br><br><br><br><br>",
