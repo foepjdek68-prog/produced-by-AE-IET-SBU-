@@ -20,45 +20,16 @@ st.set_page_config(
 
 st_autorefresh(interval=60000, key="refresh")
 
-import base64
-
-def get_base64_image(path):
-    with open(path, "rb") as img:
-        return base64.b64encode(img.read()).decode()
-
-sbu_logo = get_base64_image("Assets/sbu.png")
-dti_logo = get_base64_image("Assets/dti.png")
-
 with st.sidebar:
 
-    st.markdown(
-        f"""
-        <div style="text-align:center;">
-
-            <img src="data:image/png;base64,{sbu_logo}"
-                 width="180">
-
-            <br><br>
-
-            <img src="data:image/png;base64,{dti_logo}"
-                 width="220">
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.image(
+    "Assets/logo.png",
+    width=280
     )
 
     st.markdown("---")
 
-    st.caption("Monitoring System")
-
-    st.write("📡 Real-time Tracking")
-    st.write("🌡 Environmental Data")
-    st.write("📊 Emission Analysis")
-
-    st.markdown("---")
-
-    st.caption("Monitoring System")
+    st.caption("Greenhouse Gas Monitoring System")
 
     st.write("📡 Real-time Tracking")
     st.write("🌡 Environmental Data")
@@ -71,6 +42,15 @@ with st.sidebar:
 st.markdown("""
 <style>
 
+.block-container{
+    padding-top:1rem;
+}
+
+[data-testid="stSidebar"] img{
+    margin-top:-10px;
+    margin-bottom:10px;
+}
+
 [data-testid="stMetric"]{
     background:#111827;
     border:1px solid #374151;
@@ -82,10 +62,6 @@ st.markdown("""
 [data-testid="stMetricValue"]{
     font-size:28px;
     font-weight:700;
-}
-
-.block-container{
-    padding-top:1rem;
 }
 
 </style>
@@ -170,7 +146,7 @@ def kpi(col, symbol, name=None):
 
     label = f"{symbol} ({name})" if name else symbol
 
-    return now, f"{arrow} {diff:.2f}", label
+    return now, f"{arrow} {percent:.1f}%", label
     
 # =====================================================
 # KPI CARDS
