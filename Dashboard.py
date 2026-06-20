@@ -48,24 +48,28 @@ with st.sidebar:
 
     st.caption("Version 1.0")
 
-st.markdown(
-    """
-    <style>
-    [data-testid="stMetric"]{
-        background:#111827;
-        border:1px solid #374151;
-        padding:15px;
-        border-radius:12px;
-    }
+st.markdown("""
+<style>
 
-    .block-container{
-        padding-top:1rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+[data-testid="stMetric"]{
+    background:#111827;
+    border:1px solid #374151;
+    border-radius:12px;
+    padding:15px;
+    text-align:center;
+}
 
+[data-testid="stMetricValue"]{
+    font-size:28px;
+    font-weight:700;
+}
+
+.block-container{
+    padding-top:1rem;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # =====================================================
 # LOAD DATA
@@ -133,17 +137,13 @@ def kpi(col, symbol, name=None):
 
     diff = now - old
 
-    arrow = (
-        "↑" if diff > 0
-        else "↓" if diff < 0
-        else "→"
+    percent = (
+        (diff / old) * 100
+        if old != 0 else 0
     )
-
-    label = f"{symbol} ({name})" if name else symbol
-
-    return now, f"{arrow} {diff:.2f}", label
-
-
+    
+    return now, f"{arrow} {percent:.1f}%", label
+    
 # =====================================================
 # KPI CARDS
 # =====================================================
@@ -371,19 +371,19 @@ with right:
 
     else:
 
-    st.success("🟢 SYSTEM ONLINE")
+        st.success("🟢 SYSTEM ONLINE")
 
-    st.metric(
-        "Records",
-        len(df)
-    )
+        st.metric(
+            "Records",
+            len(df)
+        )
 
-    st.metric(
-        "Last Update",
-        latest["Date"].strftime("%H:%M")
-    )
+        st.metric(
+            "Last Update",
+            latest["Date"].strftime("%H:%M")
+        )
 
-    st.metric(
-        "Data Status",
-        "Healthy"
-    )
+        st.metric(
+            "Data Status",
+            "Healthy"
+        )
