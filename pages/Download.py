@@ -23,7 +23,7 @@ with st.sidebar:
     st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
     st.markdown("---")
 
-# ปิดการคลิก/interaction ของรูป sidebar
+# ปิด interaction รูป sidebar
 st.markdown("""
 <style>
 [data-testid="stSidebar"] img{
@@ -76,45 +76,47 @@ if "Date" in df.columns:
 
 df = df.dropna(subset=["Date"])
 
-# กัน df ว่าง
+# =====================================================
+# HANDLE EMPTY DATA
+# =====================================================
+
 if df.empty:
     latest_date = "No Data"
     date_range_text = "No Data Available"
 else:
-    latest_date = df["Date"].max()
+    latest_dt = df["Date"].max()
     date_range_text = f"{df['Date'].min().strftime('%d/%m/%Y')} - {df['Date'].max().strftime('%d/%m/%Y')}"
-    latest_date = latest_date.strftime("%d/%m/%Y %H:%M")
+    latest_date = latest_dt.strftime("%d/%m/%Y %H:%M")
 
 # =====================================================
-# HEADER (FIXED - NO BROKEN HTML)
+# HEADER (FIXED)
 # =====================================================
 
-st.markdown(
-    f"""
-    <div style="
-        background:linear-gradient(135deg,#111827,#1F2937);
-        padding:25px;
-        border-radius:20px;
-        border:1px solid #374151;
-        margin-bottom:20px;
-    ">
-        <h1>📊 Greenhouse Gas Monitoring Dashboard</h1>
+st.html(f"""
+<div style="
+    background:linear-gradient(135deg,#111827,#1F2937);
+    padding:25px;
+    border-radius:20px;
+    border:1px solid #374151;
+    margin-bottom:20px;
+">
+    <h1 style="margin:0;color:white;">
+        📊 Greenhouse Gas Monitoring Dashboard
+    </h1>
 
-        <p style="color:#9CA3AF;">
-            Real-time environmental data tracking & analysis system
-        </p>
+    <p style="color:#9CA3AF;margin-top:10px;">
+        Real-time environmental data tracking & analysis system
+    </p>
 
-        <p>
-            Dataset Range : {date_range_text}
-        </p>
+    <p style="color:white;">
+        Dataset Range : {date_range_text}
+    </p>
 
-        <p>
-            Last Update : {latest_date}
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+    <p style="color:white;">
+        Last Update : {latest_date}
+    </p>
+</div>
+""")
 
 # =====================================================
 # SUMMARY
@@ -169,7 +171,7 @@ rename_columns = {
 display_df = df.rename(columns=rename_columns)
 
 # =====================================================
-# COLUMN FILTER ONLY (NO SEARCH)
+# COLUMN FILTER
 # =====================================================
 
 selected_column = st.selectbox(
