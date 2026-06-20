@@ -29,7 +29,7 @@ with st.sidebar:
         width=280
     )
     
-    st.markdown("<br><br<br><br><br>><br>",
+    st.markdown("<br><br<br><br><br><br>",
                 unsafe_allow_html=True)
     
     st.markdown("---")
