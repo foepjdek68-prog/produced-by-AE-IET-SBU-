@@ -21,7 +21,7 @@ st.set_page_config(
 st_autorefresh(interval=60000, key="refresh")
 
 with st.sidebar:
-    st.markdown("<br><br><br>",
+    st.markdown("<br><br><br><br>",
                 unsafe_allow_html=True)
 
     st.image(
