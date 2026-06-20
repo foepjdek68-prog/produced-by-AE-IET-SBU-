@@ -23,7 +23,6 @@ with st.sidebar:
     st.markdown("<br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     st.markdown("---")
 
-# ปิด interaction รูป sidebar
 st.markdown("""
 <style>
 [data-testid="stSidebar"] img{
@@ -103,10 +102,6 @@ st.html(f"""
     <h1 style="margin:0;color:white;">
         📊 Greenhouse Gas Monitoring Dashboard
     </h1>
-
-    <p style="color:#9CA3AF;margin-top:10px;">
-        Real-time environmental data tracking & analysis system
-    </p>
 
     <p style="color:white;">
         Dataset Range : {date_range_text}
