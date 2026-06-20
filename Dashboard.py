@@ -84,8 +84,8 @@ df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 
 df = (
     df.dropna(subset=["Date"])
-      .sort_values("Date")
-      .reset_index(drop=True)
+    .sort_values("Date")
+    .reset_index(drop=True)
 )
 
 latest = df.iloc[-1]
