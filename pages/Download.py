@@ -1,9 +1,6 @@
 from PIL import Image
 import streamlit as st
 
-dti_logo = Image.open("Assets/dti.png")
-sbu_logo = Image.open("Assets/sbu.png")
-
 with st.sidebar:
 
     st.markdown("---")
