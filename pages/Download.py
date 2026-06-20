@@ -177,25 +177,38 @@ display_df = df.rename(columns=rename_columns)
 
 
 # =====================================================
-# SEARCH
+# FILTER
 # =====================================================
 
-search = st.text_input(
-    "🔎 Search Data"
+st.subheader("🔎 Filter Data")
+
+selected_column = st.selectbox(
+    "เลือกข้อมูล",
+    [
+        "ทั้งหมด",
+        "CO₂",
+        "CH₄",
+        "NO₂",
+        "PM 2.5",
+        "Temperature",
+        "Humidity"
+    ]
 )
 
-if search:
+if selected_column != "ทั้งหมด":
 
-    mask = display_df.astype(str).apply(
-        lambda x: x.str.contains(
-            search,
-            case=False,
-            na=False
-        )
-    ).any(axis=1)
+    column_map = {
+        "CO₂": "CO₂",
+        "CH₄": "CH₄",
+        "NO₂": "NO₂",
+        "PM 2.5": "PM 2.5",
+        "Temperature": "Temperature",
+        "Humidity": "Humidity"
+    }
 
-    display_df = display_df[mask]
-
+    display_df = display_df[
+        ["Date", column_map[selected_column]]
+    ]
 
 # =====================================================
 # TABLE
