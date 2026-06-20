@@ -1,4 +1,3 @@
-from PIL import Image
 import streamlit as st
 import plotly.express as px
 import pandas as pd
@@ -81,29 +80,29 @@ if df.empty:
     df = fetch_data()
     save_data(df)
 
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    df = (
-        df.dropna(subset=["Date"])
-          .sort_values("Date")
-          .reset_index(drop=True)
-    )
-    
-    latest = df.iloc[-1]
-    prev = df.iloc[-2] if len(df) > 1 else latest
-    
-    thai_date = latest["Date"].strftime("%d/%m/%y")
-    
-    alerts = []
-    
-    if latest["CO2"] > 500:
-        alerts.append("🔴 High CO₂ Level")
-    
-    if latest["PM25"] > 35:
-        alerts.append("⚠ PM2.5 Warning")
-    
-    if latest["Temp"] > 38:
-        alerts.append("🌡 High Temperature")
+df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 
+df = (
+    df.dropna(subset=["Date"])
+      .sort_values("Date")
+      .reset_index(drop=True)
+)
+
+latest = df.iloc[-1]
+prev = df.iloc[-2] if len(df) > 1 else latest
+
+thai_date = latest["Date"].strftime("%d/%m/%y")
+
+alerts = []
+
+if latest["CO2"] > 500:
+    alerts.append("🔴 High CO₂ Level")
+
+if latest["PM25"] > 35:
+    alerts.append("⚠ PM2.5 Warning")
+
+if latest["Temp"] > 38:
+    alerts.append("🌡 High Temperature")
 # =====================================================
 # HEADER
 # =====================================================
