@@ -335,9 +335,9 @@ with center:
         trace.name = legend_map.get(key, key)
 
     fig.update_layout(
-    height=550,
-    hovermode="x unified",
-    legend_title_text=""
+        height=550,
+        hovermode="x unified",
+        legend_title_text=""
 )
 
 
