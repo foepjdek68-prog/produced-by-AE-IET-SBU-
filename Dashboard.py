@@ -2,6 +2,7 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 
+from streamlit_autorefresh import st_autorefresh
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
@@ -17,23 +18,43 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st_autorefresh(interval=60000, key="refresh")
+
+import base64
+
+def get_base64_image(path):
+    with open(path, "rb") as img:
+        return base64.b64encode(img.read()).decode()
+
+sbu_logo = get_base64_image("Assets/sbu.png")
+dti_logo = get_base64_image("Assets/dti.png")
+
 with st.sidebar:
 
     st.markdown(
-        """
-        <div style="
-            text-align:center;
-            padding:25px;
-            border-radius:15px;
-            border:2px dashed #4B5563;
-            background:#111827;
-        ">
-            <h2>🌍 GHG MONITOR</h2>
-            <p>Greenhouse Gas Dashboard</p>
+        f"""
+        <div style="text-align:center;">
+
+            <img src="data:image/png;base64,{sbu_logo}"
+                 width="180">
+
+            <br><br>
+
+            <img src="data:image/png;base64,{dti_logo}"
+                 width="220">
+
         </div>
         """,
         unsafe_allow_html=True
     )
+
+    st.markdown("---")
+
+    st.caption("Monitoring System")
+
+    st.write("📡 Real-time Tracking")
+    st.write("🌡 Environmental Data")
+    st.write("📊 Emission Analysis")
 
     st.markdown("---")
 
@@ -149,7 +170,7 @@ def kpi(col, symbol, name=None):
 
     label = f"{symbol} ({name})" if name else symbol
 
-    return now, f"{arrow} {percent:.1f}%", label
+    return now, f"{arrow} {diff:.2f}", label
     
 # =====================================================
 # KPI CARDS
