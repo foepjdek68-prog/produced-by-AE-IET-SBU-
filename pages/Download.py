@@ -209,7 +209,18 @@ if selected_column != "ทั้งหมด":
     display_df = display_df[
         ["Date", column_map[selected_column]]
     ]
+    
+# =====================================================
+# TABLE
+# =====================================================
 
+st.subheader("📋 Data Preview")
+
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    height=500
+)
 # =====================================================
 # TABLE
 # =====================================================
