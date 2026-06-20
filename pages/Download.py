@@ -222,50 +222,47 @@ st.dataframe(
     height=550
 )
 
-
 # =====================================================
-# DOWNLOAD
+# DOWNLOAD SECTION
 # =====================================================
 
 st.markdown("---")
 
-st.subheader("📥 Export Data")
-
 col1, col2 = st.columns(2)
+
+# ---------- CSV ----------
 
 csv = display_df.to_csv(index=False)
 
 with col1:
 
     st.download_button(
-        label="📄 Download CSV",
+        label="📥 Download CSV",
         data=csv,
         file_name="GHG_Dashboard_Data.csv",
         mime="text/csv",
         use_container_width=True
     )
 
-
-excel_buffer = BytesIO()
-
-with pd.ExcelWriter(
-    excel_buffer,
-    engine="openpyxl"
-) as writer:
-
-    display_df.to_excel(
-        writer,
-        index=False
-    )
-
-excel_buffer.seek(0)
+# ---------- EXCEL ----------
 
 with col2:
 
+    export_df = display_df.copy()
+
+    if "Date" in export_df.columns:
+        export_df["Date"] = pd.to_datetime(
+            export_df["Date"]
+        ).dt.tz_localize(None)
+
+    csv_excel = export_df.to_csv(
+        index=False
+    ).encode("utf-8")
+
     st.download_button(
         label="📊 Download Excel",
-        data=excel_buffer,
-        file_name="GHG_Dashboard_Data.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        data=csv_excel,
+        file_name="GHG_Dashboard_Data.xls",
+        mime="application/vnd.ms-excel",
         use_container_width=True
     )
