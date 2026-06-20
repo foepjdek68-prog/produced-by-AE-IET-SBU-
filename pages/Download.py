@@ -25,7 +25,7 @@ with st.sidebar:
         width=280
     )
 
-    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+    st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     st.markdown("---")
 
 # ทำให้รูปใน sidebar "กดไม่ได้ / เปิดไม่ได้"
