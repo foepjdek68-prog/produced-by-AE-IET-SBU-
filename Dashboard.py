@@ -141,7 +141,15 @@ def kpi(col, symbol, name=None):
         (diff / old) * 100
         if old != 0 else 0
     )
-    
+
+    arrow = (
+        "↑" if diff > 0
+        else "↓" if diff < 0
+        else "→"
+    )
+
+    label = f"{symbol} ({name})" if name else symbol
+
     return now, f"{arrow} {percent:.1f}%", label
     
 # =====================================================
@@ -332,6 +340,7 @@ with center:
     hovermode="x unified",
     legend_title_text=""
 )
+
 
     st.plotly_chart(fig, use_container_width=True)
 
