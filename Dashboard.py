@@ -22,13 +22,14 @@ st_autorefresh(interval=60000, key="refresh")
 
 with st.sidebar:
 
-    st.markdown("---")
+    st.markdown("<br><br><br><br><br><br><br><br><br><br>",
+                unsafe_allow_html=True)
 
     st.image(
-    "Assets/logo.png",
-    width=280
+        "Assets/logo.png",
+        width=280
     )
-    
+
     st.markdown("---")
 
 
