@@ -110,18 +110,6 @@ st.html(f"""
 """)
 
 # =====================================================
-# SUMMARY
-# =====================================================
-
-st.info(
-    f"""
-Dataset contains {len(df):,} records
-from {df['Date'].min().strftime('%d/%m/%Y') if not df.empty else 'No Data'}
-to {df['Date'].max().strftime('%d/%m/%Y') if not df.empty else 'No Data'}
-"""
-)
-
-# =====================================================
 # KPI
 # =====================================================
 
