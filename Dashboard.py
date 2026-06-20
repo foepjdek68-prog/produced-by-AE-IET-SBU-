@@ -22,22 +22,16 @@ st_autorefresh(interval=60000, key="refresh")
 
 with st.sidebar:
 
+    st.markdown("---")
+
     st.image(
     "Assets/logo.png",
     width=280
     )
-
+    
     st.markdown("---")
 
-    st.caption("Greenhouse Gas Monitoring System")
 
-    st.write("📡 Real-time Tracking")
-    st.write("🌡 Environmental Data")
-    st.write("📊 Emission Analysis")
-
-    st.markdown("---")
-
-    st.caption("Version 1.0")
 
 st.markdown("""
 <style>
