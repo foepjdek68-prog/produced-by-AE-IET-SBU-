@@ -18,6 +18,36 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+with st.sidebar:
+
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            padding:25px;
+            border-radius:15px;
+            border:2px dashed #4B5563;
+            background:#111827;
+        ">
+            <h2>🌍 GHG MONITOR</h2>
+            <p>Greenhouse Gas Dashboard</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("---")
+
+    st.caption("Monitoring System")
+
+    st.write("📡 Real-time Tracking")
+    st.write("🌡 Environmental Data")
+    st.write("📊 Emission Analysis")
+
+    st.markdown("---")
+
+    st.caption("Version 1.0")
+
 st.markdown(
     """
     <style>
@@ -59,20 +89,36 @@ prev = df.iloc[-2] if len(df) > 1 else latest
 
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
+alerts = []
+
+if latest["CO2"] > 500:
+    alerts.append("🔴 High CO₂ Level")
+
+if latest["PM25"] > 35:
+    alerts.append("⚠ PM2.5 Warning")
+
+if latest["Temp"] > 38:
+    alerts.append("🌡 High Temperature")
 
 # =====================================================
 # HEADER
 # =====================================================
 
-st.info(
-    """
-    ### 🌍 Dashboard Tracking
-    ## Greenhouse Gases Emission
-    """
+st.markdown(
+    f"""
+    <div style="
+        background:#111827;
+        padding:20px;
+        border-radius:15px;
+        border:1px solid #374151;
+        margin-bottom:10px;
+    ">
+        <h1>🌍 Greenhouse Gas Monitoring Dashboard</h1>
+        <p>Last Update : {thai_date}</p>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
-
-st.caption(f"ข้อมูลล่าสุด : {thai_date}")
-
 
 # =====================================================
 # KPI FUNCTION
@@ -121,6 +167,20 @@ c5.metric(label, f"{v:.2f}", d)
 
 v, d, label = kpi("Humidity", "Humidity")
 c6.metric(label, f"{v:.2f}", d)
+
+if alerts:
+
+    cols = st.columns(len(alerts))
+
+    for i, alert in enumerate(alerts):
+
+        if "🔴" in alert:
+            cols[i].error(alert)
+        else:
+            cols[i].warning(alert)
+
+else:
+    st.success("🟢 Environmental Condition Normal")
 
 st.markdown("---")
 
@@ -267,6 +327,12 @@ with center:
         trace.line.width = 3
         trace.name = legend_map.get(key, key)
 
+    fig.update_layout(
+    height=550,
+    hovermode="x unified",
+    legend_title_text=""
+)
+
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -304,7 +370,20 @@ with right:
         )
 
     else:
-        st.success("🟢 ระบบทำงานปกติ")
-        st.write("✔ ระบบรับข้อมูลเรียบร้อย")
-        st.write("✔ ข้อมูลอัปเดตล่าสุดแล้ว")
-        st.write(f"🕒 เวลาอัปเดต: {latest['Date']}")
+
+    st.success("🟢 SYSTEM ONLINE")
+
+    st.metric(
+        "Records",
+        len(df)
+    )
+
+    st.metric(
+        "Last Update",
+        latest["Date"].strftime("%H:%M")
+    )
+
+    st.metric(
+        "Data Status",
+        "Healthy"
+    )
