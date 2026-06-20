@@ -1,11 +1,8 @@
 import streamlit as st
 import pandas as pd
-import base64
-from io import BytesIO
 
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
-
 
 # =====================================================
 # PAGE CONFIG
@@ -17,68 +14,21 @@ st.set_page_config(
     layout="wide"
 )
 
-
-# =====================================================
-# LOGO FUNCTION
-# =====================================================
-
-def get_base64_image(path):
-    with open(path, "rb") as img:
-        return base64.b64encode(img.read()).decode()
-
-
 # =====================================================
 # SIDEBAR
 # =====================================================
 
-try:
+with st.sidebar:
 
-    sbu_logo = get_base64_image("Assets/sbu.png")
-    dti_logo = get_base64_image("Assets/dti.png")
+    st.image(
+        "Assets/logo.png",
+        width=280
+    )
 
-    with st.sidebar:
+    st.markdown("<br><br><br><br><br>",
+                unsafe_allow_html=True)
 
-        st.markdown(
-            f"""
-            <div style="
-                text-align:center;
-                padding:15px;
-                background:#111827;
-                border-radius:15px;
-                border:1px solid #374151;
-            ">
-
-                <img src="data:image/png;base64,{sbu_logo}"
-                     width="150">
-
-                <br><br>
-
-                <img src="data:image/png;base64,{dti_logo}"
-                     width="180">
-
-                <hr>
-
-                <h4 style="color:white;">
-                    Greenhouse Gas
-                    Monitoring System
-                </h4>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.markdown("---")
-
-        st.caption("Data Export Center")
-
-        st.write("📄 CSV Export")
-        st.write("📊 Excel Export")
-        st.write("🔎 Data Preview")
-
-except Exception:
-    st.sidebar.warning("Logo not found")
-
+    st.markdown("---")
 
 # =====================================================
 # CSS
@@ -94,13 +44,18 @@ st.markdown("""
 [data-testid="stMetric"]{
     background:#111827;
     border:1px solid #374151;
-    border-radius:12px;
+    border-radius:16px;
     padding:15px;
+    text-align:center;
+}
+
+[data-testid="stMetricValue"]{
+    font-size:26px;
+    font-weight:700;
 }
 
 </style>
 """, unsafe_allow_html=True)
-
 
 # =====================================================
 # LOAD DATA
@@ -121,7 +76,6 @@ df = df.dropna(subset=["Date"])
 
 latest_date = df["Date"].max()
 
-
 # =====================================================
 # HEADER
 # =====================================================
@@ -129,44 +83,70 @@ latest_date = df["Date"].max()
 st.markdown(
     f"""
     <div style="
-        background:#111827;
-        padding:20px;
-        border-radius:15px;
+        background:linear-gradient(
+            135deg,
+            #111827,
+            #1F2937
+        );
+        padding:25px;
+        border-radius:20px;
         border:1px solid #374151;
         margin-bottom:20px;
     ">
         <h1>📥 Greenhouse Gas Data Center</h1>
-        <p>
+
+        <p style="color:#9CA3AF;">
             Export and manage environmental monitoring records
-            <br>
-            Last Update : {latest_date.strftime("%d/%m/%Y %H:%M")}
+        </p>
+
+        <p>
+            Last Update :
+            {latest_date.strftime("%d/%m/%Y %H:%M")}
         </p>
     </div>
     """,
     unsafe_allow_html=True
 )
 
+# =====================================================
+# SUMMARY
+# =====================================================
+
+st.info(
+    f"""
+Dataset contains {len(df):,} records
+from {df['Date'].min().strftime('%d/%m/%Y')}
+to {df['Date'].max().strftime('%d/%m/%Y')}
+"""
+)
 
 # =====================================================
 # KPI
 # =====================================================
 
-c1, c2 = st.columns(2)
+c1, c2, c3, c4 = st.columns(4)
 
-with c1:
-    st.metric(
-        "Total Records",
-        f"{len(df):,}"
-    )
+c1.metric(
+    "Records",
+    f"{len(df):,}"
+)
 
-with c2:
-    st.metric(
-        "Last Update",
-        latest_date.strftime("%d/%m/%Y %H:%M")
-    )
+c2.metric(
+    "Latest CO₂",
+    f"{df['CO2'].iloc[-1]:.2f}"
+)
+
+c3.metric(
+    "Latest Temp",
+    f"{df['Temp'].iloc[-1]:.2f} °C"
+)
+
+c4.metric(
+    "Last Update",
+    latest_date.strftime("%H:%M")
+)
 
 st.markdown("---")
-
 
 # =====================================================
 # COLUMN RENAME
@@ -183,12 +163,35 @@ rename_columns = {
 
 display_df = df.rename(columns=rename_columns)
 
+# =====================================================
+# SEARCH
+# =====================================================
+
+st.subheader("🔍 Search Data")
+
+search = st.text_input(
+    "ค้นหาข้อมูล"
+)
+
+if search:
+
+    mask = (
+        display_df.astype(str)
+        .apply(
+            lambda x: x.str.contains(
+                search,
+                case=False,
+                na=False
+            )
+        )
+        .any(axis=1)
+    )
+
+    display_df = display_df[mask]
 
 # =====================================================
-# FILTER
+# FILTER COLUMN
 # =====================================================
-
-st.subheader("🔎 Filter Data")
 
 selected_column = st.selectbox(
     "เลือกข้อมูล",
@@ -209,6 +212,22 @@ if selected_column != "ทั้งหมด":
         ["Date", selected_column]
     ]
 
+# =====================================================
+# QUICK STATS
+# =====================================================
+
+st.subheader("📊 Quick Statistics")
+
+stats_df = display_df.copy()
+
+if "Date" in stats_df.columns:
+    stats_df = stats_df.drop(columns=["Date"])
+
+if len(stats_df.columns) > 0:
+    st.dataframe(
+        stats_df.describe(),
+        use_container_width=True
+    )
 
 # =====================================================
 # TABLE
@@ -223,16 +242,16 @@ st.dataframe(
 )
 
 # =====================================================
-# DOWNLOAD SECTION
+# DOWNLOAD
 # =====================================================
 
 st.markdown("---")
 
 col1, col2 = st.columns(2)
 
-# ---------- CSV ----------
-
-csv = display_df.to_csv(index=False)
+csv = display_df.to_csv(
+    index=False
+)
 
 with col1:
 
@@ -244,24 +263,15 @@ with col1:
         use_container_width=True
     )
 
-# ---------- EXCEL ----------
-
 with col2:
 
-    export_df = display_df.copy()
-
-    if "Date" in export_df.columns:
-        export_df["Date"] = pd.to_datetime(
-            export_df["Date"]
-        ).dt.tz_localize(None)
-
-    csv_excel = export_df.to_csv(
+    excel_data = display_df.to_csv(
         index=False
     ).encode("utf-8")
 
     st.download_button(
-        label="📊 Download Excel",
-        data=csv_excel,
+        label="📊 Export Excel Compatible",
+        data=excel_data,
         file_name="GHG_Dashboard_Data.xls",
         mime="application/vnd.ms-excel",
         use_container_width=True
