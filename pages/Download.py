@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import base64
+from io import BytesIO
 
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
@@ -75,8 +76,8 @@ try:
         st.write("📊 Excel Export")
         st.write("🔎 Data Preview")
 
-except:
-    pass
+except Exception:
+    st.sidebar.warning("Logo not found")
 
 
 # =====================================================
@@ -111,7 +112,12 @@ if df.empty:
     df = fetch_data()
     save_data(df)
 
-df["Date"] = pd.to_datetime(df["Date"])
+df["Date"] = pd.to_datetime(
+    df["Date"],
+    errors="coerce"
+)
+
+df = df.dropna(subset=["Date"])
 
 latest_date = df["Date"].max()
 
@@ -129,11 +135,11 @@ st.markdown(
         border:1px solid #374151;
         margin-bottom:20px;
     ">
-        <h1>📥 Data Download Center</h1>
+        <h1>📥 Greenhouse Gas Data Center</h1>
         <p>
-            Download greenhouse gas monitoring data
+            Export and manage environmental monitoring records
             <br>
-            Last Update : {latest_date}
+            Last Update : {latest_date.strftime("%d/%m/%Y %H:%M")}
         </p>
     </div>
     """,
@@ -147,15 +153,17 @@ st.markdown(
 
 c1, c2 = st.columns(2)
 
-c1.metric(
-    "Total Records",
-    f"{len(df):,}"
-)
+with c1:
+    st.metric(
+        "Total Records",
+        f"{len(df):,}"
+    )
 
-c2.metric(
-    "Last Update",
-    latest_date.strftime("%d/%m/%Y %H:%M")
-)
+with c2:
+    st.metric(
+        "Last Update",
+        latest_date.strftime("%d/%m/%Y %H:%M")
+    )
 
 st.markdown("---")
 
@@ -197,19 +205,11 @@ selected_column = st.selectbox(
 
 if selected_column != "ทั้งหมด":
 
-    column_map = {
-        "CO₂": "CO₂",
-        "CH₄": "CH₄",
-        "NO₂": "NO₂",
-        "PM 2.5": "PM 2.5",
-        "Temperature": "Temperature",
-        "Humidity": "Humidity"
-    }
-
     display_df = display_df[
-        ["Date", column_map[selected_column]]
+        ["Date", selected_column]
     ]
-    
+
+
 # =====================================================
 # TABLE
 # =====================================================
@@ -219,26 +219,17 @@ st.subheader("📋 Data Preview")
 st.dataframe(
     display_df,
     use_container_width=True,
-    height=500
-)
-# =====================================================
-# TABLE
-# =====================================================
-
-st.subheader("📋 Data Preview")
-
-st.dataframe(
-    display_df,
-    use_container_width=True,
-    height=500
+    height=550
 )
 
 
 # =====================================================
-# DOWNLOAD SECTION
+# DOWNLOAD
 # =====================================================
 
 st.markdown("---")
+
+st.subheader("📥 Export Data")
 
 col1, col2 = st.columns(2)
 
@@ -247,29 +238,34 @@ csv = display_df.to_csv(index=False)
 with col1:
 
     st.download_button(
-        label="📥 Download CSV",
+        label="📄 Download CSV",
         data=csv,
         file_name="GHG_Dashboard_Data.csv",
         mime="text/csv",
         use_container_width=True
     )
 
+
+excel_buffer = BytesIO()
+
+with pd.ExcelWriter(
+    excel_buffer,
+    engine="openpyxl"
+) as writer:
+
+    display_df.to_excel(
+        writer,
+        index=False
+    )
+
+excel_buffer.seek(0)
+
 with col2:
 
-    excel_file = "GHG_Dashboard_Data.xlsx"
-
-    with pd.ExcelWriter(excel_file) as writer:
-        display_df.to_excel(
-            writer,
-            index=False
-        )
-
-    with open(excel_file, "rb") as f:
-
-        st.download_button(
-            label="📊 Download Excel",
-            data=f,
-            file_name=excel_file,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+    st.download_button(
+        label="📊 Download Excel",
+        data=excel_buffer,
+        file_name="GHG_Dashboard_Data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
