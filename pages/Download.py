@@ -19,16 +19,11 @@ st.set_page_config(
 # =====================================================
 
 with st.sidebar:
-
-    st.image(
-        "Assets/logo.png",
-        width=280
-    )
-
-    st.markdown("<br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+    st.image("Assets/logo.png", width=280)
+    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
     st.markdown("---")
 
-# ทำให้รูปใน sidebar "กดไม่ได้ / เปิดไม่ได้"
+# ปิดการคลิก/interaction ของรูป sidebar
 st.markdown("""
 <style>
 [data-testid="stSidebar"] img{
@@ -71,17 +66,27 @@ st.markdown("""
 
 df = load_data()
 
-if df.empty:
+if df is None or df.empty:
     df = fetch_data()
     save_data(df)
 
-df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+# กัน Date error
+if "Date" in df.columns:
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
 df = df.dropna(subset=["Date"])
 
-latest_date = df["Date"].max()
+# กัน df ว่าง
+if df.empty:
+    latest_date = "No Data"
+    date_range_text = "No Data Available"
+else:
+    latest_date = df["Date"].max()
+    date_range_text = f"{df['Date'].min().strftime('%d/%m/%Y')} - {df['Date'].max().strftime('%d/%m/%Y')}"
+    latest_date = latest_date.strftime("%d/%m/%Y %H:%M")
 
 # =====================================================
-# HEADER (ปรับใหม่)
+# HEADER (FIXED - NO BROKEN HTML)
 # =====================================================
 
 st.markdown(
@@ -100,8 +105,11 @@ st.markdown(
         </p>
 
         <p>
-            Last Update :
-            {latest_date.strftime("%d/%m/%Y %H:%M")}
+            Dataset Range : {date_range_text}
+        </p>
+
+        <p>
+            Last Update : {latest_date}
         </p>
     </div>
     """,
@@ -115,8 +123,8 @@ st.markdown(
 st.info(
     f"""
 Dataset contains {len(df):,} records
-from {df['Date'].min().strftime('%d/%m/%Y')}
-to {df['Date'].max().strftime('%d/%m/%Y')}
+from {df['Date'].min().strftime('%d/%m/%Y') if not df.empty else 'No Data'}
+to {df['Date'].max().strftime('%d/%m/%Y') if not df.empty else 'No Data'}
 """
 )
 
@@ -127,14 +135,26 @@ to {df['Date'].max().strftime('%d/%m/%Y')}
 c1, c2, c3, c4 = st.columns(4)
 
 c1.metric("Records", f"{len(df):,}")
-c2.metric("Latest CO₂", f"{df['CO2'].iloc[-1]:.2f}")
-c3.metric("Latest Temp", f"{df['Temp'].iloc[-1]:.2f} °C")
-c4.metric("Last Update", latest_date.strftime("%H:%M"))
+
+c2.metric(
+    "Latest CO₂",
+    f"{df['CO2'].iloc[-1]:.2f}" if not df.empty else "No Data"
+)
+
+c3.metric(
+    "Latest Temp",
+    f"{df['Temp'].iloc[-1]:.2f} °C" if not df.empty else "No Data"
+)
+
+c4.metric(
+    "Last Update",
+    latest_date if isinstance(latest_date, str) else latest_date.strftime("%H:%M")
+)
 
 st.markdown("---")
 
 # =====================================================
-# COLUMN RENAME
+# RENAME COLUMNS
 # =====================================================
 
 rename_columns = {
@@ -149,20 +169,12 @@ rename_columns = {
 display_df = df.rename(columns=rename_columns)
 
 # =====================================================
-# FILTER COLUMN (เหลืออย่างเดียว)
+# COLUMN FILTER ONLY (NO SEARCH)
 # =====================================================
 
 selected_column = st.selectbox(
     "เลือกข้อมูลที่ต้องการดู",
-    [
-        "ทั้งหมด",
-        "CO₂",
-        "CH₄",
-        "NO₂",
-        "PM 2.5",
-        "Temperature",
-        "Humidity"
-    ]
+    ["ทั้งหมด", "CO₂", "CH₄", "NO₂", "PM 2.5", "Temperature", "Humidity"]
 )
 
 if selected_column != "ทั้งหมด":
@@ -180,10 +192,7 @@ if "Date" in stats_df.columns:
     stats_df = stats_df.drop(columns=["Date"])
 
 if len(stats_df.columns) > 0:
-    st.dataframe(
-        stats_df.describe(),
-        use_container_width=True
-    )
+    st.dataframe(stats_df.describe(), use_container_width=True)
 
 # =====================================================
 # TABLE
