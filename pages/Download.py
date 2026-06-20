@@ -9,7 +9,7 @@ from Services.api_loader import fetch_data
 # =====================================================
 
 st.set_page_config(
-    page_title="Download Data",
+    page_title="GHG Data Center",
     page_icon="📥",
     layout="wide"
 )
@@ -25,10 +25,18 @@ with st.sidebar:
         width=280
     )
 
-    st.markdown("<br><br><br><br><br>",
-                unsafe_allow_html=True)
-
+    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
     st.markdown("---")
+
+# ทำให้รูปใน sidebar "กดไม่ได้ / เปิดไม่ได้"
+st.markdown("""
+<style>
+[data-testid="stSidebar"] img{
+    pointer-events: none;
+    cursor: default;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =====================================================
 # CSS
@@ -67,36 +75,28 @@ if df.empty:
     df = fetch_data()
     save_data(df)
 
-df["Date"] = pd.to_datetime(
-    df["Date"],
-    errors="coerce"
-)
-
+df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 df = df.dropna(subset=["Date"])
 
 latest_date = df["Date"].max()
 
 # =====================================================
-# HEADER
+# HEADER (ปรับใหม่)
 # =====================================================
 
 st.markdown(
     f"""
     <div style="
-        background:linear-gradient(
-            135deg,
-            #111827,
-            #1F2937
-        );
+        background:linear-gradient(135deg,#111827,#1F2937);
         padding:25px;
         border-radius:20px;
         border:1px solid #374151;
         margin-bottom:20px;
     ">
-        <h1>📥 Greenhouse Gas Data Center</h1>
+        <h1>📊 Greenhouse Gas Monitoring Dashboard</h1>
 
         <p style="color:#9CA3AF;">
-            Export and manage environmental monitoring records
+            Real-time environmental data tracking & analysis system
         </p>
 
         <p>
@@ -126,25 +126,10 @@ to {df['Date'].max().strftime('%d/%m/%Y')}
 
 c1, c2, c3, c4 = st.columns(4)
 
-c1.metric(
-    "Records",
-    f"{len(df):,}"
-)
-
-c2.metric(
-    "Latest CO₂",
-    f"{df['CO2'].iloc[-1]:.2f}"
-)
-
-c3.metric(
-    "Latest Temp",
-    f"{df['Temp'].iloc[-1]:.2f} °C"
-)
-
-c4.metric(
-    "Last Update",
-    latest_date.strftime("%H:%M")
-)
+c1.metric("Records", f"{len(df):,}")
+c2.metric("Latest CO₂", f"{df['CO2'].iloc[-1]:.2f}")
+c3.metric("Latest Temp", f"{df['Temp'].iloc[-1]:.2f} °C")
+c4.metric("Last Update", latest_date.strftime("%H:%M"))
 
 st.markdown("---")
 
@@ -164,37 +149,11 @@ rename_columns = {
 display_df = df.rename(columns=rename_columns)
 
 # =====================================================
-# SEARCH
-# =====================================================
-
-st.subheader("🔍 Search Data")
-
-search = st.text_input(
-    "ค้นหาข้อมูล"
-)
-
-if search:
-
-    mask = (
-        display_df.astype(str)
-        .apply(
-            lambda x: x.str.contains(
-                search,
-                case=False,
-                na=False
-            )
-        )
-        .any(axis=1)
-    )
-
-    display_df = display_df[mask]
-
-# =====================================================
-# FILTER COLUMN
+# FILTER COLUMN (เหลืออย่างเดียว)
 # =====================================================
 
 selected_column = st.selectbox(
-    "เลือกข้อมูล",
+    "เลือกข้อมูลที่ต้องการดู",
     [
         "ทั้งหมด",
         "CO₂",
@@ -207,10 +166,7 @@ selected_column = st.selectbox(
 )
 
 if selected_column != "ทั้งหมด":
-
-    display_df = display_df[
-        ["Date", selected_column]
-    ]
+    display_df = display_df[["Date", selected_column]]
 
 # =====================================================
 # QUICK STATS
@@ -249,12 +205,9 @@ st.markdown("---")
 
 col1, col2 = st.columns(2)
 
-csv = display_df.to_csv(
-    index=False
-)
+csv = display_df.to_csv(index=False)
 
 with col1:
-
     st.download_button(
         label="📥 Download CSV",
         data=csv,
@@ -264,10 +217,7 @@ with col1:
     )
 
 with col2:
-
-    excel_data = display_df.to_csv(
-        index=False
-    ).encode("utf-8")
+    excel_data = display_df.to_csv(index=False).encode("utf-8")
 
     st.download_button(
         label="📊 Export Excel Compatible",
