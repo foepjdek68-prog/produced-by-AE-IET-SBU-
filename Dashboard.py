@@ -65,13 +65,28 @@ thai_date = latest["Date"].strftime("%d/%m/%y")
 # =====================================================
 # HEADER & ALERTS
 # =====================================================
-st.markdown(f"""
-    <div style="background:#111827; padding:20px; border-radius:15px; border:1px solid #374151; margin-bottom:10px;">
-        <h1>🌍 Dashboard Tracking </h1>
-        <h1> Greenhouse Gases Emission </h1>
-        <p>อัปเดตล่าสุด : {thai_date}</p>
+st.markdown(
+    f"""
+    <div style="
+        background:#111827; 
+        padding:25px; 
+        border-radius:20px; 
+        border:1px solid #374151; 
+        margin-bottom:20px;
+    ">
+        <h1 style="margin:0; color:white; font-size: 2.5rem; line-height: 1.2;">
+            Dashboard Tracking
+        </h1>
+        <h1 style="margin:0; color:white; font-size: 2.5rem; line-height: 1.2;">
+            Greenhouse Gases Emission
+        </h1>
+        <p style="color:#9CA3AF; margin-top:15px; font-size: 1.1rem;">
+            🌍 อัปเดตล่าสุด : {latest_str}
+        </p>
     </div>
-""", unsafe_allow_html=True)
+    """, 
+    unsafe_allow_html=True
+)
 
 alerts = []
 if latest.get("CO2", 0) > 500: alerts.append("🔴 ระดับ CO₂ สูงเกินเกณฑ์")
