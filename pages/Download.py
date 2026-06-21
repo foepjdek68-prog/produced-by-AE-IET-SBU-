@@ -64,7 +64,7 @@ if not df.empty:
 
 st.html(f"""
 <div style="background:linear-gradient(135deg,#111827,#1F2937); padding:25px; border-radius:20px; border:1px solid #374151; margin-bottom:20px;">
-    <h1 style="margin:0;color:white;">🗄️ GHG Data Center</h1>
+    <h1 style="margin:0;color:white;">🗄️ GHG Data Management Center</h1>
     <p style="color:white;">อัปเดตล่าสุด : {latest_str}</p>
 </div>
 """)
