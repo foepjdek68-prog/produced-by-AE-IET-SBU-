@@ -21,36 +21,36 @@ st.set_page_config(
 st_autorefresh(interval=60000, key="refresh")
 
 with st.sidebar:
+    # 1. ส่วนเนื้อหาด้านบน (รูปโลโก้ + เมนู)
     st.image("Assets/logo.png", width=250)
-    
-    # ... ใส่เมนูของคุณไว้เหนือส่วนนี้ ...
+    # ใส่เมนูอื่นๆ ของคุณตรงนี้...
 
-    # Footer ที่ถูกล็อคไว้ที่มุมล่างซ้าย
+    # 2. ส่วน Footer ที่จะบังคับให้อยู่ล่างสุด
     st.markdown("""
-    <style>
-        .footer-fixed {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 85%;
-        }
-        .footer-fixed hr {
-            margin: 0px 0px 10px 0px;
-            border: 0;
-            border-top: 1px solid #4B5563;
-            width: 100%;
-        }
-        .footer-fixed p {
-            font-size: 0.75em;
-            color: #9CA3AF;
-            margin: 0;
-            text-align: left;
-        }
-    </style>
-    <div class="footer-fixed">
-        <hr>
-        <p>(C) Dept. Engineering SBU</p>
-    </div>
+        <style>
+            /* บังคับให้ Sidebar เป็น Flexbox */
+            [data-testid="stSidebar"] > div:first-child {
+                display: flex;
+                flex-direction: column;
+                height: 90vh; /* ความสูงเกือบเต็มหน้าจอ */
+            }
+            /* ส่วนนี้จะทำหน้าที่ดัน Footer ลงไปล่างสุด */
+            .sidebar-spacer {
+                flex-grow: 1;
+            }
+            .sidebar-footer {
+                border-top: 1px solid #4B5563;
+                padding-top: 10px;
+                margin-top: auto;
+                font-size: 0.75em;
+                color: #9CA3AF;
+            }
+        </style>
+        
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-footer">
+            (C) Dept. Engineering SBU
+        </div>
     """, unsafe_allow_html=True)
     
 
