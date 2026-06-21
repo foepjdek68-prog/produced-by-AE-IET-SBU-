@@ -91,30 +91,48 @@ rename_map = {
 }
 display_df = df.rename(columns=rename_map)
 
-selected_column = st.selectbox("เลือกประเภทข้อมูลที่ต้องการดู", ["ทั้งหมด"] + list(rename_map.values()))
+# ตัวกรองข้อมูล (ไว้ด้านบนเพื่อให้ผลลัพธ์ในทุก Tab เปลี่ยนตาม)
+selected_column = st.selectbox("เลือกประเภทข้อมูลที่ต้องการโฟกัส", ["ทั้งหมด"] + list(rename_map.values()))
 
-if selected_column != "ทั้งหมด":
-    if selected_column in display_df.columns:
-        display_df = display_df[["Date", selected_column]]
+if selected_column != "ทั้งหมด" and selected_column in display_df.columns:
+    working_df = display_df[["Date", selected_column]]
+else:
+    working_df = display_df
 
 # =====================================================
-# สถิติและตารางข้อมูล
+# ฟังก์ชันแสดงผลส่วนต่างๆ
 # =====================================================
-st.subheader("📊 สถิติเบื้องต้น")
-stats_df = display_df.drop(columns=["Date"], errors="ignore")
-if not stats_df.empty:
-    st.dataframe(stats_df.describe(), use_container_width=True)
+def show_statistics(data):
+    st.subheader("📊 สถิติเชิงปริมาณ")
+    stats_df = data.drop(columns=["Date"], errors="ignore")
+    if not stats_df.empty:
+        st.dataframe(stats_df.describe(), use_container_width=True)
+    else:
+        st.info("ไม่มีข้อมูลสำหรับคำนวณสถิติ")
 
-st.subheader("📋 ตัวอย่างข้อมูลล่าสุด")
-st.dataframe(display_df, use_container_width=True, height=550)
+def show_raw_data(data):
+    st.subheader("📋 ข้อมูลรายละเอียดล่าสุด")
+    # เรียงลำดับจากล่าสุดไปเก่า
+    st.dataframe(data.sort_values(by="Date", ascending=False), use_container_width=True, height=550)
+
+# =====================================================
+# แสดง Tabs
+# =====================================================
+tab1, tab2 = st.tabs(["📊 สถิติเบื้องต้น", "📋 ข้อมูลล่าสุด"])
+
+with tab1:
+    show_statistics(working_df)
+
+with tab2:
+    show_raw_data(working_df)
 
 # =====================================================
 # การดาวน์โหลดข้อมูล
 # =====================================================
 st.markdown("---")
+csv = working_df.to_csv(index=False)
 col1, col2 = st.columns(2)
 
-csv = display_df.to_csv(index=False)
 with col1:
     st.download_button("📥 ดาวน์โหลดไฟล์ CSV", csv, "GHG_Data.csv", "text/csv", use_container_width=True)
 
