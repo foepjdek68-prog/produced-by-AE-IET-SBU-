@@ -23,29 +23,31 @@ st_autorefresh(interval=60000, key="refresh")
 with st.sidebar:
     st.image("Assets/logo.png", width=250)
     
-    # ... ส่วนของเนื้อหาเมนูอื่นๆ ของคุณ ...
+    # ... ใส่เมนูของคุณไว้เหนือส่วนนี้ ...
 
-    # ส่วน Footer ที่ปรับระยะให้เหมาะสม
+    # Footer ที่ถูกล็อคไว้ที่มุมล่างซ้าย
     st.markdown("""
     <style>
-        .sidebar-footer {
-            margin-top: auto; /* ดันให้อยู่ล่างสุดของพื้นที่ที่เหลือ */
-            padding-top: 20px;
-            text-align: center;
+        .footer-fixed {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 85%;
         }
-        .sidebar-footer hr {
-            margin: 0px auto 10px auto;
+        .footer-fixed hr {
+            margin: 0px 0px 10px 0px;
             border: 0;
-            border-top: 1px solid #4B5563; /* ใช้สีเทาเข้มเพื่อให้ดูพรีเมียม */
-            width: 90%;
+            border-top: 1px solid #4B5563;
+            width: 100%;
         }
-        .sidebar-footer p {
+        .footer-fixed p {
             font-size: 0.75em;
             color: #9CA3AF;
             margin: 0;
+            text-align: left;
         }
     </style>
-    <div class="sidebar-footer">
+    <div class="footer-fixed">
         <hr>
         <p>(C) Dept. Engineering SBU</p>
     </div>
