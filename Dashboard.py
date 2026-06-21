@@ -21,27 +21,37 @@ st.set_page_config(
 st_autorefresh(interval=60000, key="refresh")
 
 with st.sidebar:
-
     st.image(
         "Assets/logo.png",
         width=250
     )
-    
-    st.markdown("<br><br><br><br><br><br><br><br><br><br>",
-                unsafe_allow_html=True)
+
     st.markdown("""
-    <div style="margin-top: 50px; font-size: 0.8em; color: gray; margin-bottom: 0px;">
-        (C) Dept. Engineering SBU
+    <style>
+        /* จัดตำแหน่ง container ของ footer ให้ล่างสุดของ sidebar */
+        .sidebar-footer {
+            position: absolute;
+            bottom: 20px;
+            width: 85%;
+            text-align: right;
+        }
+        .sidebar-footer hr {
+            margin: 0px 0px 5px 0px;
+            border: 0;
+            border-top: 1px solid #ccc;
+        }
+        .sidebar-footer p {
+            font-size: 0.75em;
+            color: gray;
+            margin: 0;
+        }
+    </style>
+    <div class="sidebar-footer">
+        <hr>
+        <p>(C) Dept. Engineering SBU</p>
     </div>
-    <hr style="margin-top: 0px; margin-bottom: 20px;">
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
     
-    
-
-    
-
-
-
 st.markdown("""
 <style>
 
