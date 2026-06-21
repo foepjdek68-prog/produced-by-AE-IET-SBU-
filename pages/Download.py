@@ -5,7 +5,7 @@ from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
 # =====================================================
-# PAGE CONFIG
+# การตั้งค่าหน้าจอ (Page Configuration)
 # =====================================================
 
 st.set_page_config(
@@ -15,24 +15,22 @@ st.set_page_config(
 )
 
 # =====================================================
-# SIDEBAR
+# แถบเมนูด้านข้าง (Sidebar)
 # =====================================================
 
 with st.sidebar:
-    # 1. ส่วนเนื้อหาด้านบน (รูปโลโก้ + เมนู)
+    # 1. โลโก้และเมนูหลัก
     st.image("Assets/logo.png", width=250)
-    # ใส่เมนูอื่นๆ ของคุณตรงนี้...
-
-    # 2. ส่วน Footer ที่จะบังคับให้อยู่ล่างสุด
+    
+    # 2. ส่วนท้ายของ Sidebar (Footer)
     st.markdown("""
         <style>
-            /* บังคับให้ Sidebar เป็น Flexbox */
+            /* บังคับให้ Sidebar เป็น Flexbox เพื่อจัดวาง Footer */
             [data-testid="stSidebar"] > div:first-child {
                 display: flex;
                 flex-direction: column;
-                height: 90vh; /* ความสูงเกือบเต็มหน้าจอ */
+                height: 90vh;
             }
-            /* ส่วนนี้จะทำหน้าที่ดัน Footer ลงไปล่างสุด */
             .sidebar-spacer {
                 flex-grow: 1;
             }
@@ -47,7 +45,7 @@ with st.sidebar:
         
         <div class="sidebar-spacer"></div>
         <div class="sidebar-footer">
-            (C) Dept. Engineering SBU
+            (C) แผนกวิศวกรรม SBU
         </div>
     """, unsafe_allow_html=True)
 
@@ -61,16 +59,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# CSS
+# การตั้งค่าสไตล์ CSS (Custom Styles)
 # =====================================================
 
 st.markdown("""
 <style>
-
 .block-container{
     padding-top:1rem;
 }
-
 [data-testid="stMetric"]{
     background:#111827;
     border:1px solid #374151;
@@ -78,17 +74,15 @@ st.markdown("""
     padding:15px;
     text-align:center;
 }
-
 [data-testid="stMetricValue"]{
     font-size:26px;
     font-weight:700;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================
-# LOAD DATA
+# การโหลดข้อมูล (Data Loading)
 # =====================================================
 
 df = load_data()
@@ -97,26 +91,26 @@ if df is None or df.empty:
     df = fetch_data()
     save_data(df)
 
-# กัน Date error
+# จัดรูปแบบวันที่
 if "Date" in df.columns:
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 
 df = df.dropna(subset=["Date"])
 
 # =====================================================
-# HANDLE EMPTY DATA
+# การจัดการกรณีไม่มีข้อมูล
 # =====================================================
 
 if df.empty:
-    latest_date = "No Data"
-    date_range_text = "No Data Available"
+    latest_date = "ไม่มีข้อมูล"
+    date_range_text = "ไม่พบข้อมูลในระบบ"
 else:
     latest_dt = df["Date"].max()
     date_range_text = f"{df['Date'].min().strftime('%d/%m/%Y')} - {df['Date'].max().strftime('%d/%m/%Y')}"
     latest_date = latest_dt.strftime("%d/%m/%Y %H:%M")
 
 # =====================================================
-# HEADER (FIXED)
+# ส่วนหัวของหน้าจอ (Header)
 # =====================================================
 
 st.html(f"""
@@ -128,42 +122,41 @@ st.html(f"""
     margin-bottom:20px;
 ">
     <h1 style="margin:0;color:white;">
-        📊 Greenhouse Gas Monitoring Dashboard
+        📊 แดชบอร์ดติดตามก๊าซเรือนกระจก (GHG)
     </h1>
-
     <p style="color:white;">
-        Last Update : {latest_date}
+        อัปเดตล่าสุด : {latest_date}
     </p>
 </div>
 """)
 
 # =====================================================
-# KPI
+# สรุปข้อมูลสำคัญ (KPI Metrics)
 # =====================================================
 
 c1, c2, c3, c4 = st.columns(4)
 
-c1.metric("Records", f"{len(df):,}")
+c1.metric("จำนวนรายการทั้งหมด", f"{len(df):,}")
 
 c2.metric(
-    "Latest CO₂",
-    f"{df['CO2'].iloc[-1]:.2f}" if not df.empty else "No Data"
+    "ค่า CO₂ ล่าสุด",
+    f"{df['CO2'].iloc[-1]:.2f}" if not df.empty else "ไม่มีข้อมูล"
 )
 
 c3.metric(
-    "Latest Temp",
-    f"{df['Temp'].iloc[-1]:.2f} °C" if not df.empty else "No Data"
+    "อุณหภูมิล่าสุด",
+    f"{df['Temp'].iloc[-1]:.2f} °C" if not df.empty else "ไม่มีข้อมูล"
 )
 
 c4.metric(
-    "Last Update",
-    latest_date if isinstance(latest_date, str) else latest_date.strftime("%H:%M")
+    "เวลาอัปเดตล่าสุด",
+    latest_date if isinstance(latest_date, str) else latest_date.split(" ")[1]
 )
 
 st.markdown("---")
 
 # =====================================================
-# RENAME COLUMNS
+# การปรับแต่งหัวคอลัมน์เพื่อแสดงผล
 # =====================================================
 
 rename_columns = {
@@ -171,29 +164,29 @@ rename_columns = {
     "CH4": "CH₄",
     "NO2": "NO₂",
     "PM25": "PM 2.5",
-    "Temp": "Temperature",
-    "Humidity": "Humidity"
+    "Temp": "อุณหภูมิ (°C)",
+    "Humidity": "ความชื้น (%)"
 }
 
 display_df = df.rename(columns=rename_columns)
 
 # =====================================================
-# COLUMN FILTER
+# ตัวกรองข้อมูล (Filter)
 # =====================================================
 
 selected_column = st.selectbox(
-    "เลือกข้อมูลที่ต้องการดู",
-    ["ทั้งหมด", "CO₂", "CH₄", "NO₂", "PM 2.5", "Temperature", "Humidity"]
+    "เลือกประเภทข้อมูลที่ต้องการดู",
+    ["ทั้งหมด", "CO₂", "CH₄", "NO₂", "PM 2.5", "อุณหภูมิ (°C)", "ความชื้น (%)"]
 )
 
 if selected_column != "ทั้งหมด":
     display_df = display_df[["Date", selected_column]]
 
 # =====================================================
-# QUICK STATS
+# สถิติเบื้องต้น (Quick Statistics)
 # =====================================================
 
-st.subheader("📊 Quick Statistics")
+st.subheader("📊 สถิติเบื้องต้นของข้อมูล")
 
 stats_df = display_df.copy()
 
@@ -204,10 +197,10 @@ if len(stats_df.columns) > 0:
     st.dataframe(stats_df.describe(), use_container_width=True)
 
 # =====================================================
-# TABLE
+# ตารางแสดงข้อมูลดิบ (Data Preview)
 # =====================================================
 
-st.subheader("📋 Data Preview")
+st.subheader("📋 ตัวอย่างข้อมูลล่าสุด")
 
 st.dataframe(
     display_df,
@@ -216,7 +209,7 @@ st.dataframe(
 )
 
 # =====================================================
-# DOWNLOAD
+# การดาวน์โหลดข้อมูล (Download Section)
 # =====================================================
 
 st.markdown("---")
@@ -227,7 +220,7 @@ csv = display_df.to_csv(index=False)
 
 with col1:
     st.download_button(
-        label="📥 Download CSV",
+        label="📥 ดาวน์โหลดไฟล์ CSV",
         data=csv,
         file_name="GHG_Dashboard_Data.csv",
         mime="text/csv",
@@ -236,11 +229,10 @@ with col1:
 
 with col2:
     excel_data = display_df.to_csv(index=False).encode("utf-8")
-
     st.download_button(
-        label="📊 Export Excel Compatible",
+        label="📊 ดาวน์โหลดไฟล์สำหรับ Excel",
         data=excel_data,
-        file_name="GHG_Dashboard_Data.xls",
+        file_name="GHG_Dashboard_Data.csv",
         mime="application/vnd.ms-excel",
         use_container_width=True
     )
