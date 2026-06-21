@@ -10,7 +10,7 @@ from Services.api_loader import fetch_data
 # การตั้งค่าหน้าจอ (Page Configuration)
 # =====================================================
 st.set_page_config(
-    page_title="Dashboard Tracking Greenhouse Gases Emission",
+    page_title="Dashboard Tracking GHGs Emission”,
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded"
