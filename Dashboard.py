@@ -78,14 +78,14 @@ st.markdown(
         justify-content: center;
     ">
         <h1 style="margin:0; color:white; font-size: 2.2rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.5px;">
-            Dashboard Tracking
+            🌍 Dashboard Tracking
         </h1>
         <h1 style="margin:2px 0 0 0; color:white; font-size: 2.2rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.5px;">
             Greenhouse Gases Emission
         </h1>
         <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #374151; display: inline-block;">
             <p style="color:#9CA3AF; margin:0; font-size: 1.05rem; font-weight: 400;">
-                🌍 อัปเดตล่าสุด : {latest_str}
+                🕒 อัปเดตล่าสุด : {latest_str}
             </p>
         </div>
     </div>
