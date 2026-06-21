@@ -9,7 +9,6 @@ from Services.api_loader import fetch_data
 # =====================================================
 # การตั้งค่าหน้าจอ (Page Configuration)
 # =====================================================
-
 st.set_page_config(
     page_title="Dashboard Tracking Greenhouse Gases Emission",
     page_icon="🌍",
@@ -20,281 +19,99 @@ st.set_page_config(
 # ตั้งค่ารีเฟรชหน้าจออัตโนมัติทุก 60 วินาที
 st_autorefresh(interval=60000, key="refresh")
 
+# =====================================================
+# SIDEBAR
+# =====================================================
 with st.sidebar:
-    # 1. ส่วนเนื้อหาด้านบน (โลโก้)
     st.image("Assets/logo.png", width=250)
-    
-    # 2. ส่วนท้ายของ Sidebar (Footer)
     st.markdown("""
         <style>
-            [data-testid="stSidebar"] > div:first-child {
-                display: flex;
-                flex-direction: column;
-                height: 90vh;
-            }
-            .sidebar-spacer {
-                flex-grow: 1;
-            }
-            .sidebar-footer {
-                border-top: 1px solid #4B5563;
-                padding-top: 10px;
-                margin-top: auto;
-                font-size: 0.75em;
-                color: #9CA3AF;
-            }
+            [data-testid="stSidebar"] > div:first-child { display: flex; flex-direction: column; height: 90vh; }
+            .sidebar-spacer { flex-grow: 1; }
+            .sidebar-footer { border-top: 1px solid #4B5563; padding-top: 10px; margin-top: auto; font-size: 0.75em; color: #9CA3AF; }
         </style>
-        
         <div class="sidebar-spacer"></div>
-        <div class="sidebar-footer">
-            (C) แผนกวิศวกรรม SBU
-        </div>
+        <div class="sidebar-footer">(C) แผนกวิศวกรรม SBU</div>
     """, unsafe_allow_html=True)
 
+# CSS ปรับแต่งหน้าจอ
 st.markdown("""
 <style>
-.block-container{
-    padding-top:1rem;
-}
-[data-testid="stSidebar"] img{
-    margin-top:-10px;
-    margin-bottom:10px;
-}
-[data-testid="stMetric"]{
-    background:#111827;
-    border:1px solid #374151;
-    border-radius:12px;
-    padding:15px;
-    text-align:center;
-}
-[data-testid="stMetricValue"]{
-    font-size:28px;
-    font-weight:700;
-}
+.block-container { padding-top: 1rem; }
+[data-testid="stMetric"] { background: #111827; border: 1px solid #374151; border-radius: 12px; padding: 15px; text-align: center; }
+[data-testid="stMetricValue"] { font-size: 28px; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
 # =====================================================
-# การโหลดข้อมูล (Data Loading)
+# LOAD & PREPARE DATA
 # =====================================================
-
 df = load_data()
-
 if df.empty:
     df = fetch_data()
     save_data(df)
 
-df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+if df.empty:
+    st.error("ไม่พบข้อมูลในระบบ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล")
+    st.stop()
 
-df = (
-    df.dropna(subset=["Date"])
-    .sort_values("Date")
-    .reset_index(drop=True)
-)
+df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
 
 latest = df.iloc[-1]
 prev = df.iloc[-2] if len(df) > 1 else latest
-
 thai_date = latest["Date"].strftime("%d/%m/%y")
 
-# การตั้งค่าการแจ้งเตือน (Alert System)
-alerts = []
-
-if latest["CO2"] > 500:
-    alerts.append("🔴 ระดับ CO₂ สูงเกินเกณฑ์")
-
-if latest["PM25"] > 35:
-    alerts.append("⚠ แจ้งเตือนค่า PM2.5")
-
-if latest["Temp"] > 38:
-    alerts.append("🌡 อุณหภูมิสูงเกินเกณฑ์")
-
 # =====================================================
-# ส่วนหัว (Header)
+# HEADER & ALERTS
 # =====================================================
-
-st.markdown(
-    f"""
-    <div style="
-        background:#111827;
-        padding:20px;
-        border-radius:15px;
-        border:1px solid #374151;
-        margin-bottom:10px;
-    ">
+st.markdown(f"""
+    <div style="background:#111827; padding:20px; border-radius:15px; border:1px solid #374151; margin-bottom:10px;">
         <h1>🌍 แดชบอร์ดติดตามก๊าซเรือนกระจก</h1>
         <p>อัปเดตล่าสุด : {thai_date}</p>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
+
+alerts = []
+if latest.get("CO2", 0) > 500: alerts.append("🔴 ระดับ CO₂ สูงเกินเกณฑ์")
+if latest.get("PM25", 0) > 35: alerts.append("⚠ แจ้งเตือนค่า PM2.5")
+if latest.get("Temp", 0) > 38: alerts.append("🌡 อุณหภูมิสูงเกินเกณฑ์")
 
 # =====================================================
 # ฟังก์ชันคำนวณ KPI
 # =====================================================
-
 def kpi(col, symbol, name=None):
     now = pd.to_numeric(latest.get(col, 0), errors="coerce")
     old = pd.to_numeric(prev.get(col, 0), errors="coerce")
-
-    now = 0 if pd.isna(now) else float(now)
-    old = 0 if pd.isna(old) else float(old)
-
+    now, old = (0.0 if pd.isna(now) else float(now)), (0.0 if pd.isna(old) else float(old))
     diff = now - old
     percent = ((diff / old) * 100 if old != 0 else 0)
-
     arrow = ("↑" if diff > 0 else "↓" if diff < 0 else "→")
-    label = f"{symbol} ({name})" if name else symbol
-
-    return now, f"{arrow} {percent:.1f}%", label
+    return now, f"{arrow} {percent:.1f}%", f"{symbol} ({name})" if name else symbol
     
 # =====================================================
-# แถบแสดงผล KPI (KPI Cards)
+# KPI CARDS
 # =====================================================
-
 c1, c2, c3, c4, c5, c6 = st.columns(6)
+metrics = [("CO2", "CO₂", "Carbon Dioxide"), ("CH4", "CH₄", "Methane"), 
+           ("NO2", "NO₂", "Nitrogen Dioxide"), ("PM25", "PM2.5", None), 
+           ("Temp", "อุณหภูมิ", None), ("Humidity", "ความชื้น", None)]
 
-v, d, label = kpi("CO2", "CO₂", "Carbon Dioxide")
-c1.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("CH4", "CH₄", "Methane")
-c2.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("NO2", "NO₂", "Nitrogen Dioxide")
-c3.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("PM25", "PM2.5")
-c4.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("Temp", "อุณหภูมิ")
-c5.metric(label, f"{v:.2f}", d)
-
-v, d, label = kpi("Humidity", "ความชื้น")
-c6.metric(label, f"{v:.2f}", d)
+for i, (col, sym, name) in enumerate(metrics):
+    val, diff, label = kpi(col, sym, name)
+    [c1, c2, c3, c4, c5, c6][i].metric(label, f"{val:.2f}", diff)
 
 if alerts:
     cols = st.columns(len(alerts))
     for i, alert in enumerate(alerts):
-        if "🔴" in alert:
-            cols[i].error(alert)
-        else:
-            cols[i].warning(alert)
+        cols[i].error(alert) if "🔴" in alert else cols[i].warning(alert)
 else:
     st.success("🟢 สภาพแวดล้อมปกติ")
 
 st.markdown("---")
 
 # =====================================================
-# ตัวกรองช่วงเวลา (Period Filter)
+# GRAPH SECTION
 # =====================================================
-
-period = st.selectbox(
-    "เลือกช่วงเวลาการแสดงผล",
-    ["รายวัน", "รายสัปดาห์", "รายเดือน", "รายปี"]
-)
-
-if period == "รายวัน":
-    df_plot = df.tail(24)
-elif period == "รายสัปดาห์":
-    df_plot = df.tail(24 * 7)
-elif period == "รายเดือน":
-    df_plot = df.tail(24 * 30)
-else:
-    df_plot = df
-
-# =====================================================
-# โครงสร้างหลัก (Main Layout)
-# =====================================================
-
-center, right = st.columns([4, 1.2])
-
-# =====================================================
-# ส่วนแสดงกราฟ (Graph Section) - ปรับปรุงใหม่
-# =====================================================
-
-with center:
-    st.subheader("📈 กราฟแสดงข้อมูล")
-
-    graph_mode = st.radio(
-        "โหมดการแสดงผลกราฟ",
-        ["ค่าจริง (Actual)", "โหมดเปรียบเทียบ (Comparison)"],
-        horizontal=True
-    )
-
-    options = {
-        "CO₂ (Carbon Dioxide)": "CO2",
-        "CH₄ (Methane)": "CH4",
-        "NO₂ (Nitrogen Dioxide)": "NO2",
-        "PM 2.5 (Particulate Matter)": "PM25",
-        "อุณหภูมิ (Temperature)": "Temp",
-        "ความชื้น (Humidity)": "Humidity"
-    }
-
-    # 1. การเลือกข้อมูล
-    if graph_mode == "ค่าจริง (Actual)":
-        selected_ui = st.selectbox("เลือกข้อมูลที่ต้องการแสดง", list(options.keys()))
-        selected = [options[selected_ui]]
-    else:
-        selected_ui = st.multiselect("เลือกข้อมูลที่ต้องการเปรียบเทียบ", list(options.keys()), default=[list(options.keys())[0]])
-        selected = [options[x] for x in selected_ui]
-        
-        if not selected:
-            st.warning("กรุณาเลือกข้อมูลอย่างน้อย 1 รายการ")
-            st.stop()
-
-    # 2. เตรียมข้อมูล (Data Preparation)
-    plot_df = df_plot.copy()
-    
-    # แปลงทุกคอลัมน์ที่เลือกให้เป็นตัวเลข เพื่อป้องกัน Error ในการวาดกราฟ
-    for col in selected:
-        plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
-
-    # 3. โหมดเปรียบเทียบ: ปรับสเกลข้อมูลให้แสดงผลรวมกันได้
-    if graph_mode == "โหมดเปรียบเทียบ (Comparison)":
-        scale = {"CO2": 1000, "CH4": 100, "NO2": 100, "PM25": 100, "Temp": 50, "Humidity": 100}
-        for col in selected:
-            plot_df[col] = (plot_df[col] / scale.get(col, 1)) * 100
-
-    # 4. สร้างกราฟ
-    fig = px.line(
-        plot_df,
-        x="Date",
-        y=selected,
-        markers=True,
-        template="plotly_dark"
-    )
-
-    # 5. ปรับแต่งสีและสไตล์
-    color_map = {
-        "CO2": "#DC2626", "CH4": "#F97316", "NO2": "#7C3AED",
-        "PM25": "#EAB308", "Temp": "#22C55E", "Humidity": "#2563EB"
-    }
-
-    for trace in fig.data:
-        trace.line.color = color_map.get(trace.name, "#FFFFFF")
-        trace.line.width = 3
-
-    fig.update_layout(
-        height=550,
-        hovermode="x unified",
-        legend_title_text="ข้อมูล"
-    )
-
-    # 6. แสดงผล
-    st.plotly_chart(fig, use_container_width=True)
-
-# =====================================================
-# แผงสถานะระบบ (Status Panel)
-# =====================================================
-
-with right:
-    st.subheader("📊 สถานะระบบ")
-    # ... (Logic ตรวจสอบสถานะคงเดิม) ...
-    if df.empty:
-        st.error("🔴 ระบบผิดปกติ: ไม่มีข้อมูล")
-    elif len(df) < 2:
-        st.error("🔴 ระบบผิดปกติ: ข้อมูลไม่เพียงพอ")
-    else:
-        st.success("🟢 ระบบออนไลน์ (Normal)")
-        st.metric("จำนวนรายการ", len(df))
-        st.metric("อัปเดตล่าสุดเมื่อ", latest["Date"].strftime("%H:%M"))
-        st.metric("สถานะข้อมูล", "ปกติ")
+period = st.selectbox("เลือกช่วงเวลาการแสดงผล", ["รายวัน", "รายสัปดาห์", "รายเดือน", "รายปี"])
+df_plot = df.tail(24) if period == "รายวัน" else df.tail(24*7) if period == "รายสัปดาห์" else df.
