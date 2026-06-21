@@ -69,22 +69,22 @@ st.markdown(
     f"""
     <div style="
         background:linear-gradient(135deg,#111827,#1F2937); 
-        padding: 40px 30px; 
-        border-radius: 20px; 
+        padding: 25px 20px; 
+        border-radius: 15px; 
         border: 1px solid #374151; 
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         display: flex;
         flex-direction: column;
         justify-content: center;
     ">
-        <h1 style="margin:0; color:white; font-size: 3rem; line-height: 1.1; font-weight: 800;">
+        <h1 style="margin:0; color:white; font-size: 2rem; line-height: 1.1; font-weight: 700;">
             Dashboard Tracking
         </h1>
-        <h1 style="margin:5px 0 0 0; color:white; font-size: 3rem; line-height: 1.1; font-weight: 800;">
+        <h1 style="margin:5px 0 0 0; color:white; font-size: 2rem; line-height: 1.1; font-weight: 700;">
             Greenhouse Gases Emission
         </h1>
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #4B5563; display: inline-block;">
-            <p style="color:#9CA3AF; margin:0; font-size: 1.2rem; font-weight: 400;">
+        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #4B5563; display: inline-block;">
+            <p style="color:#9CA3AF; margin:0; font-size: 1rem; font-weight: 400;">
                 🌍 อัปเดตล่าสุด : {latest_str}
             </p>
         </div>
