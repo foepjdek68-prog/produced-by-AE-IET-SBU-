@@ -21,29 +21,27 @@ st.set_page_config(
 st_autorefresh(interval=60000, key="refresh")
 
 with st.sidebar:
-    st.image(
-        "Assets/logo.png",
-        width=250
-    )
-    st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+    st.image("Assets/logo.png", width=250)
+    
+    # ... ส่วนของเนื้อหาเมนูอื่นๆ ของคุณ ...
 
+    # ส่วน Footer ที่ปรับระยะให้เหมาะสม
     st.markdown("""
     <style>
-        /* จัดตำแหน่ง container ของ footer ให้ล่างสุดของ sidebar */
         .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            width: 85%;
-            text-align: right;
+            margin-top: auto; /* ดันให้อยู่ล่างสุดของพื้นที่ที่เหลือ */
+            padding-top: 20px;
+            text-align: center;
         }
         .sidebar-footer hr {
-            margin: 0px 0px 5px 0px;
+            margin: 0px auto 10px auto;
             border: 0;
-            border-top: 1px solid #ccc;
+            border-top: 1px solid #4B5563; /* ใช้สีเทาเข้มเพื่อให้ดูพรีเมียม */
+            width: 90%;
         }
         .sidebar-footer p {
             font-size: 0.75em;
-            color: gray;
+            color: #9CA3AF;
             margin: 0;
         }
     </style>
@@ -53,6 +51,8 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     
+
+
 st.markdown("""
 <style>
 
