@@ -122,7 +122,7 @@ st.html(f"""
     margin-bottom:20px;
 ">
     <h1 style="margin:0;color:white;">
-        📊 แดชบอร์ดติดตามก๊าซเรือนกระจก (GHG)
+        📊 Dashboard Tracking Greenhouse Gases Emission
     </h1>
     <p style="color:white;">
         อัปเดตล่าสุด : {latest_date}
