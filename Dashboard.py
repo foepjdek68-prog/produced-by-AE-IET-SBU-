@@ -31,7 +31,7 @@ with st.sidebar:
             .sidebar-footer { border-top: 1px solid #4B5563; padding-top: 10px; margin-top: auto; font-size: 0.75em; color: #9CA3AF; }
         </style>
         <div class="sidebar-spacer"></div>
-        <div class="sidebar-footer">(C) แผนกวิศวกรรม SBU</div>
+        <div class="sidebar-footer">(C) Dept. Engineering SBU </div>
     """, unsafe_allow_html=True)
 
 # CSS ปรับแต่งหน้าจอ
@@ -67,7 +67,9 @@ thai_date = latest["Date"].strftime("%d/%m/%y")
 # =====================================================
 st.markdown(f"""
     <div style="background:#111827; padding:20px; border-radius:15px; border:1px solid #374151; margin-bottom:10px;">
-        <h1>🌍 แดชบอร์ดติดตามก๊าซเรือนกระจก</h1>
+        <h1>🌍 Dashboard Tracking </h1>
+        <h1> Greenhouse Gases Emission </h1>
+        <h1> ระบบรายงานและติดตามก๊าซเรือนกระจกอัจฉริยะ </h1>
         <p>อัปเดตล่าสุด : {thai_date}</p>
     </div>
 """, unsafe_allow_html=True)
