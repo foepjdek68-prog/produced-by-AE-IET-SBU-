@@ -19,9 +19,37 @@ st.set_page_config(
 # =====================================================
 
 with st.sidebar:
-    st.image("Assets/logo.png", width=280)
-    st.markdown("<br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-    st.markdown("---")
+    # 1. ส่วนเนื้อหาด้านบน (รูปโลโก้ + เมนู)
+    st.image("Assets/logo.png", width=250)
+    # ใส่เมนูอื่นๆ ของคุณตรงนี้...
+
+    # 2. ส่วน Footer ที่จะบังคับให้อยู่ล่างสุด
+    st.markdown("""
+        <style>
+            /* บังคับให้ Sidebar เป็น Flexbox */
+            [data-testid="stSidebar"] > div:first-child {
+                display: flex;
+                flex-direction: column;
+                height: 90vh; /* ความสูงเกือบเต็มหน้าจอ */
+            }
+            /* ส่วนนี้จะทำหน้าที่ดัน Footer ลงไปล่างสุด */
+            .sidebar-spacer {
+                flex-grow: 1;
+            }
+            .sidebar-footer {
+                border-top: 1px solid #4B5563;
+                padding-top: 10px;
+                margin-top: auto;
+                font-size: 0.75em;
+                color: #9CA3AF;
+            }
+        </style>
+        
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-footer">
+            (C) Dept. Engineering SBU
+        </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("""
 <style>
