@@ -208,7 +208,7 @@ else:
 center, right = st.columns([4, 1.2])
 
 # =====================================================
-# ส่วนแสดงกราฟ (Graph Section)
+# ส่วนแสดงกราฟ (Graph Section) - ปรับปรุงใหม่
 # =====================================================
 
 with center:
@@ -229,20 +229,57 @@ with center:
         "ความชื้น (Humidity)": "Humidity"
     }
 
-    # (ส่วนของ logic การเลือกข้อมูล... เหมือนเดิมแต่เปลี่ยนชื่อ UI)
+    # 1. การเลือกข้อมูล
     if graph_mode == "ค่าจริง (Actual)":
         selected_ui = st.selectbox("เลือกข้อมูลที่ต้องการแสดง", list(options.keys()))
         selected = [options[selected_ui]]
-        legend_map = {v: k for k, v in options.items()}
     else:
         selected_ui = st.multiselect("เลือกข้อมูลที่ต้องการเปรียบเทียบ", list(options.keys()), default=[list(options.keys())[0]])
         selected = [options[x] for x in selected_ui]
+        
         if not selected:
             st.warning("กรุณาเลือกข้อมูลอย่างน้อย 1 รายการ")
             st.stop()
-        legend_map = {v: k for k, v in options.items()}
 
-    # ... (ส่วนการสร้างกราฟ Plotly คงเดิม) ...
+    # 2. เตรียมข้อมูล (Data Preparation)
+    plot_df = df_plot.copy()
+    
+    # แปลงทุกคอลัมน์ที่เลือกให้เป็นตัวเลข เพื่อป้องกัน Error ในการวาดกราฟ
+    for col in selected:
+        plot_df[col] = pd.to_numeric(plot_df[col], errors="coerce").fillna(0)
+
+    # 3. โหมดเปรียบเทียบ: ปรับสเกลข้อมูลให้แสดงผลรวมกันได้
+    if graph_mode == "โหมดเปรียบเทียบ (Comparison)":
+        scale = {"CO2": 1000, "CH4": 100, "NO2": 100, "PM25": 100, "Temp": 50, "Humidity": 100}
+        for col in selected:
+            plot_df[col] = (plot_df[col] / scale.get(col, 1)) * 100
+
+    # 4. สร้างกราฟ
+    fig = px.line(
+        plot_df,
+        x="Date",
+        y=selected,
+        markers=True,
+        template="plotly_dark"
+    )
+
+    # 5. ปรับแต่งสีและสไตล์
+    color_map = {
+        "CO2": "#DC2626", "CH4": "#F97316", "NO2": "#7C3AED",
+        "PM25": "#EAB308", "Temp": "#22C55E", "Humidity": "#2563EB"
+    }
+
+    for trace in fig.data:
+        trace.line.color = color_map.get(trace.name, "#FFFFFF")
+        trace.line.width = 3
+
+    fig.update_layout(
+        height=550,
+        hovermode="x unified",
+        legend_title_text="ข้อมูล"
+    )
+
+    # 6. แสดงผล
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
