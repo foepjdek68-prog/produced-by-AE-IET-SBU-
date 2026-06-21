@@ -60,7 +60,7 @@ df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
 
 latest = df.iloc[-1]
 prev = df.iloc[-2] if len(df) > 1 else latest
-thai_date = latest["Date"].strftime("%d/%m/%y")
+latest_str = latest["Date"].strftime("%d/%m/%Y %H:%M")
 
 # =====================================================
 # HEADER & ALERTS
@@ -161,7 +161,6 @@ with center:
     for trace in fig.data:
         trace.line.color = color_map.get(trace.name, "#FFFFFF")
         trace.line.width = 3
-        # แปลงชื่อคีย์เป็นชื่อภาษาไทยที่แสดงบน Legend
         rev_map = {v: k for k, v in options.items()}
         trace.name = rev_map.get(trace.name, trace.name)
 
