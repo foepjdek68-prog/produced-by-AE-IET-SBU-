@@ -29,8 +29,12 @@ with st.sidebar:
     
     st.markdown("<br><br><br><br><br><br><br><br><br><br>",
                 unsafe_allow_html=True)
-    st.markdown(" (C) Dept. Engineering SBU")
-    st.markdown("---")
+    st.markdown("""
+    <div style="margin-top: 50px; font-size: 0.8em; color: gray; margin-bottom: 0px;">
+        (C) Dept. Engineering SBU
+    </div>
+    <hr style="margin-top: 0px; margin-bottom: 20px;">
+""", unsafe_allow_html=True)
     
     
 
