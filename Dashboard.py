@@ -29,7 +29,7 @@ with st.sidebar:
     
     st.markdown("<br><br><br><br><br><br><br><br><br><br><br>",
                 unsafe_allow_html=True)
-    
+    st.markdown(" (C) Dept. Engineering SBU")
     st.markdown("---")
     
     
