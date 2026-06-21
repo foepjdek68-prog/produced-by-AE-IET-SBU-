@@ -67,7 +67,8 @@ thai_date = latest["Date"].strftime("%d/%m/%y")
 # =====================================================
 st.markdown(f"""
     <div style="background:#111827; padding:20px; border-radius:15px; border:1px solid #374151; margin-bottom:10px;">
-        <h1>🌍 Dashboard Tracking Greenhouse Gases Emission </h1>
+        <h1>🌍 Dashboard Tracking </h1>
+        <h1> Greenhouse Gases Emission </h1>
         <p>อัปเดตล่าสุด : {thai_date}</p>
     </div>
 """, unsafe_allow_html=True)
