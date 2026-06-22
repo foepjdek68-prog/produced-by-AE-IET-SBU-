@@ -1,7 +1,8 @@
 [theme]
+
 primaryColor = "#38bdf8"
 
-backgroundColor = "#030712"
+backgroundColor = "#020617"
 
 secondaryBackgroundColor = "#0f172a"
 
@@ -9,13 +10,21 @@ textColor = "#f8fafc"
 
 font = "sans serif"
 
+
 [server]
+
 headless = true
-enableCORS = false
-enableXsrfProtection = false
+
+enableCORS = true
+
+enableXsrfProtection = true
+
 
 [client]
+
 toolbarMode = "minimal"
 
+
 [browser]
+
 gatherUsageStats = false
