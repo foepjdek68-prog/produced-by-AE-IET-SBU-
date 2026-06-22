@@ -58,58 +58,88 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 st.markdown("""
+
 <style>
 
-/* 50% */
+/* =====================================================
+   MAIN BACKGROUND
+===================================================== */
 
-.stApp{
-    background:#030712;
+.stApp {
+    background: #030712;
 }
 
-.block-container{
-    padding-top:1rem;
+.block-container {
+    padding-top: 1rem;
 }
 
-/* 40% */
 
-[data-testid="stSidebar"]{
-    background:#1e3a8a !important;
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+[data-testid="stSidebar"] {
+    background: #3b82f6 !important;
 }
 
-[data-testid="stSidebar"] *{
-    color:#f8fafc !important;
+[data-testid="stSidebar"] * {
+    color: #ffffff !important;
 }
 
-/* KPI */
 
-[data-testid="stMetric"]{
-    background:#0f172a !important;
-    border:1px solid #38bdf8 !important;
-    border-radius:12px !important;
-    padding:15px !important;
+/* =====================================================
+   KPI CARDS
+===================================================== */
+
+[data-testid="stMetric"] {
+    background: #0f172a !important;
+    border: 1px solid #60a5fa !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    text-align: center;
 }
 
-/* KPI LABEL */
-
-[data-testid="stMetricLabel"]{
-    color:#cbd5e1 !important;
+[data-testid="stMetricLabel"] {
+    color: #cbd5e1 !important;
+    font-weight: 600 !important;
 }
 
-/* KPI VALUE */
-
-[data-testid="stMetricValue"]{
-    color:#ffffff !important;
-    font-weight:700 !important;
+[data-testid="stMetricValue"] {
+    color: #ffffff !important;
+    font-weight: 700 !important;
 }
 
-/* KPI DELTA */
+[data-testid="stMetricDelta"] {
+    color: #22c55e !important;
+}
 
-[data-testid="stMetricDelta"]{
-    color:#22c55e !important;
+
+/* =====================================================
+   INPUT COMPONENTS
+===================================================== */
+
+.stSelectbox > div > div {
+    background: #111827 !important;
+    color: #ffffff !important;
+}
+
+.stRadio label {
+    color: #ffffff !important;
+}
+
+
+/* =====================================================
+   DIVIDER
+===================================================== */
+
+hr {
+    border-color: #334155 !important;
 }
 
 </style>
+
 """, unsafe_allow_html=True)
+
 # =====================================================
 # HEADER
 # =====================================================
