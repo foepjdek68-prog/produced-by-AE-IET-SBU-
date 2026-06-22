@@ -60,7 +60,7 @@ with st.sidebar:
 st.markdown("""
 <style>
 
-/* Main Background */
+/* พื้นหลังหลัก */
 .stApp{
     background:#030712;
 }
@@ -71,63 +71,41 @@ st.markdown("""
 
 /* Sidebar */
 [data-testid="stSidebar"]{
-    background:#dbeafe !important;
-    border-right:1px solid #bfdbfe;
+    background:#1e293b !important;
 }
 
-/* Sidebar Text */
+/* ตัวหนังสือ Sidebar */
 [data-testid="stSidebar"] *{
-    color:#1e293b !important;
+    color:#f8fafc !important;
 }
 
-/* Logo */
-[data-testid="stSidebar"] img{
-    filter:
-        brightness(1.15)
-        contrast(1.15)
-        drop-shadow(0 0 8px rgba(255,255,255,.6));
-}
-
-/* Menu Hover */
-[data-testid="stSidebarNav"] a:hover{
-    background:#bfdbfe !important;
-    border-radius:10px;
-}
-
-/* Menu Selected */
-[data-testid="stSidebarNav"] a[aria-current="page"]{
-    background:#60a5fa !important;
-    color:white !important;
-    border-radius:10px;
-}
-
-/* KPI Card */
+/* KPI */
 [data-testid="stMetric"]{
     background:#081226 !important;
     border:1px solid #334155 !important;
     border-radius:12px !important;
     padding:15px !important;
-    text-align:center;
 }
 
-/* KPI Title */
+/* ชื่อ KPI */
 [data-testid="stMetricLabel"]{
     color:#cbd5e1 !important;
 }
 
-/* KPI Number */
+/* ตัวเลข KPI */
 [data-testid="stMetricValue"]{
     color:#ffffff !important;
     font-weight:700 !important;
 }
 
-/* KPI Delta */
+/* ค่าเพิ่ม/ลด */
 [data-testid="stMetricDelta"]{
     color:#22c55e !important;
 }
 
 </style>
 """, unsafe_allow_html=True)
+
 # =====================================================
 # HEADER
 # =====================================================
