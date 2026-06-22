@@ -46,7 +46,13 @@ latest_str = latest["Date"].strftime("%d/%m/%Y %H:%M:%S")
 # SIDEBAR & CSS
 # =====================================================
 with st.sidebar:
+    # เพิ่ม container ล้อมรอบโลโก้เพื่อขับสีม่วงให้เด่นขึ้น
+    st.markdown("""
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+        """, unsafe_allow_html=True)
     st.image("Assets/logo.png", width=250)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
     st.markdown("""
         <style>
             [data-testid="stSidebar"] > div:first-child { display: flex; flex-direction: column; height: 90vh; }
@@ -97,12 +103,12 @@ st.markdown("""
 ===================================================== */
 
 section[data-testid="stSidebar"] {
-    background: #0f172a !important;
+    background: #1e293b !important;
     border-right: 1px solid #334155;
 }
 
 section[data-testid="stSidebar"] * {
-    color: #ffffff !important;
+    color: #e2e8f0 !important;
 }
 
 /* =====================================================
