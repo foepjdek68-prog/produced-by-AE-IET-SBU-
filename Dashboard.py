@@ -59,11 +59,75 @@ with st.sidebar:
 
 st.markdown("""
 <style>
-.block-container { padding-top: 1rem; }
-[data-testid="stMetric"] { background: #111827; border: 1px solid #374151; border-radius: 12px; padding: 15px; text-align: center; }
+
+/* Main Background */
+.stApp{
+    background:#030712;
+}
+
+.block-container{
+    padding-top:1rem;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"]{
+    background:#dbeafe !important;
+    border-right:1px solid #bfdbfe;
+}
+
+/* Sidebar Text */
+[data-testid="stSidebar"] *{
+    color:#1e293b !important;
+}
+
+/* Logo */
+[data-testid="stSidebar"] img{
+    filter:
+        brightness(1.15)
+        contrast(1.15)
+        drop-shadow(0 0 8px rgba(255,255,255,.6));
+}
+
+/* Menu Hover */
+[data-testid="stSidebarNav"] a:hover{
+    background:#bfdbfe !important;
+    border-radius:10px;
+}
+
+/* Menu Selected */
+[data-testid="stSidebarNav"] a[aria-current="page"]{
+    background:#60a5fa !important;
+    color:white !important;
+    border-radius:10px;
+}
+
+/* KPI Card */
+[data-testid="stMetric"]{
+    background:#081226 !important;
+    border:1px solid #334155 !important;
+    border-radius:12px !important;
+    padding:15px !important;
+    text-align:center;
+}
+
+/* KPI Title */
+[data-testid="stMetricLabel"]{
+    color:#cbd5e1 !important;
+}
+
+/* KPI Number */
+[data-testid="stMetricValue"]{
+    color:#ffffff !important;
+    font-weight:700 !important;
+}
+
+/* KPI Delta */
+[data-testid="stMetricDelta"]{
+    color:#22c55e !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
-
 # =====================================================
 # HEADER
 # =====================================================
