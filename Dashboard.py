@@ -62,7 +62,7 @@ st.markdown("""
 
 /* Main Background */
 .stApp{
-    background: #172554;
+    background: #1e293b;
 }
 
 .block-container{
