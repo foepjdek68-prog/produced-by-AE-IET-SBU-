@@ -121,13 +121,29 @@ else:
 # GRAPH SECTION
 # =====================================================
 period = st.selectbox("เลือกช่วงเวลาการแสดงผล", ["รายวัน", "รายสัปดาห์", "รายเดือน", "รายปี"])
-df_plot = df.tail(24) if period == "รายวัน" else df.tail(24*7) if period == "รายสัปดาห์" else df.tail(24*30) if period == "รายเดือน" else df
+
+if period == "รายวัน":
+    df_plot = df.tail(24)
+elif period == "รายสัปดาห์":
+    df_plot = df.tail(24 * 7)
+elif period == "รายเดือน":
+    df_plot = df.tail(24 * 30)
+else:
+    df_plot = df
 
 center, right = st.columns([4, 1.2])
+
 with center:
     st.subheader("📈 กราฟแสดงข้อมูล")
     graph_mode = st.radio("โหมดการแสดงผล", ["ค่าจริง (Actual)", "โหมดเปรียบเทียบ (Comparison)"], horizontal=True)
-    options = {"CO₂ (Carbon Dioxide)":"CO2", "CH₄ (Methane)":"CH4", "NO₂ (Nitrogen Dioxide)":"NO2", "PM 2.5 (Particulate Matter)":"PM25", "อุณหภูมิ (Temperature)":"Temp", "ความชื้น (Humidity)":"Humidity"}
+    options = {
+        "CO₂ (Carbon Dioxide)": "CO2", 
+        "CH₄ (Methane)": "CH4", 
+        "NO₂ (Nitrogen Dioxide)": "NO2", 
+        "PM 2.5 (Particulate Matter)": "PM25", 
+        "อุณหภูมิ (Temperature)": "Temp", 
+        "ความชื้น (Humidity)": "Humidity"
+    }
     
     if graph_mode == "ค่าจริง (Actual)":
         sel = st.selectbox("เลือกข้อมูลที่ต้องการแสดง", list(options.keys()))
@@ -135,14 +151,18 @@ with center:
     else:
         sel = st.multiselect("เลือกข้อมูลที่ต้องการเปรียบเทียบ", list(options.keys()), default=[list(options.keys())[0], list(options.keys())[1]])
         selected = [options[x] for x in sel]
-        if not selected: st.stop()
+        if not selected: 
+            st.warning("กรุณาเลือกข้อมูลอย่างน้อย 1 รายการ")
+            st.stop()
 
     plot_df = df_plot.copy()
     if graph_mode == "โหมดเปรียบเทียบ (Comparison)":
         for col in selected:
             s = pd.to_numeric(plot_df[col], errors="coerce")
-            if s.max() - s.min() != 0: plot_df[col] = (s - s.min()) / (s.max() - s.min()) * 100
-            else: plot_df[col] = 0
+            if s.max() - s.min() != 0: 
+                plot_df[col] = (s - s.min()) / (s.max() - s.min()) * 100
+            else: 
+                plot_df[col] = 0
 
     fig = px.line(plot_df, x="Date", y=selected, markers=True, template="plotly_dark")
     fig.update_layout(height=550, hovermode="x unified", paper_bgcolor="#030712", plot_bgcolor="#030712")
