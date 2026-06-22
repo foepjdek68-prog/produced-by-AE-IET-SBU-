@@ -67,16 +67,54 @@ st.markdown("""
 # =====================================================
 # HEADER
 # =====================================================
-st.markdown(
-    f"""
-    <div style="background:linear-gradient(135deg,#111827,#1F2937); padding: 20px 25px; border-radius: 12px; border: 1px solid #374151; margin-bottom: 20px;">
-        <h1 style="margin:0; color:white; font-size: 2.2rem;">🌍 Dashboard Tracking Greenhouse Gases Emission</h1>
-        <div style="margin-top: 12px; border-top: 1px solid #374151; padding-top: 8px;">
-            <p style="color:#9CA3AF; margin:0;">🕒 อัปเดตล่าสุด : {latest_str}</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True
-)
+st.markdown("""
+<style>
+
+/* พื้นหลังหลัก */
+.stApp{
+    background:#030712;
+}
+
+.block-container{
+    padding-top:1rem;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"]{
+    background:#334155 !important;
+}
+
+/* ตัวหนังสือ Sidebar */
+[data-testid="stSidebar"] *{
+    color:#f8fafc !important;
+}
+
+/* KPI */
+[data-testid="stMetric"]{
+    background:#081226 !important;
+    border:1px solid #334155 !important;
+    border-radius:12px !important;
+    padding:15px !important;
+}
+
+/* ชื่อ KPI */
+[data-testid="stMetricLabel"]{
+    color:#cbd5e1 !important;
+}
+
+/* ตัวเลข KPI */
+[data-testid="stMetricValue"]{
+    color:#ffffff !important;
+    font-weight:700 !important;
+}
+
+/* ค่าเพิ่ม/ลด */
+[data-testid="stMetricDelta"]{
+    color:#22c55e !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # =====================================================
 # ALERTS & KPI
