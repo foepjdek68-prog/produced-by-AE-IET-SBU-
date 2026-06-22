@@ -1,7 +1,12 @@
 [theme]
 primaryColor = "#22d3ee"
 
-backgroundColor = "#081226"
+background: linear-gradient(
+    180deg,
+    #dbeafe 0%,
+    #bfdbfe 50%,
+    #93c5fd 100%
+);
 secondaryBackgroundColor = "#16213e"
 
 textColor = "#f8fafc"
