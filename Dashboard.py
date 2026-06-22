@@ -39,9 +39,13 @@ def get_data():
         save_data(df)
 
     # 3. clean data
-    if not df.empty and "Date" in df.columns:
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        df = df.dropna(subset=["Date"])
+    if not fresh_df.empty:
+
+    save_data(
+        fresh_df.tail(1)
+    )
+
+    df = load_data()
         df = df.sort_values("Date").reset_index(drop=True)
 
     return df
