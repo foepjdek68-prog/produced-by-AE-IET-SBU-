@@ -57,8 +57,27 @@ with st.sidebar:
         <div class="sidebar-footer">(C) Dept. Engineering SBU </div>
     """, unsafe_allow_html=True)
 
-st.markdown("""
+st.markdown(
+    f"""
+    <div style="
+        background:linear-gradient(135deg,#0f172a,#1e293b);
+        padding:20px;
+        border-radius:12px;
+        border:1px solid #334155;
+        margin-bottom:20px;
+    ">
+        <h1 style="margin:0;color:white;">
+            🌍 Dashboard Tracking Greenhouse Gases Emission
+        </h1>
+        <p style="margin-top:8px;color:#cbd5e1;">
+            🕒 อัปเดตล่าสุด : {latest_str}
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
+st.markdown("""
 <style>
 
 /* =====================================================
@@ -73,19 +92,17 @@ st.markdown("""
     padding-top: 1rem;
 }
 
-
 /* =====================================================
    SIDEBAR
 ===================================================== */
 
-[data-testid="stSidebar"] {
-    background: #3b82f6 !important;
+section[data-testid="stSidebar"] {
+    background: #60a5fa !important;
 }
 
-[data-testid="stSidebar"] * {
+section[data-testid="stSidebar"] * {
     color: #ffffff !important;
 }
-
 
 /* =====================================================
    KPI CARDS
@@ -113,7 +130,6 @@ st.markdown("""
     color: #22c55e !important;
 }
 
-
 /* =====================================================
    INPUT COMPONENTS
 ===================================================== */
@@ -123,10 +139,14 @@ st.markdown("""
     color: #ffffff !important;
 }
 
-.stRadio label {
+.stMultiSelect > div > div {
+    background: #111827 !important;
     color: #ffffff !important;
 }
 
+.stRadio label {
+    color: #ffffff !important;
+}
 
 /* =====================================================
    DIVIDER
@@ -134,59 +154,6 @@ st.markdown("""
 
 hr {
     border-color: #334155 !important;
-}
-
-</style>
-
-""", unsafe_allow_html=True)
-
-# =====================================================
-# HEADER
-# =====================================================
-st.markdown("""
-<style>
-
-/* พื้นหลังหลัก */
-.stApp{
-    background:#030712;
-}
-
-.block-container{
-    padding-top:1rem;
-}
-
-/* Sidebar */
-[data-testid="stSidebar"]{
-    background:#334155 !important;
-}
-
-/* ตัวหนังสือ Sidebar */
-[data-testid="stSidebar"] *{
-    color:#f8fafc !important;
-}
-
-/* KPI */
-[data-testid="stMetric"]{
-    background:#081226 !important;
-    border:1px solid #334155 !important;
-    border-radius:12px !important;
-    padding:15px !important;
-}
-
-/* ชื่อ KPI */
-[data-testid="stMetricLabel"]{
-    color:#cbd5e1 !important;
-}
-
-/* ตัวเลข KPI */
-[data-testid="stMetricValue"]{
-    color:#ffffff !important;
-    font-weight:700 !important;
-}
-
-/* ค่าเพิ่ม/ลด */
-[data-testid="stMetricDelta"]{
-    color:#22c55e !important;
 }
 
 </style>
@@ -268,7 +235,14 @@ with center:
         rev_map = {v: k for k, v in options.items()}
         trace.name = rev_map.get(trace.name, trace.name)
 
-    fig.update_layout(height=550, hovermode="x unified", legend_title_text="")
+    fig.update_layout(
+    height=550,
+    hovermode="x unified",
+    legend_title_text="",
+    paper_bgcolor="#030712",
+    plot_bgcolor="#030712",
+    font=dict(color="white")
+)
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
