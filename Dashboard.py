@@ -59,11 +59,57 @@ with st.sidebar:
 
 st.markdown("""
 <style>
-.block-container { padding-top: 1rem; }
-[data-testid="stMetric"] { background: #111827; border: 1px solid #374151; border-radius: 12px; padding: 15px; text-align: center; }
+
+/* 50% */
+
+.stApp{
+    background:#030712;
+}
+
+.block-container{
+    padding-top:1rem;
+}
+
+/* 40% */
+
+[data-testid="stSidebar"]{
+    background:#1e3a8a !important;
+}
+
+[data-testid="stSidebar"] *{
+    color:#f8fafc !important;
+}
+
+/* KPI */
+
+[data-testid="stMetric"]{
+    background:#0f172a !important;
+    border:1px solid #38bdf8 !important;
+    border-radius:12px !important;
+    padding:15px !important;
+}
+
+/* KPI LABEL */
+
+[data-testid="stMetricLabel"]{
+    color:#cbd5e1 !important;
+}
+
+/* KPI VALUE */
+
+[data-testid="stMetricValue"]{
+    color:#ffffff !important;
+    font-weight:700 !important;
+}
+
+/* KPI DELTA */
+
+[data-testid="stMetricDelta"]{
+    color:#22c55e !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
-
 # =====================================================
 # HEADER
 # =====================================================
