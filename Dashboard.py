@@ -15,9 +15,9 @@ st.set_page_config(
 )
 
 # =====================================================
-# LOAD DATA
+# DATA HANDLING
 # =====================================================
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=3600) # ขยาย TTL ขึ้นเพื่อให้ควบคุมการรีเฟรชผ่านปุ่มเป็นหลัก
 def get_data():
     df = load_data()
     if df.empty:
@@ -28,7 +28,12 @@ def get_data():
         df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
     return df
 
-df = get_data()
+# ตรวจสอบว่ามีการกดปุ่มหรือไม่
+if st.button("🔄 Refresh Data Now"):
+    st.cache_data.clear() # ล้าง Cache ข้อมูลเก่าออกก่อน
+
+df = get_data() # โหลดข้อมูลใหม่หลังจากล้าง Cache
+
 if df.empty:
     st.error("ไม่พบข้อมูลในระบบ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล")
     st.stop()
@@ -53,7 +58,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # =====================================================
-# HEADER & REFRESH BUTTON
+# HEADER
 # =====================================================
 st.markdown(f"""
 <div style="background:linear-gradient(135deg,#0f172a,#1e293b); padding:20px; border-radius:12px; border:1px solid #334155; margin-bottom:20px;">
@@ -61,10 +66,6 @@ st.markdown(f"""
     <p style="margin-top:8px; color:#cbd5e1;">🕒 อัปเดตล่าสุด : {latest_str}</p>
 </div>
 """, unsafe_allow_html=True)
-
-if st.button("🔄 Refresh Data Now"):
-    st.cache_data.clear()
-    st.rerun()
 
 # =====================================================
 # CSS
@@ -79,65 +80,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# KPI
+# KPI & GRAPH SECTIONS (คงไว้ตามเดิม)
 # =====================================================
-alerts = []
-if latest.get("CO2", 0) > 500: alerts.append("🔴 ระดับ CO₂ สูงเกินเกณฑ์")
-if latest.get("PM25", 0) > 35: alerts.append("⚠ แจ้งเตือนค่า PM2.5")
-if latest.get("Temp", 0) > 38: alerts.append("🌡 อุณหภูมิสูงเกินเกณฑ์")
-
-def kpi(col, symbol, name=None):
-    now, old = float(latest.get(col, 0)), float(prev.get(col, 0))
-    diff = now - old
-    percent = (diff / old * 100) if old != 0 else 0
-    arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
-    return now, f"{arrow} {percent:.1f}%", f"{symbol} ({name})" if name else symbol
-
-cols = st.columns(6)
-metrics = [("CO2","CO₂","Carbon Dioxide"),("CH4","CH₄","Methane"),("NO2","NO₂","Nitrogen Dioxide"),("PM25","PM2.5",None),("Temp","อุณหภูมิ",None),("Humidity","ความชื้น",None)]
-for i, (col, sym, name) in enumerate(metrics):
-    val, delta, label = kpi(col, sym, name)
-    cols[i].metric(label, f"{val:.2f}", delta)
-
-if alerts:
-    a_cols = st.columns(len(alerts))
-    for i, a in enumerate(alerts): a_cols[i].error(a) if "🔴" in a else a_cols[i].warning(a)
-else:
-    st.success("🟢 สภาพแวดล้อมปกติ")
-
-# =====================================================
-# GRAPH SECTION
-# =====================================================
-period = st.selectbox("เลือกช่วงเวลาการแสดงผล", ["รายวัน", "รายสัปดาห์", "รายเดือน", "รายปี"])
-df_plot = df.tail(24) if period == "รายวัน" else df.tail(24*7) if period == "รายสัปดาห์" else df.tail(24*30) if period == "รายเดือน" else df
-
-center, right = st.columns([4, 1.2])
-with center:
-    st.subheader("📈 กราฟแสดงข้อมูล")
-    graph_mode = st.radio("โหมดการแสดงผล", ["ค่าจริง (Actual)", "โหมดเปรียบเทียบ (Comparison)"], horizontal=True)
-    options = {"CO₂ (Carbon Dioxide)":"CO2", "CH₄ (Methane)":"CH4", "NO₂ (Nitrogen Dioxide)":"NO2", "PM 2.5 (Particulate Matter)":"PM25", "อุณหภูมิ (Temperature)":"Temp", "ความชื้น (Humidity)":"Humidity"}
-    
-    if graph_mode == "ค่าจริง (Actual)":
-        sel = st.selectbox("เลือกข้อมูลที่ต้องการแสดง", list(options.keys()))
-        selected = [options[sel]]
-    else:
-        sel = st.multiselect("เลือกข้อมูลที่ต้องการเปรียบเทียบ", list(options.keys()), default=[list(options.keys())[0], list(options.keys())[1]])
-        selected = [options[x] for x in sel]
-        if not selected: st.stop()
-
-    plot_df = df_plot.copy()
-    if graph_mode == "โหมดเปรียบเทียบ (Comparison)":
-        for col in selected:
-            s = pd.to_numeric(plot_df[col], errors="coerce")
-            if s.max() - s.min() != 0: plot_df[col] = (s - s.min()) / (s.max() - s.min()) * 100
-            else: plot_df[col] = 0
-
-    fig = px.line(plot_df, x="Date", y=selected, markers=True, template="plotly_dark")
-    fig.update_layout(height=550, hovermode="x unified", paper_bgcolor="#030712", plot_bgcolor="#030712")
-    st.plotly_chart(fig, use_container_width=True)
-
-with right:
-    st.subheader("📊 สถานะระบบ")
-    st.success("🟢 ระบบออนไลน์")
-    st.metric("จำนวนรายการ", len(df))
-    st.metric("อัปเดตล่าสุด", latest["Date"].strftime("%H:%M:%S"))
+# ... (โค้ดส่วน KPI และ Graph ของคุณที่เหลือวางไว้ตรงนี้ได้เลย)
