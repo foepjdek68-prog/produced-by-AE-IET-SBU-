@@ -60,7 +60,10 @@ with st.sidebar:
 st.markdown("""
 <style>
 
-/* พื้นหลังหลัก */
+/* =========================
+   MAIN
+========================= */
+
 .stApp{
     background:#030712;
 }
@@ -69,38 +72,99 @@ st.markdown("""
     padding-top:1rem;
 }
 
-/* Sidebar */
+/* =========================
+   SIDEBAR
+========================= */
+
 [data-testid="stSidebar"]{
-    background:#1e293b !important;
+    background:#64748b !important;
+    border-right:1px solid #94a3b8;
 }
 
-/* ตัวหนังสือ Sidebar */
+/* Sidebar Text */
+
 [data-testid="stSidebar"] *{
-    color:#f8fafc !important;
+    color:#ffffff !important;
 }
 
-/* KPI */
+/* Sidebar Logo */
+
+[data-testid="stSidebar"] img{
+    filter:
+        brightness(1.15)
+        contrast(1.15)
+        drop-shadow(0 0 10px rgba(255,255,255,.25));
+}
+
+/* Menu */
+
+[data-testid="stSidebarNav"] a{
+    border-radius:10px !important;
+}
+
+[data-testid="stSidebarNav"] a:hover{
+    background:#94a3b8 !important;
+}
+
+[data-testid="stSidebarNav"] a[aria-current="page"]{
+    background:#38bdf8 !important;
+    color:white !important;
+    font-weight:600 !important;
+}
+
+/* =========================
+   KPI CARD
+========================= */
+
 [data-testid="stMetric"]{
     background:#081226 !important;
     border:1px solid #334155 !important;
     border-radius:12px !important;
     padding:15px !important;
+    text-align:center;
 }
 
-/* ชื่อ KPI */
+/* KPI LABEL */
+
 [data-testid="stMetricLabel"]{
     color:#cbd5e1 !important;
+    font-weight:600 !important;
 }
 
-/* ตัวเลข KPI */
+/* KPI VALUE */
+
 [data-testid="stMetricValue"]{
     color:#ffffff !important;
     font-weight:700 !important;
 }
 
-/* ค่าเพิ่ม/ลด */
+/* KPI DELTA */
+
 [data-testid="stMetricDelta"]{
     color:#22c55e !important;
+}
+
+/* =========================
+   SELECT BOX
+========================= */
+
+.stSelectbox > div > div{
+    background:#111827 !important;
+    color:white !important;
+}
+
+/* =========================
+   RADIO
+========================= */
+
+.stRadio label{
+    color:white !important;
+}
+
+/* Divider */
+
+hr{
+    border-color:#334155 !important;
 }
 
 </style>
