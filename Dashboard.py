@@ -16,11 +16,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ตั้งค่ารีเฟรชหน้าจออัตโนมัติทุก 60 วินาที
 st_autorefresh(interval=60000, key="refresh")
 
 # =====================================================
-# ฟังก์ชันโหลดข้อมูล (บังคับให้ Rerun ข้อมูลใหม่)
+# LOAD & PREPARE DATA
 # =====================================================
 @st.cache_data(ttl=30)
 def get_data():
@@ -34,7 +33,6 @@ def get_data():
         df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
     return df
 
-# โหลดข้อมูล
 df = get_data()
 if df.empty:
     st.error("ไม่พบข้อมูลในระบบ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล")
@@ -132,13 +130,31 @@ with center:
         sel_ui = st.selectbox("เลือกข้อมูลที่ต้องการแสดง", list(options.keys()))
         selected = [options[sel_ui]]
     else:
-        sel_ui = st.multiselect("เลือกข้อมูลที่ต้องการเปรียบเทียบ", list(options.keys()), default=[list(options.keys())[0]])
+        sel_ui = st.multiselect("เลือกข้อมูลที่ต้องการเปรียบเทียบ", list(options.keys()), default=[list(options.keys())[0], list(options.keys())[1]])
         selected = [options[x] for x in sel_ui]
         if not selected: st.warning("กรุณาเลือกข้อมูลอย่างน้อย 1 รายการ"); st.stop()
 
     plot_df = df_plot.copy()
+    
+    if graph_mode == "โหมดเปรียบเทียบ (Comparison)" and len(selected) > 0:
+        for col in selected:
+            series = pd.to_numeric(plot_df[col], errors="coerce")
+            min_val, max_val = series.min(), series.max()
+            if max_val - min_val != 0:
+                plot_df[col] = ((series - min_val) / (max_val - min_val)) * 100
+            else:
+                plot_df[col] = 0
+
     fig = px.line(plot_df, x="Date", y=selected, markers=True, template="plotly_dark")
-    fig.update_layout(height=550, hovermode="x unified")
+    color_map = {"CO2": "#DC2626", "CH4": "#F97316", "NO2": "#7C3AED", "PM25": "#EAB308", "Temp": "#22C55E", "Humidity": "#2563EB"}
+    
+    for trace in fig.data:
+        trace.line.color = color_map.get(trace.name, "#FFFFFF")
+        trace.line.width = 3
+        rev_map = {v: k for k, v in options.items()}
+        trace.name = rev_map.get(trace.name, trace.name)
+
+    fig.update_layout(height=550, hovermode="x unified", legend_title_text="")
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
