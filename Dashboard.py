@@ -17,7 +17,7 @@ st.set_page_config(
 # =====================================================
 # DATA HANDLING
 # =====================================================
-@st.cache_data(ttl=3600) # ขยาย TTL ขึ้นเพื่อให้ควบคุมการรีเฟรชผ่านปุ่มเป็นหลัก
+@st.cache_data(ttl=3600)
 def get_data():
     df = load_data()
     if df.empty:
@@ -28,11 +28,11 @@ def get_data():
         df = df.dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
     return df
 
-# ตรวจสอบว่ามีการกดปุ่มหรือไม่
+# ตรวจสอบการกดปุ่ม Refresh
 if st.button("🔄 Refresh Data Now"):
-    st.cache_data.clear() # ล้าง Cache ข้อมูลเก่าออกก่อน
+    st.cache_data.clear()
 
-df = get_data() # โหลดข้อมูลใหม่หลังจากล้าง Cache
+df = get_data()
 
 if df.empty:
     st.error("ไม่พบข้อมูลในระบบ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล")
@@ -68,7 +68,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# CSS
+# CSS STYLING
 # =====================================================
 st.markdown("""
 <style>
@@ -80,6 +80,26 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================
-# KPI & GRAPH SECTIONS (คงไว้ตามเดิม)
+# KPI SECTION
 # =====================================================
-# ... (โค้ดส่วน KPI และ Graph ของคุณที่เหลือวางไว้ตรงนี้ได้เลย)
+alerts = []
+if latest.get("CO2", 0) > 500: alerts.append("🔴 ระดับ CO₂ สูงเกินเกณฑ์")
+if latest.get("PM25", 0) > 35: alerts.append("⚠ แจ้งเตือนค่า PM2.5")
+if latest.get("Temp", 0) > 38: alerts.append("🌡 อุณหภูมิสูงเกินเกณฑ์")
+
+def kpi(col, symbol, name=None):
+    now, old = float(latest.get(col, 0)), float(prev.get(col, 0))
+    diff = now - old
+    percent = (diff / old * 100) if old != 0 else 0
+    arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
+    return now, f"{arrow} {percent:.1f}%", f"{symbol} ({name})" if name else symbol
+
+cols = st.columns(6)
+metrics = [("CO2","CO₂","Carbon Dioxide"),("CH4","CH₄","Methane"),("NO2","NO₂","Nitrogen Dioxide"),("PM25","PM2.5",None),("Temp","อุณหภูมิ",None),("Humidity","ความชื้น",None)]
+for i, (col, sym, name) in enumerate(metrics):
+    val, delta, label = kpi(col, sym, name)
+    cols[i].metric(label, f"{val:.2f}", delta)
+
+if alerts:
+    a_cols = st.columns(len(alerts))
+    for
