@@ -1,437 +1,110 @@
 import streamlit as st
 import pandas as pd
 
-from streamlit_autorefresh import st_autorefresh
-
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
+# =====================================================
+# การตั้งค่าหน้าจอ
+# =====================================================
+st.set_page_config(page_title="GHG Data Center", page_icon="🗄️", layout="wide")
 
 # =====================================================
-# PAGE CONFIG
+# แถบเมนูด้านข้าง
 # =====================================================
-
-st.set_page_config(
-    page_title="GHG Data Center",
-    page_icon="🗄️",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-
-# Auto refresh
-st_autorefresh(
-    interval=15000,
-    key="data_refresh"
-)
-
-
-# =====================================================
-# GLOBAL STYLE
-# =====================================================
-
-st.markdown("""
-<style>
-
-/* Background */
-
-.stApp {
-    background:#020617;
-}
-
-
-/* Sidebar */
-
-section[data-testid="stSidebar"] {
-
-    background:#0f172a !important;
-    border-right:1px solid #334155;
-
-}
-
-
-section[data-testid="stSidebar"] * {
-
-    color:#f8fafc !important;
-
-}
-
-
-/* Metric Card */
-
-[data-testid="stMetric"] {
-
-    background:#0f172a !important;
-    border:1px solid #38bdf8 !important;
-    border-radius:14px;
-    padding:15px;
-
-}
-
-
-[data-testid="stMetricLabel"] {
-
-    color:#cbd5e1 !important;
-
-}
-
-
-[data-testid="stMetricValue"] {
-
-    color:white !important;
-
-}
-
-
-/* Table */
-
-[data-testid="stDataFrame"] {
-
-    border-radius:12px;
-
-}
-
-
-/* Divider */
-
-hr {
-
-    border-color:#334155;
-
-}
-
-
-</style>
-""",
-unsafe_allow_html=True)
-
-
-
-# =====================================================
-# SIDEBAR
-# =====================================================
-
 with st.sidebar:
-
+    st.image("Assets/logo.png", width=250)
     st.markdown("""
-    <div style="
-    background:#1e293b;
-    padding:15px;
-    border-radius:15px;
-    text-align:center;
-    ">
-    """,
-    unsafe_allow_html=True)
-
-
-    st.image(
-        "Assets/logo.png",
-        width=250
-    )
-
-
-    st.markdown(
-    "</div>",
-    unsafe_allow_html=True
-    )
-
-
-    st.markdown("""
-    <div style="
-    margin-top:400px;
-    border-top:1px solid #475569;
-    padding-top:10px;
-    color:#94a3b8;
-    text-align:center;
-    font-size:12px;
-    ">
-    (C) Dept. Engineering SBU
-    </div>
-    """,
-    unsafe_allow_html=True
-    )
-
-
+        <style>
+            [data-testid="stSidebar"] > div:first-child { display: flex; flex-direction: column; height: 90vh; }
+            .sidebar-spacer { flex-grow: 1; }
+            .sidebar-footer { border-top: 1px solid #4B5563; padding-top: 10px; margin-top: auto; font-size: 0.75em; color: #9CA3AF; }
+        </style>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-footer">(C) Dept. Engineering SBU</div>
+    """, unsafe_allow_html=True)
 
 # =====================================================
-# LOAD DATA
+# การโหลดข้อมูล
 # =====================================================
+df = load_data()
+if df is None or df.empty:
+    df = fetch_data()
+    if df is not None and not df.empty:
+        save_data(df)
 
-@st.cache_data(ttl=5)
-def get_data():
-
-    df = load_data()
-
-
-    if df.empty:
-
-        df = fetch_data()
-
-        if not df.empty:
-
-            save_data(df)
-
-
-    if not df.empty:
-
-        df["Date"] = pd.to_datetime(
-            df["Date"],
-            errors="coerce"
-        )
-
-
-        df = (
-            df
-            .dropna(subset=["Date"])
-            .sort_values("Date")
-            .reset_index(drop=True)
-        )
-
-
-    return df
-
-
-
-df = get_data()
-
-
-
-if df.empty:
-
-    st.error(
-        "ไม่พบข้อมูลในระบบ"
-    )
-
-    st.stop()
-
-
-
-latest = df.iloc[-1]
-
-
-latest_str = latest["Date"].strftime(
-    "%d/%m/%Y %H:%M:%S"
-)
-
-
+if df is not None and "Date" in df.columns:
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+    df = df.dropna(subset=["Date"])
 
 # =====================================================
-# HEADER
+# ส่วนหัวของหน้าจอ
 # =====================================================
+latest_str = df["Date"].max().strftime("%d/%m/%Y %H:%M") if not df.empty else "ไม่มีข้อมูล"
 
 st.markdown(f"""
-
-<div style="
-background:linear-gradient(135deg,#0f172a,#1e293b);
-padding:20px;
-border-radius:15px;
-border:1px solid #334155;
-margin-bottom:20px;
-">
-
-<h1 style="
-color:white;
-margin:0;
-">
-
-🗄️ GHG Data Management Center
-
-</h1>
-
-
-<p style="
-color:#cbd5e1;
-">
-
-🕒 อัปเดตล่าสุด : {latest_str}
-
-</p>
-
-
+<div style="background:linear-gradient(135deg,#111827,#1F2937); padding:25px; border-radius:20px; border:1px solid #374151; margin-bottom:20px;">
+    <h1 style="margin:0;color:white;">🗄️ GHG Data Management Center</h1>
+    <p style="color:white;">อัปเดตล่าสุด : {latest_str}</p>
 </div>
-
-""",
-unsafe_allow_html=True)
-
-
+""", unsafe_allow_html=True)
 
 # =====================================================
-# KPI
+# สรุปข้อมูลสำคัญ (KPI Metrics)
 # =====================================================
+c1, c2, c3, c4 = st.columns(4)
+is_data_available = df is not None and not df.empty
 
+c1.metric("จำนวนรายการทั้งหมด", f"{len(df):,}" if is_data_available else "0")
 
-c1,c2,c3,c4 = st.columns(4)
-
-
-
-c1.metric(
-    "จำนวนข้อมูล",
-    f"{len(df):,}"
-)
-
-
-c2.metric(
-    "CO₂ ล่าสุด",
-    f"{latest['CO2']:.2f}"
-)
-
-
-c3.metric(
-    "อุณหภูมิ",
-    f"{latest['Temp']:.2f} °C"
-)
-
-
-c4.metric(
-    "สถานะ",
-    "🟢 ONLINE"
-)
-
-
+last_row = df.iloc[-1] if is_data_available else None
+c2.metric("ค่า CO₂ ล่าสุด", f"{last_row['CO2']:.2f}" if is_data_available and 'CO2' in df.columns else "N/A")
+c3.metric("อุณหภูมิล่าสุด", f"{last_row['Temp']:.2f} °C" if is_data_available and 'Temp' in df.columns else "N/A")
+c4.metric("เวลาอัปเดตล่าสุด", latest_str)
 
 st.markdown("---")
 
-
-
 # =====================================================
-# FILTER
+# การปรับแต่งและตัวกรอง
 # =====================================================
-
-
 rename_map = {
-
-    "CO2":"CO₂",
-
-    "CH4":"CH₄",
-
-    "NO2":"NO₂",
-
-    "PM25":"PM2.5",
-
-    "Temp":"Temperature",
-
-    "Humidity":"Humidity"
-
+    "CO2": "CO₂", "CH4": "CH₄", "NO2": "NO₂", 
+    "PM25": "PM 2.5", "Temp": "อุณหภูมิ (°C)", "Humidity": "ความชื้น (%)"
 }
+display_df = df.rename(columns=rename_map) if not df.empty else pd.DataFrame()
 
+selected_column = st.selectbox("เลือกประเภทข้อมูลที่ต้องการโฟกัส", ["ทั้งหมด"] + list(rename_map.values()))
 
-
-display_df = df.rename(
-    columns=rename_map
-)
-
-
-
-selected = st.selectbox(
-
-    "เลือกข้อมูล",
-
-    [
-        "ทั้งหมด"
-    ]
-    +
-    list(rename_map.values())
-
-)
-
-
-
-if selected != "ทั้งหมด":
-
-    working_df = display_df[
-        [
-            "Date",
-            selected
-        ]
-    ]
-
+if selected_column != "ทั้งหมด" and selected_column in display_df.columns:
+    working_df = display_df[["Date", selected_column]]
 else:
-
     working_df = display_df
 
-
-
 # =====================================================
-# DATA VIEW
+# ส่วนแสดงผล
 # =====================================================
-
-
-tab1,tab2 = st.tabs(
-    [
-        "📊 Statistics",
-        "📋 Latest Data"
-    ]
-)
-
-
+tab1, tab2 = st.tabs(["📊 สถิติเบื้องต้น", "📋 ข้อมูลล่าสุด"])
 
 with tab1:
-
-
-    st.subheader(
-        "📊 สถิติข้อมูล"
-    )
-
-
-    st.dataframe(
-
-        working_df.describe(),
-
-        use_container_width=True
-
-    )
-
-
+    st.subheader("📊 สถิติเชิงปริมาณ")
+    if not working_df.empty:
+        st.dataframe(working_df.drop(columns=["Date"], errors="ignore").describe(), use_container_width=True)
+    else:
+        st.info("ไม่มีข้อมูล")
 
 with tab2:
-
-
-    st.subheader(
-        "📋 ข้อมูลล่าสุด"
-    )
-
-
-    st.dataframe(
-
-        working_df
-        .sort_values(
-            "Date",
-            ascending=False
-        ),
-
-        height=550,
-
-        use_container_width=True
-
-    )
-
-
+    st.subheader("📋 ข้อมูลรายละเอียดล่าสุด")
+    if not working_df.empty:
+        st.dataframe(working_df.sort_values(by="Date", ascending=False), use_container_width=True, height=550)
+    else:
+        st.info("ไม่มีข้อมูล")
 
 # =====================================================
-# DOWNLOAD
+# การดาวน์โหลด
 # =====================================================
-
-
 st.markdown("---")
-
-
-csv = working_df.to_csv(
-    index=False
-).encode(
-    "utf-8-sig"
-)
-
-
-st.download_button(
-
-    "📥 Download CSV",
-
-    csv,
-
-    "GHG_Data.csv",
-
-    "text/csv",
-
-    use_container_width=True
-
-)
+if not working_df.empty:
+    csv = working_df.to_csv(index=False).encode('utf-8-sig')
+    col1, col2 = st.columns(2)
+    col1.download_button("📥 ดาวน์โหลดไฟล์ CSV", csv, "GHG_Data.csv", "text/csv", use_container_width=True)
+    col2.download_button("📊 ดาวน์โหลดไฟล์สำหรับ Excel", csv, "GHG_Data.csv", "text/csv", use_container_width=True)
