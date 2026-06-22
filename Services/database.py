@@ -10,58 +10,20 @@ DB_PATH = os.path.join(
 )
 
 
-# ==========================================
-# CREATE DATABASE FOLDER
-# ==========================================
-
-def init_database():
-
-    if not os.path.exists(DB_FOLDER):
-        os.makedirs(DB_FOLDER)
-
-
-    conn = sqlite3.connect(DB_PATH)
-
-
-    conn.execute("""
-    CREATE TABLE IF NOT EXISTS ghg_data
-    (
-        Date TEXT,
-        CO2 REAL,
-        CH4 REAL,
-        NO2 REAL,
-        PM25 REAL,
-        Temp REAL,
-        Humidity REAL
-    )
-    """)
-
-
-    conn.commit()
-    conn.close()
-
-
-
-# ==========================================
-# CONNECTION
-# ==========================================
-
 def get_connection():
 
-    init_database()
+    os.makedirs(
+        DB_FOLDER,
+        exist_ok=True
+    )
 
     return sqlite3.connect(DB_PATH)
 
 
 
-# ==========================================
-# LOAD DATA
-# ==========================================
-
 def load_data():
 
     conn = get_connection()
-
 
     try:
 
@@ -74,23 +36,16 @@ def load_data():
             conn
         )
 
-
     except Exception:
 
         df = pd.DataFrame()
 
 
-
     conn.close()
-
 
     return df
 
 
-
-# ==========================================
-# INSERT NEW SENSOR DATA
-# ==========================================
 
 def save_data(df):
 
@@ -101,26 +56,50 @@ def save_data(df):
     conn = get_connection()
 
 
-    df.to_sql(
-        "ghg_data",
-        conn,
-        if_exists="append",
-        index=False
-    )
+    try:
+
+        # ตรวจว่ามี table หรือไม่
+        tables = pd.read_sql(
+            """
+            SELECT name 
+            FROM sqlite_master 
+            WHERE type='table'
+            """,
+            conn
+        )
 
 
-    # จำกัดข้อมูลไม่ให้โตเกินไป
-    conn.execute("""
-    DELETE FROM ghg_data
-    WHERE rowid NOT IN
-    (
-        SELECT rowid
-        FROM ghg_data
-        ORDER BY Date DESC
-        LIMIT 20000
-    )
-    """)
+        if "ghg_data" not in tables["name"].values:
+
+            df.to_sql(
+                "ghg_data",
+                conn,
+                if_exists="replace",
+                index=False
+            )
 
 
-    conn.commit()
-    conn.close()
+        else:
+
+            df.to_sql(
+                "ghg_data",
+                conn,
+                if_exists="append",
+                index=False
+            )
+
+
+        conn.commit()
+
+
+    except Exception as e:
+
+        print(
+            "DATABASE ERROR:",
+            e
+        )
+
+
+    finally:
+
+        conn.close()
