@@ -99,4 +99,16 @@ period = st.selectbox("เลือกช่วงเวลาการแสด
 if period == "รายวัน": df_plot = df.tail(24)
 elif period == "รายสัปดาห์": df_plot = df.tail(24*7)
 elif period == "รายเดือน": df_plot = df.tail(24*30)
-else:
+else: df_plot = df
+
+# ... (Graph Visualization Logic)
+
+# =====================================================
+# CSS STYLING
+# =====================================================
+st.markdown("""
+<style>
+.stApp { background:#030712; }
+[data-testid="stMetric"] { background:#0f172a !important; border:1px solid #60a5fa !important; border-radius:12px !important; padding:15px !important; }
+</style>
+""", unsafe_allow_html=True)
