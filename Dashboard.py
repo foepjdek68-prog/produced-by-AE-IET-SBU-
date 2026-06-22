@@ -1,8 +1,6 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-import time
-from streamlit_autorefresh import st_autorefresh
 from Services.database import load_data, save_data
 from Services.api_loader import fetch_data
 
@@ -16,16 +14,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-AUTO_REFRESH_TIME = 60
-if "refresh_time" not in st.session_state:
-    st.session_state.refresh_time = time.time()
-
-st_autorefresh(interval=1000, key="refresh_timer")
-
 # =====================================================
 # LOAD DATA
 # =====================================================
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=60)
 def get_data():
     df = load_data()
     if df.empty:
@@ -61,7 +53,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # =====================================================
-# HEADER & REFRESH
+# HEADER & REFRESH BUTTON
 # =====================================================
 st.markdown(f"""
 <div style="background:linear-gradient(135deg,#0f172a,#1e293b); padding:20px; border-radius:12px; border:1px solid #334155; margin-bottom:20px;">
@@ -70,22 +62,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-r1, r2, r3 = st.columns([1.5, 2, 5])
-with r1:
-    if st.button("🔄 Refresh Now", use_container_width=True):
-        st.cache_data.clear()
-        st.session_state.refresh_time = time.time()
-        st.rerun()
-with r2:
-    elapsed = int(time.time() - st.session_state.refresh_time)
-    remain = AUTO_REFRESH_TIME - elapsed
-    if remain <= 0:
-        st.cache_data.clear()
-        st.session_state.refresh_time = time.time()
-        st.rerun()
-    st.info(f"⏱ Refresh ใน {remain} วินาที")
-with r3:
-    st.caption("ระบบจะอัปเดตข้อมูลอัตโนมัติทุก 60 วินาที")
+if st.button("🔄 Refresh Data Now"):
+    st.cache_data.clear()
+    st.rerun()
 
 # =====================================================
 # CSS
