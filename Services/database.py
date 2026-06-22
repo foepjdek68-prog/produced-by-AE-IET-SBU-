@@ -37,11 +37,13 @@ def save_data(df):
 
     conn = get_connection()
 
+
     df.to_sql(
         "ghg_data",
         conn,
         if_exists="replace",
         index=False
     )
+
 
     conn.close()
