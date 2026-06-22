@@ -1,7 +1,7 @@
 streamlit
-streamlit-autorefresh
-plotly
 pandas
+plotly
+numpy
+pytz
 openpyxl
-gspread
-google-auth
+streamlit-autorefresh
