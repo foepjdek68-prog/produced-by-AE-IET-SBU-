@@ -1,14 +1,11 @@
 import sqlite3
 import pandas as pd
-import os
 
 
 DB_PATH = "Storage/GHG_Database.db"
 
 
 def get_connection():
-
-    os.makedirs("Storage", exist_ok=True)
 
     return sqlite3.connect(DB_PATH)
 
@@ -25,7 +22,7 @@ def load_data():
             conn
         )
 
-    except Exception:
+    except:
 
         df = pd.DataFrame()
 
@@ -38,27 +35,15 @@ def load_data():
 
 def save_data(df):
 
-    if df is None or df.empty:
-        return
-
-
     conn = get_connection()
 
-    try:
 
-        df.to_sql(
-            "ghg_data",
-            conn,
-            if_exists="replace",
-            index=False
-        )
+    df.to_sql(
+        "ghg_data",
+        conn,
+        if_exists="replace",
+        index=False
+    )
 
-        conn.commit()
 
-    except Exception as e:
-
-        print("DATABASE ERROR:", e)
-
-    finally:
-
-        conn.close()
+    conn.close()
