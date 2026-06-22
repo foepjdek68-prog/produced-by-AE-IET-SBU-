@@ -1,14 +1,17 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+
 from streamlit_autorefresh import st_autorefresh
 
-from Services.database import load_data, save_data
+from Services.database import load_data
 from Services.api_loader import fetch_data
 
+
 # =====================================================
-# CONFIG
+# PAGE CONFIG
 # =====================================================
+
 st.set_page_config(
     page_title="Dashboard Tracking GHGs Emission",
     page_icon="🌍",
@@ -16,233 +19,465 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# refresh ทุก 15 วินาที (เหมาะกับ Streamlit Cloud)
-st_autorefresh(interval=15000, key="refresh")
+
+# refresh ทุก 15 วินาที
+
+st_autorefresh(
+    interval=15000,
+    key="refresh"
+)
+
+
 
 # =====================================================
-# DATA LOADER (REAL-TIME FIX)
+# STYLE
 # =====================================================
+
+st.markdown("""
+<style>
+
+.stApp {
+
+background:#030712;
+
+}
+
+
+section[data-testid="stSidebar"] {
+
+background:#0f172a !important;
+
+}
+
+
+section[data-testid="stSidebar"] * {
+
+color:white !important;
+
+}
+
+
+[data-testid="stMetric"] {
+
+background:#0f172a !important;
+
+border:1px solid #38bdf8 !important;
+
+border-radius:12px;
+
+padding:15px;
+
+}
+
+
+[data-testid="stMetricLabel"] {
+
+color:#cbd5e1 !important;
+
+}
+
+
+[data-testid="stMetricValue"] {
+
+color:white !important;
+
+}
+
+
+hr {
+
+border-color:#334155;
+
+}
+
+</style>
+""",
+unsafe_allow_html=True)
+
+
+
+# =====================================================
+# SIDEBAR
+# =====================================================
+
+with st.sidebar:
+
+    st.image(
+        "Assets/logo.png",
+        width=250
+    )
+
+
+    st.markdown("""
+    <div style="
+    margin-top:300px;
+    border-top:1px solid #475569;
+    padding-top:10px;
+    text-align:center;
+    color:#94a3b8;
+    font-size:12px;
+    ">
+    (C) Dept. Engineering SBU
+    </div>
+    """,
+    unsafe_allow_html=True)
+
+
+
+# =====================================================
+# LOAD DATA
+# =====================================================
+
+
 @st.cache_data(ttl=10)
 def get_data():
 
-    # 1. ดึงข้อมูลสดก่อน
+
     try:
-        fresh_df = fetch_data()
-    except Exception:
-        fresh_df = pd.DataFrame()
 
-    # 2. fallback ถ้า API ล่ม
-    if fresh_df.empty:
         df = load_data()
-    else:
-        df = fresh_df
-        save_data(df)
 
-    # 3. clean data
-    if not fresh_df.empty:
 
-    save_data(
-        fresh_df.tail(1)
-    )
+    except Exception:
 
-    df = load_data()
-        df = df.sort_values("Date").reset_index(drop=True)
+        df = pd.DataFrame()
+
+
+
+    # ถ้าไม่มีข้อมูล
+    # ใช้ API จำลอง
+
+    if df.empty:
+
+        df = fetch_data()
+
+
+
+    if not df.empty:
+
+
+        df["Date"] = pd.to_datetime(
+            df["Date"],
+            errors="coerce"
+        )
+
+
+        df = (
+            df
+            .dropna(subset=["Date"])
+            .sort_values("Date")
+            .reset_index(drop=True)
+        )
+
 
     return df
 
 
+
+
 df = get_data()
 
-# กัน crash
-if df is None or df.empty:
-    st.error("❌ ไม่มีข้อมูล (API / DB ไม่ตอบสนอง)")
+
+
+if df.empty:
+
+    st.error(
+        "ไม่พบข้อมูล"
+    )
+
     st.stop()
 
-latest = df.iloc[-1]
-prev = df.iloc[-2] if len(df) > 1 else latest
 
-latest_str = latest["Date"].strftime("%d/%m/%Y %H:%M:%S")
+
+latest = df.iloc[-1]
+
+
+prev = (
+    df.iloc[-2]
+    if len(df)>1
+    else latest
+)
+
+
+
+latest_time = latest["Date"].strftime(
+    "%d/%m/%Y %H:%M:%S"
+)
+
+
 
 # =====================================================
 # HEADER
 # =====================================================
-col1, col2 = st.columns([8, 1])
 
-with col1:
-    st.markdown(f"""
-    <div style="
-        background:linear-gradient(135deg,#0f172a,#1e293b);
-        padding:18px;
-        border-radius:12px;
-        border:1px solid #334155;
-    ">
-        <h2 style="color:white;margin:0;">
-            🌍 GHG Dashboard
-        </h2>
-        <p style="color:#cbd5e1;margin:5px 0 0 0;">
-            🕒 Last update: {latest_str}
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
 
-with col2:
-    if st.button("🔄 Refresh"):
-        st.cache_data.clear()
-        st.rerun()
+st.markdown(f"""
+
+<div style="
+background:linear-gradient(135deg,#0f172a,#1e293b);
+padding:20px;
+border-radius:15px;
+border:1px solid #334155;
+">
+
+<h1 style="
+color:white;
+margin:0;
+">
+
+🌍 Dashboard Tracking Greenhouse Gases Emission
+
+</h1>
+
+
+<p style="
+color:#cbd5e1;
+">
+
+🕒 Update : {latest_time}
+
+</p>
+
+
+</div>
+
+""",
+unsafe_allow_html=True)
+
+
 
 st.markdown("---")
 
-# =====================================================
-# ALERT SYSTEM
-# =====================================================
-alerts = []
 
-if latest.get("CO2", 0) > 500:
-    alerts.append("🔴 CO₂ สูง")
-if latest.get("PM25", 0) > 35:
-    alerts.append("⚠ PM2.5 สูง")
-if latest.get("Temp", 0) > 38:
-    alerts.append("🌡 อุณหภูมิสูง")
-
-if alerts:
-    cols = st.columns(len(alerts))
-    for i, a in enumerate(alerts):
-        cols[i].warning(a)
-else:
-    st.success("🟢 ปกติทั้งหมด")
 
 # =====================================================
 # KPI
 # =====================================================
-def kpi(col, symbol):
-    now = float(latest.get(col, 0))
-    old = float(prev.get(col, 0))
-    diff = now - old
-    percent = (diff / old * 100) if old != 0 else 0
-    arrow = "↑" if diff > 0 else "↓" if diff < 0 else "→"
-    return now, f"{arrow} {percent:.1f}%", symbol
 
 
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+def create_kpi(column):
 
-metrics = [
-    ("CO2", "CO₂"),
-    ("CH4", "CH₄"),
-    ("NO2", "NO₂"),
-    ("PM25", "PM2.5"),
-    ("Temp", "Temp"),
-    ("Humidity", "Humidity")
+    now = float(
+        latest.get(column,0)
+    )
+
+    old = float(
+        prev.get(column,0)
+    )
+
+
+    diff = now-old
+
+
+    percent = (
+        diff/old*100
+        if old !=0
+        else 0
+    )
+
+
+    arrow = (
+        "↑"
+        if diff>0
+        else "↓"
+        if diff<0
+        else "→"
+    )
+
+
+    return now,f"{arrow} {percent:.1f}%"
+
+
+
+c1,c2,c3,c4,c5,c6 = st.columns(6)
+
+
+
+items = [
+
+("CO2","CO₂"),
+
+("CH4","CH₄"),
+
+("NO2","NO₂"),
+
+("PM25","PM2.5"),
+
+("Temp","Temperature"),
+
+("Humidity","Humidity")
+
 ]
 
-for i, (col, sym) in enumerate(metrics):
-    val, diff, label = kpi(col, sym)
-    [c1, c2, c3, c4, c5, c6][i].metric(label, f"{val:.2f}", diff)
+
+
+cols=[
+c1,c2,c3,c4,c5,c6
+]
+
+
+for i,(key,name) in enumerate(items):
+
+    value,delta=create_kpi(key)
+
+    cols[i].metric(
+        name,
+        f"{value:.2f}",
+        delta
+    )
+
+
 
 st.markdown("---")
+
+
+
+# =====================================================
+# ALERT
+# =====================================================
+
+
+if latest.get("CO2",0)>500:
+
+    st.error(
+        "🔴 CO₂ สูงเกินกำหนด"
+    )
+
+else:
+
+    st.success(
+        "🟢 ระบบปกติ"
+    )
+
+
 
 # =====================================================
 # GRAPH
 # =====================================================
-period = st.selectbox(
-    "ช่วงเวลา",
-    ["รายวัน", "รายสัปดาห์", "รายเดือน", "รายปี"]
+
+
+st.subheader(
+    "📈 Graph"
 )
 
-if period == "รายวัน":
-    df_plot = df.tail(24)
-elif period == "รายสัปดาห์":
-    df_plot = df.tail(24 * 7)
-elif period == "รายเดือน":
-    df_plot = df.tail(24 * 30)
+
+
+period = st.selectbox(
+    "ช่วงเวลา",
+    [
+        "รายวัน",
+        "รายสัปดาห์",
+        "รายเดือน",
+        "ทั้งหมด"
+    ]
+)
+
+
+
+if period=="รายวัน":
+
+    plot_df=df.tail(24)
+
+elif period=="รายสัปดาห์":
+
+    plot_df=df.tail(168)
+
+elif period=="รายเดือน":
+
+    plot_df=df.tail(720)
+
 else:
-    df_plot = df
 
-# กัน lag (สำคัญมากบน Streamlit Cloud)
-MAX_POINTS = 800
-if len(df_plot) > MAX_POINTS:
-    df_plot = df_plot.tail(MAX_POINTS)
+    plot_df=df
 
-center, right = st.columns([4, 1.2])
 
-with center:
 
-    st.subheader("📈 Graph")
+option={
 
-    graph_mode = st.radio(
-        "โหมด",
-        ["Actual", "Compare"],
-        horizontal=True
-    )
+"CO₂":"CO2",
 
-    options = {
-        "CO2": "CO2",
-        "CH4": "CH4",
-        "NO2": "NO2",
-        "PM25": "PM25",
-        "Temp": "Temp",
-        "Humidity": "Humidity"
-    }
+"CH₄":"CH4",
 
-    if graph_mode == "Actual":
-        sel = st.selectbox("เลือก", list(options.keys()))
-        selected = [sel]
-    else:
-        selected = st.multiselect(
-            "เลือก",
-            list(options.keys()),
-            default=["CO2", "CH4"]
-        )
-        if not selected:
-            st.warning("เลือกอย่างน้อย 1 ค่า")
-            st.stop()
+"NO₂":"NO2",
 
-    plot_df = df_plot.copy()
+"PM2.5":"PM25",
 
-    fig = px.line(
-        plot_df,
-        x="Date",
-        y=selected,
-        markers=False,   # ลด lag
-        template="plotly_white"
-    )
+"Temperature":"Temp",
 
-    color_map = {
-        "CO2": "#ef4444",
-        "CH4": "#f97316",
-        "NO2": "#8b5cf6",
-        "PM25": "#eab308",
-        "Temp": "#22c55e",
-        "Humidity": "#3b82f6"
-    }
+"Humidity":"Humidity"
 
-    for t in fig.data:
-        t.line.width = 3
-        t.line.color = color_map.get(t.name, "#111827")
+}
 
-    fig.update_layout(
-        height=520,
-        hovermode="x unified",
-        paper_bgcolor="white",
-        plot_bgcolor="white"
-    )
 
-    st.plotly_chart(fig, use_container_width=True)
+
+selected_name = st.selectbox(
+
+"เลือกข้อมูล",
+
+list(option.keys())
+
+)
+
+
+
+selected=[option[selected_name]]
+
+
+
+fig=px.line(
+
+plot_df,
+
+x="Date",
+
+y=selected,
+
+markers=True,
+
+template="plotly_dark"
+
+)
+
+
+
+fig.update_layout(
+
+height=500,
+
+paper_bgcolor="#030712",
+
+plot_bgcolor="#030712",
+
+font=dict(
+color="white"
+)
+
+)
+
+
+
+st.plotly_chart(
+
+fig,
+
+use_container_width=True
+
+)
+
+
 
 # =====================================================
-# STATUS PANEL
+# STATUS
 # =====================================================
-with right:
-    st.subheader("📊 Status")
 
-    delay = (pd.Timestamp.now() - latest["Date"]).total_seconds()
 
-    if delay < 60:
-        status = "🟢 Live"
-    elif delay < 300:
-        status = "🟡 Delayed"
-    else:
-        status = "🔴 Offline"
+st.sidebar.metric(
+    "จำนวนข้อมูล",
+    len(df)
+)
 
-    st.metric("Status", status)
-    st.metric("Rows", len(df))
-    st.metric("Last update", latest["Date"].strftime("%H:%M:%S"))
+
+st.sidebar.metric(
+    "ล่าสุด",
+    latest_time
+)
