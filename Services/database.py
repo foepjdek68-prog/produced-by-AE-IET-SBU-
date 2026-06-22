@@ -1,10 +1,15 @@
 import sqlite3
 import pandas as pd
 
+
 DB_PATH = "Storage/GHG_Database.db"
 
+
 def get_connection():
+
     return sqlite3.connect(DB_PATH)
+
+
 
 def load_data():
 
@@ -21,9 +26,12 @@ def load_data():
 
         df = pd.DataFrame()
 
+
     conn.close()
 
     return df
+
+
 
 def save_data(df):
 
