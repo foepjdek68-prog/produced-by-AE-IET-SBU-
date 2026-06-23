@@ -70,10 +70,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-if st.button("🔄 Refresh Now", use_container_width=True):
-    st.cache_data.clear()
-    st.rerun()
-
 # =====================================================
 # CSS
 # =====================================================
