@@ -10,7 +10,7 @@ from Services.api_loader import fetch_data
 # PAGE CONFIG
 # =====================================================
 st.set_page_config(
-    page_title="Dashboard Tracking GHGs Emission",
+    page_title="Dashboard Tracking GHGs Concentration",
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -38,7 +38,7 @@ def get_data():
 df = get_data()
 
 if df.empty:
-    st.error("ไม่พบข้อมูลในระบบ กรุณาตรวจสอบการเชื่อมต่อฐานข้อมูล")
+    st.error("No data found in the system. Please check the database connection.")
     st.stop()
 
 latest = df.iloc[-1]
@@ -65,8 +65,8 @@ with st.sidebar:
 # =====================================================
 st.markdown(f"""
 <div style="background:linear-gradient(135deg,#0f172a,#1e293b); padding:20px; border-radius:12px; border:1px solid #334155; margin-bottom:20px;">
-    <h1 style="margin:0; color:white;">🌍 Dashboard Tracking Greenhouse Gases Emission</h1>
-    <p style="margin-top:8px; color:#cbd5e1;">🕒 อัปเดตล่าสุด : {latest_str}</p>
+    <h1 style="margin:0; color:white;">🌍 Dashboard Tracking GHGs Concentration</h1>
+    <p style="margin-top:8px; color:#cbd5e1;">🕒 Last Updated: {latest_str}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -86,9 +86,9 @@ st.markdown("""
 # KPI SECTION
 # =====================================================
 alerts = []
-if latest.get("CO2", 0) > 500: alerts.append("🔴 ระดับ CO₂ สูงเกินเกณฑ์")
-if latest.get("PM25", 0) > 35: alerts.append("⚠ แจ้งเตือนค่า PM2.5")
-if latest.get("Temp", 0) > 38: alerts.append("🌡 อุณหภูมิสูงเกินเกณฑ์")
+if latest.get("CO2", 0) > 500: alerts.append("🔴 CO₂ level exceeds threshold")
+if latest.get("PM25", 0) > 35: alerts.append("⚠ PM2.5 concentration warning")
+if latest.get("Temp", 0) > 38: alerts.append("🌡 Temperature exceeds threshold (°C)")
 
 def kpi(col, symbol, name=None):
     now, old = float(latest.get(col, 0)), float(prev.get(col, 0))
@@ -98,7 +98,15 @@ def kpi(col, symbol, name=None):
     return now, f"{arrow} {percent:.1f}%", f"{symbol} ({name})" if name else symbol
 
 cols = st.columns(6)
-metrics = [("CO2","CO₂","Carbon Dioxide"),("CH4","CH₄","Methane"),("NO2","NO₂","Nitrogen Dioxide"),("PM25","PM2.5",None),("Temp","อุณหภูมิ",None),("Humidity","ความชื้น",None)]
+metrics = [
+    ("CO2", "CO₂", "ppm"),
+    ("CH4", "CH₄", "ppb"),
+    ("NO2", "NO₂", "ppb"),
+    ("PM25", "PM2.5", "µg/m³"),
+    ("Temp", "Temperature", "°C"),
+    ("Humidity", "Humidity", "%")
+]
+
 for i, (col, sym, name) in enumerate(metrics):
     val, delta, label = kpi(col, sym, name)
     cols[i].metric(label, f"{val:.2f}", delta)
@@ -111,18 +119,18 @@ if alerts:
         else:
             a_cols[i].warning(a)
 else:
-    st.success("🟢 สภาพแวดล้อมปกติ")
+    st.success("🟢 Environment Status: Normal")
 
 # =====================================================
 # GRAPH SECTION
 # =====================================================
-period = st.selectbox("เลือกช่วงเวลาการแสดงผล", ["รายวัน", "รายสัปดาห์", "รายเดือน", "รายปี"])
+period = st.selectbox("Select Time Range", ["Daily", "Weekly", "Monthly", "Yearly"])
 
-if period == "รายวัน":
+if period == "Daily":
     df_plot = df.tail(24)
-elif period == "รายสัปดาห์":
+elif period == "Weekly":
     df_plot = df.tail(24 * 7)
-elif period == "รายเดือน":
+elif period == "Monthly":
     df_plot = df.tail(24 * 30)
 else:
     df_plot = df
@@ -130,29 +138,30 @@ else:
 center, right = st.columns([4, 1.2])
 
 with center:
-    st.subheader("📈 กราฟแสดงข้อมูล")
-    graph_mode = st.radio("โหมดการแสดงผล", ["ค่าจริง (Actual)", "โหมดเปรียบเทียบ (Comparison)"], horizontal=True)
+    st.subheader("📈 Data Visualization")
+    graph_mode = st.radio("Display Mode", ["Actual", "Comparison"], horizontal=True)
+    
     options = {
-        "CO₂ (Carbon Dioxide)": "CO2", 
-        "CH₄ (Methane)": "CH4", 
-        "NO₂ (Nitrogen Dioxide)": "NO2", 
-        "PM 2.5 (Particulate Matter)": "PM25", 
-        "อุณหภูมิ (Temperature)": "Temp", 
-        "ความชื้น (Humidity)": "Humidity"
+        "CO₂ (Carbon Dioxide - ppm)": "CO2", 
+        "CH₄ (Methane - ppb)": "CH4", 
+        "NO₂ (Nitrogen Dioxide - ppb)": "NO2", 
+        "PM 2.5 (Particulate Matter - µg/m³)": "PM25", 
+        "Temperature (°C)": "Temp", 
+        "Humidity (%)": "Humidity"
     }
     
-    if graph_mode == "ค่าจริง (Actual)":
-        sel = st.selectbox("เลือกข้อมูลที่ต้องการแสดง", list(options.keys()))
+    if graph_mode == "Actual":
+        sel = st.selectbox("Select Parameter to Display", list(options.keys()))
         selected = [options[sel]]
     else:
-        sel = st.multiselect("เลือกข้อมูลที่ต้องการเปรียบเทียบ", list(options.keys()), default=[list(options.keys())[0], list(options.keys())[1]])
+        sel = st.multiselect("Select Parameters to Compare", list(options.keys()), default=[list(options.keys())[0], list(options.keys())[1]])
         selected = [options[x] for x in sel]
         if not selected: 
-            st.warning("กรุณาเลือกข้อมูลอย่างน้อย 1 รายการ")
+            st.warning("Please select at least 1 parameter.")
             st.stop()
 
     plot_df = df_plot.copy()
-    if graph_mode == "โหมดเปรียบเทียบ (Comparison)":
+    if graph_mode == "Comparison":
         for col in selected:
             s = pd.to_numeric(plot_df[col], errors="coerce")
             if s.max() - s.min() != 0: 
@@ -165,7 +174,7 @@ with center:
     st.plotly_chart(fig, use_container_width=True)
 
 with right:
-    st.subheader("📊 สถานะระบบ")
-    st.success("🟢 ระบบออนไลน์")
-    st.metric("จำนวนรายการ", len(df))
-    st.metric("อัปเดตล่าสุด", latest["Date"].strftime("%H:%M:%S"))
+    st.subheader("📊 System Status")
+    st.success("🟢 Online")
+    st.metric("Total Records", len(df))
+    st.metric("Last Update", latest["Date"].strftime("%H:%M:%S"))
