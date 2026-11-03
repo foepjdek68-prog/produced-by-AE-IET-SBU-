@@ -142,23 +142,35 @@ with center:
     graph_mode = st.radio("Display Mode", ["Actual", "Comparison"], horizontal=True)
     
     options = {
-        "CO₂ (Carbon Dioxide - ppm)": "CO2", 
-        "CH₄ (Methane - ppb)": "CH4", 
-        "NO₂ (Nitrogen Dioxide - ppb)": "NO2", 
-        "PM 2.5 (Particulate Matter - µg/m³)": "PM25", 
-        "Temperature (°C)": "Temp", 
-        "Humidity (%)": "Humidity"
+        "CO₂ (Carbon Dioxide)": "CO2", 
+        "CH₄ (Methane)": "CH4", 
+        "NO₂ (Nitrogen Dioxide)": "NO2", 
+        "PM 2.5 (Particulate Matter)": "PM25", 
+        "Temperature": "Temp", 
+        "Humidity": "Humidity"
+    }
+
+    # กำหนดหน่วยวัดจริงตามมาตรฐานสากล
+    unit_map = {
+        "CO2": "ppm",
+        "CH4": "ppb",
+        "NO2": "ppb",
+        "PM25": "µg/m³",
+        "Temp": "°C",
+        "Humidity": "%"
     }
     
     if graph_mode == "Actual":
         sel = st.selectbox("Select Parameter to Display", list(options.keys()))
         selected = [options[sel]]
+        y_axis_title = f"Unit: {unit_map[selected[0]]}"
     else:
         sel = st.multiselect("Select Parameters to Compare", list(options.keys()), default=[list(options.keys())[0], list(options.keys())[1]])
         selected = [options[x] for x in sel]
         if not selected: 
             st.warning("Please select at least 1 parameter.")
             st.stop()
+        y_axis_title = "Unit: % (Normalized Scale)"
 
     plot_df = df_plot.copy()
     if graph_mode == "Comparison":
@@ -170,7 +182,13 @@ with center:
                 plot_df[col] = 0
 
     fig = px.line(plot_df, x="Date", y=selected, markers=True, template="plotly_dark")
-    fig.update_layout(height=550, hovermode="x unified", paper_bgcolor="#030712", plot_bgcolor="#030712")
+    fig.update_layout(
+        height=550, 
+        hovermode="x unified", 
+        paper_bgcolor="#030712", 
+        plot_bgcolor="#030712",
+        yaxis_title=y_axis_title
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 with right:
