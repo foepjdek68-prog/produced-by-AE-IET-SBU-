@@ -1,5 +1,7 @@
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import pandas as pd
 import time
 from streamlit_autorefresh import st_autorefresh
@@ -160,36 +162,82 @@ with center:
         "Humidity": "%"
     }
     
+    plot_df = df_plot.copy()
+
     if graph_mode == "Actual":
         sel = st.selectbox("Select Parameter to Display", list(options.keys()))
         selected = [options[sel]]
-        y_axis_title = f"Unit: {unit_map[selected[0]]}"
+        
+        fig = px.line(plot_df, x="Date", y=selected, markers=True, template="plotly_dark")
+        fig.update_layout(
+            height=550, 
+            hovermode="x unified", 
+            paper_bgcolor="#030712", 
+            plot_bgcolor="#030712",
+            yaxis_title=f"Unit: {unit_map[selected[0]]}"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
     else:
         sel = st.multiselect("Select Parameters to Compare", list(options.keys()), default=[list(options.keys())[0], list(options.keys())[1]])
         selected = [options[x] for x in sel]
-        if not selected: 
-            st.warning("Please select at least 1 parameter.")
-            st.stop()
-        y_axis_title = "Unit: % (Normalized Scale)"
+        
+        if len(selected) == 0 or len(selected) == 1:
+            st.warning("Please select at least 2 parameters to compare.")
+            
+        elif len(selected) == 2:
+            # โหมด 2 แกน (Dual Y-axis)
+            var1, var2 = selected[0], selected[1]
+            unit1, unit2 = unit_map[var1], unit_map[var2]
+            
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            
+            # เส้นที่ 1 (แกนซ้าย)
+            fig.add_trace(
+                go.Scatter(x=plot_df["Date"], y=plot_df[var1], name=sel[0], mode='lines+markers', line=dict(color="#60a5fa")),
+                secondary_y=False,
+            )
+            
+            # เส้นที่ 2 (แกนขวา)
+            fig.add_trace(
+                go.Scatter(x=plot_df["Date"], y=plot_df[var2], name=sel[1], mode='lines+markers', line=dict(color="#f87171")),
+                secondary_y=True,
+            )
+            
+            fig.update_layout(
+                height=550,
+                hovermode="x unified",
+                paper_bgcolor="#030712",
+                plot_bgcolor="#030712",
+                template="plotly_dark",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            
+            # ตั้งชื่อและสีของแกนให้ตรงกับเส้นกราฟ
+            fig.update_yaxes(title_text=f"{var1} ({unit1})", secondary_y=False, color="#60a5fa")
+            fig.update_yaxes(title_text=f"{var2} ({unit2})", secondary_y=True, color="#f87171")
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+        else:
+            # โหมดปรับฐาน 0-100% (กรณีเลือก 3 ตัวแปรขึ้นไป)
+            st.info("💡 Selecting more than 2 parameters applies a Normalized Scale (0-100%) for comparison.")
+            for col in selected:
+                s = pd.to_numeric(plot_df[col], errors="coerce")
+                if s.max() - s.min() != 0: 
+                    plot_df[col] = (s - s.min()) / (s.max() - s.min()) * 100
+                else: 
+                    plot_df[col] = 0
 
-    plot_df = df_plot.copy()
-    if graph_mode == "Comparison":
-        for col in selected:
-            s = pd.to_numeric(plot_df[col], errors="coerce")
-            if s.max() - s.min() != 0: 
-                plot_df[col] = (s - s.min()) / (s.max() - s.min()) * 100
-            else: 
-                plot_df[col] = 0
-
-    fig = px.line(plot_df, x="Date", y=selected, markers=True, template="plotly_dark")
-    fig.update_layout(
-        height=550, 
-        hovermode="x unified", 
-        paper_bgcolor="#030712", 
-        plot_bgcolor="#030712",
-        yaxis_title=y_axis_title
-    )
-    st.plotly_chart(fig, use_container_width=True)
+            fig = px.line(plot_df, x="Date", y=selected, markers=True, template="plotly_dark")
+            fig.update_layout(
+                height=550, 
+                hovermode="x unified", 
+                paper_bgcolor="#030712", 
+                plot_bgcolor="#030712",
+                yaxis_title="Unit: % (Normalized Scale)"
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
 with right:
     st.subheader("📊 System Status")
