@@ -176,6 +176,9 @@ with center:
             plot_bgcolor="#030712",
             yaxis_title=f"Unit: {unit_map[selected[0]]}"
         )
+        # บังคับแกนเริ่มจาก 0
+        fig.update_yaxes(rangemode="tozero")
+        
         st.plotly_chart(fig, use_container_width=True)
 
     else:
@@ -213,9 +216,9 @@ with center:
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             
-            # ตั้งชื่อและสีของแกนให้ตรงกับเส้นกราฟ
-            fig.update_yaxes(title_text=f"{var1} ({unit1})", secondary_y=False, color="#60a5fa")
-            fig.update_yaxes(title_text=f"{var2} ({unit2})", secondary_y=True, color="#f87171")
+            # ตั้งชื่อและสีของแกนให้ตรงกับเส้นกราฟ พร้อมบังคับเริ่มจาก 0 ทั้งสองแกน
+            fig.update_yaxes(title_text=f"{var1} ({unit1})", secondary_y=False, color="#60a5fa", rangemode="tozero")
+            fig.update_yaxes(title_text=f"{var2} ({unit2})", secondary_y=True, color="#f87171", rangemode="tozero")
             
             st.plotly_chart(fig, use_container_width=True)
             
@@ -237,6 +240,9 @@ with center:
                 plot_bgcolor="#030712",
                 yaxis_title="Unit: % (Normalized Scale)"
             )
+            # บังคับแกนเริ่มจาก 0
+            fig.update_yaxes(rangemode="tozero")
+            
             st.plotly_chart(fig, use_container_width=True)
 
 with right:
