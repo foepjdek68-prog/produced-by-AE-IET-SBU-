@@ -152,7 +152,6 @@ with center:
         "Humidity": "Humidity"
     }
 
-    # กำหนดหน่วยวัดจริงตามมาตรฐานสากล
     unit_map = {
         "CO2": "ppm",
         "CH4": "ppb",
@@ -176,9 +175,18 @@ with center:
             plot_bgcolor="#030712",
             yaxis_title=f"Unit: {unit_map[selected[0]]}"
         )
-        # บังคับแกนเริ่มจาก 0
-        fig.update_yaxes(rangemode="tozero")
         
+        # UI สำหรับกำหนดแกน Y เอง
+        with st.expander("⚙️ Advanced Y-Axis Settings"):
+            auto_scale = st.checkbox("Auto Scale (Start from 0)", value=True, key="actual_auto")
+            if not auto_scale:
+                col_min, col_max = st.columns(2)
+                y_min = col_min.number_input("Min Value", value=0.0, key="actual_min")
+                y_max = col_max.number_input("Max Value", value=100.0, key="actual_max")
+                fig.update_yaxes(range=[y_min, y_max])
+            else:
+                fig.update_yaxes(rangemode="tozero")
+                
         st.plotly_chart(fig, use_container_width=True)
 
     else:
@@ -189,7 +197,6 @@ with center:
             st.warning("Please select at least 2 parameters to compare.")
             
         elif len(selected) == 2:
-            # โหมด 2 แกน (Dual Y-axis)
             var1, var2 = selected[0], selected[1]
             unit1, unit2 = unit_map[var1], unit_map[var2]
             
@@ -215,15 +222,30 @@ with center:
                 template="plotly_dark",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
-            
-            # ตั้งชื่อและสีของแกนให้ตรงกับเส้นกราฟ พร้อมบังคับเริ่มจาก 0 ทั้งสองแกน
-            fig.update_yaxes(title_text=f"{var1} ({unit1})", secondary_y=False, color="#60a5fa", rangemode="tozero")
-            fig.update_yaxes(title_text=f"{var2} ({unit2})", secondary_y=True, color="#f87171", rangemode="tozero")
-            
+
+            # UI สำหรับกำหนดแกน Y ซ้าย-ขวา แบบอิสระ
+            with st.expander("⚙️ Advanced Y-Axis Settings"):
+                auto_scale = st.checkbox("Auto Scale (Start from 0)", value=True, key="dual_auto")
+                if not auto_scale:
+                    st.caption(f"Left Axis: {var1} ({unit1})")
+                    cl1, cl2 = st.columns(2)
+                    y1_min = cl1.number_input("Left Min", value=0.0, key="dual_y1_min")
+                    y1_max = cl2.number_input("Left Max", value=100.0, key="dual_y1_max")
+                    
+                    st.caption(f"Right Axis: {var2} ({unit2})")
+                    cr1, cr2 = st.columns(2)
+                    y2_min = cr1.number_input("Right Min", value=0.0, key="dual_y2_min")
+                    y2_max = cr2.number_input("Right Max", value=100.0, key="dual_y2_max")
+
+                    fig.update_yaxes(title_text=f"{var1} ({unit1})", secondary_y=False, color="#60a5fa", range=[y1_min, y1_max])
+                    fig.update_yaxes(title_text=f"{var2} ({unit2})", secondary_y=True, color="#f87171", range=[y2_min, y2_max])
+                else:
+                    fig.update_yaxes(title_text=f"{var1} ({unit1})", secondary_y=False, color="#60a5fa", rangemode="tozero")
+                    fig.update_yaxes(title_text=f"{var2} ({unit2})", secondary_y=True, color="#f87171", rangemode="tozero")
+
             st.plotly_chart(fig, use_container_width=True)
             
         else:
-            # โหมดปรับฐาน 0-100% (กรณีเลือก 3 ตัวแปรขึ้นไป)
             st.info("💡 Selecting more than 2 parameters applies a Normalized Scale (0-100%) for comparison.")
             for col in selected:
                 s = pd.to_numeric(plot_df[col], errors="coerce")
@@ -240,9 +262,18 @@ with center:
                 plot_bgcolor="#030712",
                 yaxis_title="Unit: % (Normalized Scale)"
             )
-            # บังคับแกนเริ่มจาก 0
-            fig.update_yaxes(rangemode="tozero")
             
+            # UI สำหรับกำหนดแกน Y (0-100%)
+            with st.expander("⚙️ Advanced Y-Axis Settings"):
+                auto_scale = st.checkbox("Auto Scale (Start from 0)", value=True, key="norm_auto")
+                if not auto_scale:
+                    col_min, col_max = st.columns(2)
+                    y_min = col_min.number_input("Min Value (%)", value=0.0, key="norm_min")
+                    y_max = col_max.number_input("Max Value (%)", value=100.0, key="norm_max")
+                    fig.update_yaxes(range=[y_min, y_max])
+                else:
+                    fig.update_yaxes(rangemode="tozero")
+
             st.plotly_chart(fig, use_container_width=True)
 
 with right:
